@@ -1,6 +1,5 @@
 ---
 description: Fires before implementing or modifying code
-globs:
 ---
 
 # Judgment Quality Principles + Deep Rumination Before Implementation

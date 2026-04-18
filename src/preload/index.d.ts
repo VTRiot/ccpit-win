@@ -30,6 +30,21 @@ interface ParcFermeAPI {
     blocks: { filename: string; targetPath: string; content: string }[],
     templateName: string
   ): Promise<{ placed: string[]; errors: string[] }>
+  migrationImportPit(
+    filePath: string
+  ): Promise<{
+    entries: { path: string; content: string; lines: number }[]
+    claudeMdPreview: string
+    claudeMdLines: number
+    rulesCount: number
+    skillsCount: number
+    coverageMapSummary: { totalRows: number; uncoveredCount: number } | null
+    metricsRaw: string | null
+    validationErrors: string[]
+  }>
+  migrationDeployPit(
+    entries: { path: string; content: string; lines: number }[]
+  ): Promise<{ deployed: string[]; backedUp: string[]; errors: string[] }>
 
   projectsList(): Promise<
     { name: string; path: string; status: string; createdAt: string }[]
@@ -63,6 +78,7 @@ interface ParcFermeAPI {
 
   selectFolder(): Promise<string | null>
   selectFile(): Promise<string | null>
+  selectPitFile(): Promise<string | null>
   openExternal(url: string): Promise<void>
   openPath(folderPath: string): Promise<string>
   clipboardWrite(text: string): Promise<void>

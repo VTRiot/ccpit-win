@@ -92,12 +92,13 @@ What to include in P3:
 ```yaml
 ---
 description: "(action-based description. See Section 4)"
-globs: "(matching file patterns. Leave empty or omit if none)"
+paths:
+  - "**/*.ts"
 ---
 ```
 
 - `description`: Helps CC decide when to load this rule
-- `globs`: File pattern matching. Example: `"*.py"` loads only when working with Python files. If unspecified, always loaded
+- `paths`: File pattern matching (array format). Example: `["**/*.py"]` loads only when working with Python files. If unspecified, always loaded
 
 ### 3-2. skills/ YAML Frontmatter
 

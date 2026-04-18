@@ -1,6 +1,12 @@
 ---
 description: Fires when modifying library or framework code
-globs: "*.py,*.js,*.ts,*.c,*.cpp,*.rs"
+paths:
+  - "**/*.py"
+  - "**/*.js"
+  - "**/*.ts"
+  - "**/*.c"
+  - "**/*.cpp"
+  - "**/*.rs"
 ---
 
 # Library Design Intent Check (mandatory before modifying code)
