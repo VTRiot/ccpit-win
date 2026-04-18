@@ -1,7 +1,7 @@
-{
-  "name": "parc-ferme",
+﻿{
+  "name": "ccpit-win",
   "version": "1.0.0",
-  "description": "Parc Fermé — Claude Code Configuration Manager",
+  "description": "CCPIT — Claude Code Configuration Manager",
   "main": "./out/main/index.js",
   "author": "example.com",
   "homepage": "https://electron-vite.org",

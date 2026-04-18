@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 
 type Theme = 'dark' | 'light'
 
-const STORAGE_KEY = 'parc-ferme-theme'
+const STORAGE_KEY = 'ccpit-theme'
 
 export function useTheme(): { theme: Theme; toggleTheme: () => void } {
   const [theme, setTheme] = useState<Theme>(() => {

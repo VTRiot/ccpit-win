@@ -1,9 +1,9 @@
-import i18n from 'i18next'
+﻿import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import en from './en.json'
 import ja from './ja.json'
 
-const STORAGE_KEY = 'parc-ferme-lang'
+const STORAGE_KEY = 'ccpit-lang'
 
 const initialLang = (localStorage.getItem(STORAGE_KEY) || 'en') as 'ja' | 'en'
 

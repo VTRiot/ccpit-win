@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Loader2, ExternalLink, Copy, Check, Save } from 'lucide-react'
 import { Button } from '../components/ui/button'
@@ -6,8 +6,8 @@ import { Label } from '../components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
 import { toNativePath } from '../lib/utils'
 
-const STORAGE_KEY_DA_OUTPUT = 'parc-ferme-da-output'
-const STORAGE_KEY_DA_PATH = 'parc-ferme-da-custom-path'
+const STORAGE_KEY_DA_OUTPUT = 'ccpit-da-output'
+const STORAGE_KEY_DA_PATH = 'ccpit-da-custom-path'
 
 export function DAPage(): React.JSX.Element {
   const { t } = useTranslation()

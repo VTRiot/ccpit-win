@@ -1,10 +1,10 @@
-import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
+﻿import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { app } from 'electron'
 
-const PARC_FERME_DIR = join(app.getPath('home'), '.ccpit')
-const PROJECTS_FILE = join(PARC_FERME_DIR, 'projects.json')
+const CCPIT_DIR = join(app.getPath('home'), '.ccpit')
+const PROJECTS_FILE = join(CCPIT_DIR, 'projects.json')
 
 export interface ProjectEntry {
   name: string
@@ -21,7 +21,7 @@ async function ensureDir(dir: string): Promise<void> {
 
 /** projects.json を読み込む */
 export async function loadProjects(): Promise<ProjectEntry[]> {
-  await ensureDir(PARC_FERME_DIR)
+  await ensureDir(CCPIT_DIR)
   if (!existsSync(PROJECTS_FILE)) return []
   const content = await readFile(PROJECTS_FILE, 'utf-8')
   return JSON.parse(content)
@@ -29,7 +29,7 @@ export async function loadProjects(): Promise<ProjectEntry[]> {
 
 /** projects.json に保存 */
 async function saveProjects(projects: ProjectEntry[]): Promise<void> {
-  await ensureDir(PARC_FERME_DIR)
+  await ensureDir(CCPIT_DIR)
   await writeFile(PROJECTS_FILE, JSON.stringify(projects, null, 2), 'utf-8')
 }
 
@@ -39,7 +39,7 @@ async function detectStatus(projectPath: string): Promise<'manx' | 'legacy' | 'u
   if (!existsSync(claudeMdPath)) return 'uninitialized'
 
   const content = await readFile(claudeMdPath, 'utf-8')
-  if (content.includes('CCPIT managed') || content.includes('Parc Fermé managed')) return 'manx'
+  if (content.includes('CCPIT managed') || content.includes('CCPIT managed')) return 'manx'
   return 'legacy'
 }
 
