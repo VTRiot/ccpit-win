@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useCallback, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, FolderOpen, Loader2, Check, X, Copy, ExternalLink, FileUp, Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, FolderOpen, Loader2, Check, X, Copy, ExternalLink, FileUp, Eye, EyeOff, FileArchive, AlertTriangle } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
@@ -12,7 +12,7 @@ interface MigrationWizardProps {
   onSetupCompleted: () => void
 }
 
-type Step = 'scan' | 'scanning' | 'scanResult' | 'packGenerated' | 'import' | 'importPreview' | 'password' | 'deploying' | 'result'
+type Step = 'scan' | 'scanning' | 'scanResult' | 'packGenerated' | 'import' | 'pitPreview' | 'password' | 'deploying' | 'result'
 
 interface ScannedFile {
   path: string
@@ -22,10 +22,21 @@ interface ScannedFile {
   category: string
 }
 
-interface ParsedBlock {
-  filename: string
-  targetPath: string
+interface PitEntry {
+  path: string
   content: string
+  lines: number
+}
+
+interface PitPreview {
+  entries: PitEntry[]
+  claudeMdPreview: string
+  claudeMdLines: number
+  rulesCount: number
+  skillsCount: number
+  coverageMapSummary: { totalRows: number; uncoveredCount: number } | null
+  metricsRaw: string | null
+  validationErrors: string[]
 }
 
 interface DeployResult {
@@ -39,7 +50,7 @@ const STEP_KEYS = ['scan', 'pack', 'import', 'deploy'] as const
 function getStepGroupIndex(step: Step): number {
   if (step === 'scan' || step === 'scanning' || step === 'scanResult') return 0
   if (step === 'packGenerated') return 1
-  if (step === 'import' || step === 'importPreview') return 2
+  if (step === 'import' || step === 'pitPreview') return 2
   return 3
 }
 
@@ -48,9 +59,9 @@ export function MigrationWizard({ onBack, onSetupCompleted }: MigrationWizardPro
   const [step, setStep] = useState<Step>('scan')
   const [scannedFiles, setScannedFiles] = useState<ScannedFile[]>([])
   const [packContent, setPackContent] = useState('')
-  const [importText, setImportText] = useState('')
-  const [parsedBlocks, setParsedBlocks] = useState<ParsedBlock[]>([])
-  const [importResult, setImportResult] = useState<{ placed: string[]; errors: string[] } | null>(null)
+  const [pitPreview, setPitPreview] = useState<PitPreview | null>(null)
+  const [pitLoading, setPitLoading] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -79,21 +90,63 @@ export function MigrationWizard({ onBack, onSetupCompleted }: MigrationWizardPro
     await window.api.openExternal('https://claude.ai/new')
   }
 
-  const handleParseImport = async (): Promise<void> => {
-    const blocks = await window.api.migrationParseImport(importText)
-    setParsedBlocks(blocks)
-    setStep('importPreview')
+  const loadPitFile = useCallback(async (filePath: string): Promise<void> => {
+    setPitLoading(true)
+    try {
+      const preview = await window.api.migrationImportPit(filePath)
+      setPitPreview(preview)
+      setStep('pitPreview')
+    } catch (err) {
+      setPitPreview({
+        entries: [],
+        claudeMdPreview: '',
+        claudeMdLines: 0,
+        rulesCount: 0,
+        skillsCount: 0,
+        coverageMapSummary: null,
+        metricsRaw: null,
+        validationErrors: [err instanceof Error ? err.message : String(err)],
+      })
+      setStep('pitPreview')
+    } finally {
+      setPitLoading(false)
+    }
+  }, [])
+
+  const handleSelectPitFile = async (): Promise<void> => {
+    const filePath = await window.api.selectPitFile()
+    if (!filePath) return
+    await loadPitFile(filePath)
   }
 
-  const handleImportToGolden = async (): Promise<void> => {
-    const res = await window.api.migrationImportToGolden(parsedBlocks, 'manx')
-    setImportResult(res)
+  const handleDrop = useCallback(async (e: DragEvent<HTMLDivElement>): Promise<void> => {
+    e.preventDefault()
+    setDragOver(false)
+    const file = e.dataTransfer.files[0]
+    if (!file || !file.name.endsWith('.pit')) return
+    // Electron extends File with a `path` property
+    const filePath = (file as File & { path: string }).path
+    await loadPitFile(filePath)
+  }, [loadPitFile])
+
+  const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>): void => {
+    e.preventDefault()
+    setDragOver(true)
+  }, [])
+
+  const handleDragLeave = useCallback((): void => {
+    setDragOver(false)
+  }, [])
+
+  const handleDeployPit = async (): Promise<void> => {
+    if (!pitPreview) return
     setStep('password')
   }
 
   const handleDeploy = async (): Promise<void> => {
+    if (!pitPreview) return
     setStep('deploying')
-    const res = await window.api.goldenDeploy('manx', password)
+    const res = await window.api.migrationDeployPit(pitPreview.entries)
     setDeployResult(res)
     if (res.errors.length === 0) {
       await window.api.configSet({ setupCompleted: true })
@@ -102,6 +155,8 @@ export function MigrationWizard({ onBack, onSetupCompleted }: MigrationWizardPro
   }
 
   const stepLabels = STEP_KEYS.map((key) => t(`migration.steps.${key}`))
+
+  const pitHasErrors = pitPreview && pitPreview.validationErrors.length > 0
 
   return (
     <div className="max-w-2xl mx-auto mt-8">
@@ -244,39 +299,118 @@ export function MigrationWizard({ onBack, onSetupCompleted }: MigrationWizardPro
             <CardDescription>{t('migration.importDescription')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <textarea
-              value={importText}
-              onChange={(e) => setImportText(e.target.value)}
-              placeholder={t('migration.importPlaceholder')}
-              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-48 font-mono text-xs resize-none"
-            />
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setStep('packGenerated')}>{t('common.back')}</Button>
-              <Button onClick={handleParseImport} disabled={!importText.trim()}>{t('common.parse')}</Button>
-            </div>
+            {pitLoading ? (
+              <div className="flex items-center justify-center gap-3 py-12 text-muted-foreground">
+                <Loader2 size={20} className="animate-spin" /> {t('migration.pitLoading')}
+              </div>
+            ) : (
+              <>
+                {/* ファイル選択ボタン */}
+                <Button onClick={handleSelectPitFile}>
+                  <FileArchive size={16} /> {t('migration.selectPitFile')}
+                </Button>
+
+                {/* D&D エリア */}
+                <div
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  className={cn(
+                    'flex flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed p-8 transition-colors',
+                    dragOver
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-border text-muted-foreground'
+                  )}
+                >
+                  <FileUp size={24} />
+                  <p className="text-sm">
+                    {dragOver ? t('migration.dropPitActive') : t('migration.dropPitHint')}
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setStep('packGenerated')}>{t('common.back')}</Button>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       )}
 
-      {step === 'importPreview' && (
+      {step === 'pitPreview' && pitPreview && (
         <Card>
           <CardHeader>
-            <CardTitle>{t('migration.importPreview', { count: parsedBlocks.length })}</CardTitle>
+            <CardTitle>{t('migration.pitPreviewTitle')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="border border-border rounded-md max-h-64 overflow-auto divide-y divide-border">
-              {parsedBlocks.map((block, i) => (
-                <div key={i} className="p-3">
-                  <div className="font-mono text-xs text-primary mb-1">{block.targetPath}</div>
-                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap max-h-24 overflow-auto">
-                    {block.content.slice(0, 300)}{block.content.length > 300 ? '...' : ''}
-                  </pre>
+            {/* 検証エラー */}
+            {pitHasErrors && (
+              <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 space-y-1">
+                <div className="flex items-center gap-2 text-destructive text-sm font-medium">
+                  <AlertTriangle size={16} />
+                  {t('migration.pitValidationErrors', { count: pitPreview.validationErrors.length })}
                 </div>
-              ))}
+                <ul className="list-disc list-inside text-xs text-destructive space-y-0.5">
+                  {pitPreview.validationErrors.map((e, i) => <li key={i}>{e}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {/* ファイルツリー */}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-2">{t('migration.pitFileTree')}</p>
+              <div className="bg-muted/50 rounded-md p-3 max-h-40 overflow-auto">
+                <ul className="text-xs font-mono space-y-0.5">
+                  {pitPreview.entries.map((e) => (
+                    <li key={e.path} className="flex justify-between">
+                      <span>{e.path}</span>
+                      <span className="text-muted-foreground">{e.lines} L</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
+
+            {/* サマリー */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-md border border-border p-3">
+                <p className="text-xs text-muted-foreground">{t('migration.pitClaudeMd', { lines: pitPreview.claudeMdLines })}</p>
+                {pitPreview.claudeMdPreview && (
+                  <pre className="text-xs font-mono mt-2 whitespace-pre-wrap text-muted-foreground max-h-24 overflow-auto">
+                    {pitPreview.claudeMdPreview}
+                  </pre>
+                )}
+              </div>
+              <div className="rounded-md border border-border p-3 space-y-1">
+                <p className="text-xs text-muted-foreground">{t('migration.pitRules', { count: pitPreview.rulesCount })}</p>
+                <p className="text-xs text-muted-foreground">{t('migration.pitSkills', { count: pitPreview.skillsCount })}</p>
+                {pitPreview.coverageMapSummary && (
+                  <p className="text-xs text-muted-foreground">
+                    {t('migration.pitCoverage', {
+                      total: pitPreview.coverageMapSummary.totalRows,
+                      uncovered: pitPreview.coverageMapSummary.uncoveredCount,
+                    })}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* メトリクス */}
+            {pitPreview.metricsRaw && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2">{t('migration.pitMetrics')}</p>
+                <pre className="text-xs font-mono bg-muted/50 rounded-md p-3 whitespace-pre-wrap max-h-32 overflow-auto">
+                  {pitPreview.metricsRaw}
+                </pre>
+              </div>
+            )}
+
+            {/* アクションボタン */}
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setStep('import')}>{t('common.back')}</Button>
-              <Button onClick={handleImportToGolden}>{t('migration.placeInGolden')}</Button>
+              <Button onClick={handleDeployPit} disabled={!!pitHasErrors}>
+                {t('migration.pitDeploy')}
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -285,12 +419,6 @@ export function MigrationWizard({ onBack, onSetupCompleted }: MigrationWizardPro
       {step === 'password' && (
         <Card>
           <CardHeader>
-            {importResult && (
-              <div className="flex items-center gap-2 text-green-500 mb-3">
-                <Check size={16} />
-                <span className="text-sm">{t('migration.placedFiles', { count: importResult.placed.length })}</span>
-              </div>
-            )}
             <CardTitle>{t('migration.passwordTitle')}</CardTitle>
             <CardDescription>{t('migration.passwordDescription')}</CardDescription>
           </CardHeader>
@@ -311,7 +439,10 @@ export function MigrationWizard({ onBack, onSetupCompleted }: MigrationWizardPro
             {passwordConfirm && !passwordValid && (
               <p className="text-sm text-destructive">{password !== passwordConfirm ? t('common.passwordMismatch') : t('common.passwordTooShort')}</p>
             )}
-            <Button onClick={handleDeploy} disabled={!passwordValid}>{t('common.runSetup')}</Button>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setStep('pitPreview')}>{t('common.back')}</Button>
+              <Button onClick={handleDeploy} disabled={!passwordValid}>{t('common.runSetup')}</Button>
+            </div>
           </CardContent>
         </Card>
       )}

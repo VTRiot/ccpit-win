@@ -37,6 +37,22 @@ const api = {
     templateName: string
   ): Promise<{ placed: string[]; errors: string[] }> =>
     ipcRenderer.invoke('migration:importToGolden', blocks, templateName),
+  migrationImportPit: (
+    filePath: string
+  ): Promise<{
+    entries: { path: string; content: string; lines: number }[]
+    claudeMdPreview: string
+    claudeMdLines: number
+    rulesCount: number
+    skillsCount: number
+    coverageMapSummary: { totalRows: number; uncoveredCount: number } | null
+    metricsRaw: string | null
+    validationErrors: string[]
+  }> => ipcRenderer.invoke('migration:importPit', filePath),
+  migrationDeployPit: (
+    entries: { path: string; content: string; lines: number }[]
+  ): Promise<{ deployed: string[]; backedUp: string[]; errors: string[] }> =>
+    ipcRenderer.invoke('migration:deployPit', entries),
 
   // Projects
   projectsList: (): Promise<
@@ -84,6 +100,7 @@ const api = {
   // System
   selectFolder: (): Promise<string | null> => ipcRenderer.invoke('dialog:selectFolder'),
   selectFile: (): Promise<string | null> => ipcRenderer.invoke('dialog:selectFile'),
+  selectPitFile: (): Promise<string | null> => ipcRenderer.invoke('dialog:selectPitFile'),
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:openExternal', url),
   openPath: (folderPath: string): Promise<string> => ipcRenderer.invoke('shell:openPath', folderPath),
   clipboardWrite: (text: string): Promise<void> => ipcRenderer.invoke('clipboard:write', text),

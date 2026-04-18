@@ -1,6 +1,5 @@
 ---
 description: Fires when adding, changing, or deciding the placement of a rule
-globs:
 ---
 
 # Routing + Self-Modification Protocol

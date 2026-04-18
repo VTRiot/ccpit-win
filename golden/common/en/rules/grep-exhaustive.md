@@ -1,6 +1,5 @@
 ---
 description: Fires when investigating or modifying code
-globs:
 ---
 
 # Exhaustive Search Obligation (Do not stop at the first grep hit)

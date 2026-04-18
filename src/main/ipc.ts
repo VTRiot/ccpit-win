@@ -6,6 +6,9 @@ import {
   generateConversionPack,
   parseImportMd,
   importToGolden,
+  importPitFile,
+  deployPitFile,
+  type PitEntry,
 } from './services/migration'
 import { listProjects, createProject, removeProject } from './services/projects'
 import { runHealthCheck, getDenyList, checkCcCli } from './services/health'
@@ -34,6 +37,12 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('migration:parseImport', (_e, mdContent: string) => parseImportMd(mdContent))
   ipcMain.handle('migration:importToGolden', (_e, blocks, templateName: string) =>
     importToGolden(blocks, GOLDEN_DIR, templateName)
+  )
+  ipcMain.handle('migration:importPit', (_e, filePath: string) =>
+    importPitFile(filePath)
+  )
+  ipcMain.handle('migration:deployPit', (_e, entries: PitEntry[]) =>
+    deployPitFile(entries)
   )
 
   // --- Projects ---
@@ -76,6 +85,14 @@ export function registerIpcHandlers(): void {
     const result = await dialog.showOpenDialog({
       properties: ['openFile'],
       filters: [{ name: 'Markdown', extensions: ['md', 'txt'] }],
+    })
+    return result.canceled ? null : result.filePaths[0]
+  })
+
+  ipcMain.handle('dialog:selectPitFile', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [{ name: 'PIT File', extensions: ['pit'] }],
     })
     return result.canceled ? null : result.filePaths[0]
   })

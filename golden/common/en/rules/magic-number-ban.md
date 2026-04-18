@@ -1,6 +1,12 @@
 ---
 description: Fires when about to write a numeric literal in code
-globs: "*.py,*.js,*.ts,*.c,*.cpp,*.rs"
+paths:
+  - "**/*.py"
+  - "**/*.js"
+  - "**/*.ts"
+  - "**/*.c"
+  - "**/*.cpp"
+  - "**/*.rs"
 ---
 
 # Magic Number Ban
