@@ -83,6 +83,70 @@ Please analyze the Doctor Pack above and respond to the following:
 4. **Official Spec Conflict Check:** Verify that the Deny Rules and Hooks configurations do not conflict with current Claude Code official specifications`
 }
 
+/** Doctor Pack 診断メトリクス（日本語） */
+function dpMetricsSectionJa(
+  generatedAt: string,
+  denyCount: number,
+  hooksCount: number,
+  highRiskCount: number,
+  mediumRiskCount: number,
+  lowRiskCount: number
+): string {
+  return `---
+## 診断メトリクス（必ず出力の最後に含めてください）
+
+以下のメタデータを、診断結果の最末尾に含めてください。
+diagnosis_started_at は、あなたがこの DP（Doctor Pack）の処理を開始した時刻です。
+diagnosis_completed_at は、全診断結果の出力を完了した時刻です。
+
+\`\`\`yaml
+---
+diagnosis_metrics:
+  dp_generated_at: "${generatedAt}"
+  diagnosis_started_at: "(あなたが処理を開始した時刻を ISO 8601 で記入)"
+  diagnosis_completed_at: "(全出力を完了した時刻を ISO 8601 で記入)"
+  elapsed_minutes: "(上記 2 つの差分を分単位で記入)"
+  deny_rules_count: ${denyCount}
+  hooks_count: ${hooksCount}
+  diff_high_risk: ${highRiskCount}
+  diff_medium_risk: ${mediumRiskCount}
+  diff_low_risk: ${lowRiskCount}
+---
+\`\`\``
+}
+
+/** Doctor Pack diagnosis metrics (English) */
+function dpMetricsSectionEn(
+  generatedAt: string,
+  denyCount: number,
+  hooksCount: number,
+  highRiskCount: number,
+  mediumRiskCount: number,
+  lowRiskCount: number
+): string {
+  return `---
+## Diagnosis Metrics (must be included at the very end of your output)
+
+Include the following metadata at the end of all diagnostic output.
+diagnosis_started_at is the time you started processing this DP (Doctor Pack).
+diagnosis_completed_at is the time you completed all diagnostic output.
+
+\`\`\`yaml
+---
+diagnosis_metrics:
+  dp_generated_at: "${generatedAt}"
+  diagnosis_started_at: "(enter the time you started processing in ISO 8601)"
+  diagnosis_completed_at: "(enter the time you completed all output in ISO 8601)"
+  elapsed_minutes: "(difference between the above two in minutes)"
+  deny_rules_count: ${denyCount}
+  hooks_count: ${hooksCount}
+  diff_high_risk: ${highRiskCount}
+  diff_medium_risk: ${mediumRiskCount}
+  diff_low_risk: ${lowRiskCount}
+---
+\`\`\``
+}
+
 /** Doctor Pack を生成 */
 export async function generateDoctorPack(symptom: string): Promise<string> {
   const sections: string[] = []
@@ -130,6 +194,7 @@ export async function generateDoctorPack(symptom: string): Promise<string> {
   const claudeDir = join(app.getPath('home'), '.claude')
   const hooksDir = join(claudeDir, 'hooks')
   const settingsPath = join(claudeDir, 'settings.json')
+  let hooksCount = 0
   sections.push('---')
   sections.push('## Hooks')
   sections.push('')
@@ -137,6 +202,10 @@ export async function generateDoctorPack(symptom: string): Promise<string> {
     try {
       const j = JSON.parse(await readFile(settingsPath, 'utf-8'))
       if (j.hooks) {
+        hooksCount = Object.keys(j.hooks).reduce(
+          (sum: number, key: string) => sum + (Array.isArray(j.hooks[key]) ? j.hooks[key].length : 0),
+          0
+        )
         sections.push('### Definitions (from settings.json)')
         sections.push('')
         sections.push('```json')
@@ -173,6 +242,9 @@ export async function generateDoctorPack(symptom: string): Promise<string> {
   sections.push('')
 
   // Diff summary (vs latest snapshot)
+  let highRiskCount = 0
+  let mediumRiskCount = 0
+  let lowRiskCount = 0
   const snapshots = await listSnapshots()
   if (snapshots.length > 0) {
     const latestId = snapshots[0].id
@@ -189,6 +261,9 @@ export async function generateDoctorPack(symptom: string): Promise<string> {
       const highRisk = diffs.filter((d) => d.risk === 'high')
       const mediumRisk = diffs.filter((d) => d.risk === 'medium')
       const lowRisk = diffs.filter((d) => d.risk === 'low')
+      highRiskCount = highRisk.length
+      mediumRiskCount = mediumRisk.length
+      lowRiskCount = lowRisk.length
 
       sections.push(`| Risk | Count |`)
       sections.push(`|------|-------|`)
@@ -232,6 +307,14 @@ export async function generateDoctorPack(symptom: string): Promise<string> {
     sections.push(dpGuideSectionJa())
   } else {
     sections.push(dpGuideSectionEn())
+  }
+  sections.push('')
+
+  // Diagnosis metrics
+  if (lang === 'ja') {
+    sections.push(dpMetricsSectionJa(now, denyList.length, hooksCount, highRiskCount, mediumRiskCount, lowRiskCount))
+  } else {
+    sections.push(dpMetricsSectionEn(now, denyList.length, hooksCount, highRiskCount, mediumRiskCount, lowRiskCount))
   }
   sections.push('')
   sections.push('---')
