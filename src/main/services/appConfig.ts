@@ -1,9 +1,9 @@
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
+﻿import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { join } from 'path'
 import { app } from 'electron'
 
-const PARC_FERME_DIR = join(app.getPath('home'), '.ccpit')
-const CONFIG_FILE = join(PARC_FERME_DIR, 'app-config.json')
+const CCPIT_DIR = join(app.getPath('home'), '.ccpit')
+const CONFIG_FILE = join(CCPIT_DIR, 'app-config.json')
 
 const DEFAULT_SPLASH_DURATION_MS = 3000
 const DEFAULT_SPLASH_RARE_CHANCE = 0.033
@@ -50,8 +50,8 @@ export function getConfig(): AppConfig {
 export function setConfig(partial: Partial<AppConfig>): AppConfig {
   const current = readConfigSync()
   const updated = { ...current, ...partial }
-  if (!existsSync(PARC_FERME_DIR)) {
-    mkdirSync(PARC_FERME_DIR, { recursive: true })
+  if (!existsSync(CCPIT_DIR)) {
+    mkdirSync(CCPIT_DIR, { recursive: true })
   }
   writeFileSync(CONFIG_FILE, JSON.stringify(updated, null, 2), 'utf-8')
   return updated

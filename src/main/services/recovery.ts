@@ -1,11 +1,11 @@
-import { readdir, readFile, writeFile, copyFile, mkdir, rename } from 'fs/promises'
+﻿import { readdir, readFile, writeFile, copyFile, mkdir, rename } from 'fs/promises'
 import { join, relative } from 'path'
 import { existsSync } from 'fs'
 import { createHash } from 'crypto'
 import { app } from 'electron'
 
-const PARC_FERME_DIR = join(app.getPath('home'), '.ccpit')
-const SNAPSHOTS_DIR = join(PARC_FERME_DIR, 'snapshots')
+const CCPIT_DIR = join(app.getPath('home'), '.ccpit')
+const SNAPSHOTS_DIR = join(CCPIT_DIR, 'snapshots')
 const CLAUDE_DIR = join(app.getPath('home'), '.claude')
 
 /** Snapshot 対象 allowlist（構成ファイルのみ） */
@@ -255,7 +255,7 @@ export async function softRestore(snapshotId: string): Promise<{
 }> {
   const snapshotDir = join(SNAPSHOTS_DIR, snapshotId)
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-  const quarantineDir = join(PARC_FERME_DIR, 'quarantine', timestamp)
+  const quarantineDir = join(CCPIT_DIR, 'quarantine', timestamp)
 
   const result = { quarantinePath: quarantineDir, restoredFiles: [] as string[], errors: [] as string[] }
 
