@@ -5,7 +5,7 @@ import { app } from 'electron'
 import { diffSnapshot, listSnapshots } from './recovery'
 import { getDenyList } from './health'
 import { getConfig, type Language } from './appConfig'
-import { CCPIT_VERSION, GITHUB_URL, CLAUDE_CODE_DOCS } from './constants'
+import { CCPIT_VERSION, GITHUB_URL, CLAUDE_CODE_DOCS, AI_GUIDES } from './constants'
 
 /** Doctor Pack 役割定義（日本語） */
 function dpRoleSectionJa(docs: typeof CLAUDE_CODE_DOCS): string {
@@ -15,12 +15,13 @@ function dpRoleSectionJa(docs: typeof CLAUDE_CODE_DOCS): string {
 あなたは CCPIT（Claude Code Protocol Interlock Tower）の診断 AI です。
 ユーザーの Claude Code 環境に問題が発生した際に、Doctor Pack の情報をもとに原因分析と修正手順を提供します。
 
-**MANX Protocol の安全設計コンテキスト:**
-- **settings.json（P0 / Junior TT）:** Claude Code の最下層防護。deny リストと hooks で CC の行動を制御。CC 自身が変更不可
-- **hooks:** settings.json 内に定義されるイベント駆動のシェルスクリプト。CC のコンテキスト外で動作し、報告書出し忘れ（report-gate）や settings.json 保護（settings-guard）を担う
-- **CLAUDE.md + rules/ + skills/（Senior TT）:** CC の推論品質を保証する規律層。compaction で劣化する可能性がある
-- **Recovery Kit（RK）:** 構成ファイルの snapshot 比較・隔離・復元。ユーザーが CCPIT GUI から操作
-- **Diff のリスクスコア:** High = settings.json / hooks 変更、Medium = rules / skills 変更、Low = その他
+## MANX Protocol の安全設計（詳細は以下を参照）
+
+以下の URL にアクセスし、MANX の安全設計を理解した上で診断してください:
+${AI_GUIDES.ja.diagnosis}
+
+MANX Protocol の全体像:
+${AI_GUIDES.ja.summary}
 
 ## 重要: 最新の Claude Code 仕様を確認してください
 
@@ -39,12 +40,13 @@ function dpRoleSectionEn(docs: typeof CLAUDE_CODE_DOCS): string {
 You are the diagnostic AI for CCPIT (Claude Code Protocol Interlock Tower).
 When issues occur in the user's Claude Code environment, you provide root cause analysis and remediation steps based on the Doctor Pack information.
 
-**MANX Protocol Safety Design Context:**
-- **settings.json (P0 / Junior TT):** Lowest layer of protection for Claude Code. Controls CC behavior via deny lists and hooks. CC cannot modify this
-- **hooks:** Event-driven shell scripts defined in settings.json. Operate outside CC's context, handling report-gate (forgotten reports) and settings-guard (settings.json protection)
-- **CLAUDE.md + rules/ + skills/ (Senior TT):** Discipline layer ensuring CC's reasoning quality. May degrade through compaction
-- **Recovery Kit (RK):** Snapshot comparison, quarantine, and restoration of config files. Operated by the user via CCPIT GUI
-- **Diff Risk Scoring:** High = settings.json / hooks changes, Medium = rules / skills changes, Low = other
+## MANX Protocol Safety Design (See details below)
+
+Access the following URL to understand MANX safety design before diagnosis:
+${AI_GUIDES.en.diagnosis}
+
+MANX Protocol overview:
+${AI_GUIDES.en.summary}
 
 ## Important: Check the Latest Claude Code Specifications
 
