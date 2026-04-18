@@ -1,0 +1,112 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * Parc Fermé Theme — claude.ai inspired warm tones
+ * Dark = default, Light = toggle
+ * Using shadcn/ui semantic variable naming with @theme inline
+ */
+
+/* --- Light theme --- */
+:root {
+  --background: hsl(40 20% 96%);
+  --foreground: hsl(30 10% 10%);
+  --card: hsl(40 15% 93%);
+  --card-foreground: hsl(30 10% 10%);
+  --popover: hsl(40 15% 93%);
+  --popover-foreground: hsl(30 10% 10%);
+  --primary: hsl(28 60% 45%);
+  --primary-foreground: hsl(40 20% 98%);
+  --secondary: hsl(35 15% 88%);
+  --secondary-foreground: hsl(30 10% 20%);
+  --muted: hsl(35 12% 90%);
+  --muted-foreground: hsl(30 8% 46%);
+  --accent: hsl(35 15% 88%);
+  --accent-foreground: hsl(30 10% 20%);
+  --destructive: hsl(0 72% 51%);
+  --border: hsl(35 15% 82%);
+  --input: hsl(35 15% 82%);
+  --ring: hsl(28 60% 45%);
+  --radius: 0.5rem;
+  --sidebar: hsl(40 15% 91%);
+  --sidebar-foreground: hsl(30 10% 10%);
+  --sidebar-border: hsl(35 15% 82%);
+  --sidebar-active: hsl(35 15% 84%);
+  --sidebar-hover: hsl(35 15% 87%);
+  --statusbar: hsl(40 15% 88%);
+  --statusbar-foreground: hsl(30 8% 46%);
+}
+
+/* --- Dark theme (default) --- */
+.dark {
+  --background: hsl(30 8% 15%);
+  --foreground: hsl(40 15% 93%);
+  --card: hsl(30 8% 18%);
+  --card-foreground: hsl(40 15% 93%);
+  --popover: hsl(30 8% 18%);
+  --popover-foreground: hsl(40 15% 93%);
+  --primary: hsl(28 55% 65%);
+  --primary-foreground: hsl(30 8% 10%);
+  --secondary: hsl(30 6% 22%);
+  --secondary-foreground: hsl(40 15% 90%);
+  --muted: hsl(30 6% 22%);
+  --muted-foreground: hsl(35 10% 55%);
+  --accent: hsl(30 8% 25%);
+  --accent-foreground: hsl(40 15% 93%);
+  --destructive: hsl(0 72% 51%);
+  --border: hsl(30 6% 25%);
+  --input: hsl(30 6% 25%);
+  --ring: hsl(28 55% 65%);
+  --sidebar: hsl(30 8% 13%);
+  --sidebar-foreground: hsl(40 15% 93%);
+  --sidebar-border: hsl(30 6% 22%);
+  --sidebar-active: hsl(30 8% 23%);
+  --sidebar-hover: hsl(30 8% 20%);
+  --statusbar: hsl(30 8% 11%);
+  --statusbar-foreground: hsl(35 10% 55%);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-hover: var(--sidebar-hover);
+  --color-statusbar: var(--statusbar);
+  --color-statusbar-foreground: var(--statusbar-foreground);
+  --radius: var(--radius);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+#root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}

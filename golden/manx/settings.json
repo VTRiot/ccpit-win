@@ -1,0 +1,53 @@
+{
+  "skipDangerousModePermissionPrompt": true,
+  "permissions": {
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf C:\\\\)",
+      "Bash(rm -rf C:\\\\*)",
+      "Bash(rmdir /s /q C:\\\\)",
+      "Read(**/*.env)",
+      "Read(**/*secrets*)",
+      "Read(**/credentials/**/*)",
+      "Bash(cat **/*.env)",
+      "Bash(cat **/*secrets*)",
+      "Bash(cat **/credentials/**/*)",
+      "Edit(~/.claude/settings.json)",
+      "Edit(~/.claude/settings.local.json)",
+      "Write(~/.claude/settings.json)",
+      "Write(~/.claude/settings.local.json)",
+      "Bash(cat ~/.claude/settings.json)",
+      "Bash(cat ~/.claude/settings.local.json)"
+    ]
+  },
+  "auth": {
+    "password": "CHANGE_ME"
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/report-gate.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/settings-guard.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
