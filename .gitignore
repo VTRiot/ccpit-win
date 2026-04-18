@@ -1,0 +1,27 @@
+﻿# Dependencies
+node_modules/
+dist/
+
+# Build output
+out/
+
+# Environment & secrets
+.env
+.env.*
+*.key
+*.pem
+
+# Backup files
+*.bak
+*.bak.*
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# CCPIT runtime data (user local)
+.ccpit/
