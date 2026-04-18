@@ -274,6 +274,11 @@ export function MigrationWizard({ onBack, onSetupCompleted }: MigrationWizardPro
                 <Copy size={16} /> {t('common.copy')}
               </Button>
             </div>
+            {/* Continue hint */}
+            <p className="text-sm text-[#22c55e]">
+              {'\u26A0'} {t('migration.continueHint')}
+            </p>
+
             {/* Browser guide */}
             <div className="rounded-md border border-border bg-muted/30 p-3 space-y-1">
               <p className="text-xs font-medium text-muted-foreground">{t('migration.browserGuide')}</p>

@@ -117,6 +117,7 @@
     "browserStep1": "1. 上のボタンをクリック — Pack がコピーされ claude.ai が開きます",
     "browserStep2": "2. Ctrl+V（Mac は Cmd+V）で入力欄に貼り付け",
     "browserStep3": "3. Enter で送信 — 結果をコピーしてインポートへ",
+    "continueHint": "claude.ai のツール使用制限により、処理の途中で中断されることがあります。その場合は画面下部の「続ける」ボタンを押してください。.pit ファイルが生成されるまで「続ける」を押し続けてください。",
     "importTitle": ".pit ファイルのインポート",
     "importDescription": "claude.ai が生成した .pit ファイルを選択またはドロップしてください",
     "selectPitFile": ".pit ファイルを選択",
@@ -216,6 +217,7 @@
       "browserStep1": "1. 上のボタンをクリック — Pack がコピーされ claude.ai が開きます",
       "browserStep2": "2. Ctrl+V（Mac は Cmd+V）で入力欄に貼り付け",
       "browserStep3": "3. Enter で送信",
+      "continueHint": "claude.ai のツール使用制限により、診断の途中で中断されることがあります。その場合は画面下部の「続ける」ボタンを押してください。診断結果が完了するまで「続ける」を押し続けてください。",
       "packPreview": "Pack プレビュー",
       "outputTo": "出力先: {{path}}",
       "saved": "{{path}} に保存しました"
