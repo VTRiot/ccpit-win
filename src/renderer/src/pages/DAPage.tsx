@@ -159,6 +159,11 @@ export function DAPage(): React.JSX.Element {
               </Button>
             </div>
 
+            {/* Continue hint */}
+            <p className="text-sm text-[#22c55e]">
+              {'\u26A0'} {t('pages.da.continueHint')}
+            </p>
+
             {/* Browser guide */}
             <div className="rounded-md border border-border bg-muted/30 p-3 space-y-1">
               <p className="text-xs font-medium text-muted-foreground">{t('pages.da.browserGuide')}</p>
