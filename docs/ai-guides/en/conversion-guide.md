@@ -1,0 +1,217 @@
+---
+version: "1.0.0"
+language: "en"
+purpose: "Conversion Pack（CP）reference guide for claude.ai Migration assistant"
+---
+
+# CP (Conversion Pack) Detailed Guide
+
+This guide is a detailed reference for the CCPIT (Protocol Interlock Tower) Migration assistant when decomposing CLAUDE.md using a CP (Conversion Pack).
+
+---
+
+## 1. MANX Protocol Sorting Criteria (P0-P5)
+
+MANX Protocol is a design architecture that places CC (Claude Code) configuration files based on Priority levels.
+
+### 1-1. Priority List
+
+| Priority | Location | Role | Constraint |
+|----------|----------|------|------------|
+| P0 | settings.json | Absolute deny + hooks (event-driven guardrails) + auth | CC cannot modify. Functions as Junior TT (Safety Mechanism) |
+| P1 | CLAUDE.md | Identity, values, output, trust boundary, interlock table | **30-50 lines** (including headings and blank lines) |
+| P2 | rules/*.md | Short behavioral rules. YAML frontmatter required | **Under 20 lines each** |
+| P3 | skills/*/SKILL.md | Detailed procedures. YAML frontmatter required | **No line limit** |
+| P4 | {project}/CLAUDE.md | Project-specific rules | Per project |
+| P5 | CLAUDE.local.md | Volatile memo (.gitignore target) | Session-scoped |
+
+### 1-2. Sorting Decision Flow
+
+1. **"Never do this"** -> P0 (deny). Only for operations that must be prohibited even if the user says "do it"
+2. **"Universal identity and values"** -> P1. Content that defines who CC is
+3. **"Short reminder under 20 lines"** -> P2. Rules where forgetting causes immediate problems
+4. **"Detailed procedure, template, or workflow"** -> P3. Efficient via on-demand loading
+5. **"Only used in a specific project"** -> P4
+6. **When in doubt** -> P3 (on-demand loaded, low context cost)
+
+### 1-3. Drawing the Line Between P1 and P2
+
+- "Who CC is" -> P1
+- "Preventing CC's common mistakes" -> P2
+
+### 1-4. Drawing the Line Between P2 and P3
+
+- "Reminder under 20 lines" -> P2
+- "Procedure, workflow, or template" -> P3
+
+---
+
+## 2. Detailed Constraints for Each Priority
+
+### 2-1. P1 (CLAUDE.md) - 30-50 Lines
+
+Due to CC's architecture constraints, CLAUDE.md must be kept lightweight:
+- CC loads the entire CLAUDE.md at session start, consuming the context window
+- As the number of instructions increases, compliance rate for each instruction degrades uniformly
+- Under 200 lines is recommended (community best practice)
+- MANX Protocol targets a stricter **30-50 lines**
+
+What to include in P1:
+- CC's identity definition
+- Values (root-cause orientation, no guessing, etc.)
+- Output format (language, conciseness, etc.)
+- Trust boundary
+- Skill index + trigger condition list
+- Interlock table
+
+### 2-2. P2 (rules/) - Under 20 Lines Each
+
+- Short reminder format
+- YAML frontmatter required
+- Specify glob patterns to narrow scope when possible
+- Terse rules like "Don't do X" or "Always check Y"
+
+### 2-3. P3 (skills/) - No Line Limit
+
+Through progressive disclosure, context is consumed only when triggered:
+- At startup: Only YAML frontmatter (name + description) is loaded
+- On trigger: Full content loaded on-demand when CC determines the skill is needed
+- Untriggered skills consume zero context
+
+What to include in P3:
+- Procedure-level workflows
+- Template and format definitions
+- Long descriptions with contract-like exception coverage
+
+---
+
+## 3. YAML Frontmatter Format
+
+### 3-1. rules/ YAML Frontmatter
+
+```yaml
+---
+description: "(action-based description. See Section 4)"
+globs: "(matching file patterns. Leave empty or omit if none)"
+---
+```
+
+- `description`: Helps CC decide when to load this rule
+- `globs`: File pattern matching. Example: `"*.py"` loads only when working with Python files. If unspecified, always loaded
+
+### 3-2. skills/ YAML Frontmatter
+
+```yaml
+---
+name: "(skill name)"
+description: "(action-based description. See Section 4)"
+---
+```
+
+- `name`: Identifier for the skill
+- `description`: Used by CC for trigger decisions. The most important field
+
+---
+
+## 4. Writing Descriptions (Action-Based)
+
+Descriptions directly affect CC's trigger decisions. Follow these rules:
+
+### 4-1. No Category Restrictions -> Use Action-Based Descriptions
+
+- **Bad:** `"Bug investigation"` -> Risk of CC deciding "this is a status check, not a bug investigation" and skipping
+- **Good:** `"When performing investigation (including bug investigation, status checks, configuration audits, performance analysis, and all other investigative activities)"`
+
+### 4-2. No Artifact Names -> Define by Action
+
+- **Bad:** `"Report"` -> Risk of CC misidentifying by name
+- **Good:** `"When outputting MD files"`
+
+### 4-3. Specific Names and Clear Actions Are Fine
+
+- `"When performing a commit"` - Expressions with no room for interpretation can be used as-is
+
+---
+
+## 5. Interlock Table Structure and Purpose
+
+The interlock table is placed in CLAUDE.md (P1) and performs skill trigger verification.
+
+### 5-1. Structure
+
+```markdown
+| Action | Required Skill | Trigger Evidence |
+|--------|---------------|-----------------|
+| Start code implementation | rumination | Q1-Q4 answers output |
+| Report "fix complete" | testable-impl | Before/After measurements recorded |
+```
+
+### 5-2. Function
+
+- Before CC takes a specific action, it self-verifies that the corresponding skill has been triggered
+- If not triggered, CC halts the action, manually loads the skill, and resumes
+- Same principle as an aircraft pre-flight checklist
+
+---
+
+## 6. Good and Bad Decomposition Examples
+
+### 6-1. Good Decomposition Example
+
+**Original CLAUDE.md (excerpt):**
+```
+- Output in Japanese
+- Concise bullet points
+- No decorative expressions
+- Always backup before editing files
+- Don't stop at first grep hit, check all matches
+- Answer Q1-Q4 before implementing code changes
+  Q1. Is this a root cause fix?
+  Q2. Does it advance the top-level objective?
+  Q3. Are we deferring any bug seeds?
+  Q4. If this is wrong, what breaks first?
+```
+
+**Decomposition result:**
+- P1 CLAUDE.md: `Japanese. Concise. No decoration` (3-line value summary)
+- P2 rules/backup.md: `Always backup before editing files`
+- P2 rules/grep-exhaustive.md: `Don't stop at first grep hit, check all matches`
+- P3 skills/rumination/SKILL.md: Detailed Q1-Q4 procedure
+
+**Why this is good:** P1 contains only identity/values. Behavioral rules go to P2. Detailed procedures go to P3. Clear separation of concerns.
+
+### 6-2. Bad Decomposition Example
+
+**Bad decomposition from the same source:**
+- P1 CLAUDE.md: Full Q1-Q4 text copied verbatim (exceeds 30 lines)
+- P2 rules/output.md: `Output in Japanese. Concise bullet points. No decoration. Always backup. Check all grep hits. Q1-Q4 required.` (exceeds 20 lines, multiple unrelated concerns mixed)
+
+**Why this is bad:** P1 is bloated, and P2 mixes multiple unrelated rules. No separation of concerns.
+
+---
+
+## 7. Writing and Verifying Coverage Maps
+
+### 7-1. What is a Coverage Map
+
+A table showing which output file each **original section** of CLAUDE.md maps to. It's a verification tool to guarantee zero information loss.
+
+### 7-2. Format
+
+```markdown
+| Original Section | Line Range (approx) | Output | Remarks |
+|-----------------|---------------------|--------|---------|
+| Header | L1-7 | P1 CLAUDE.md | Compressed |
+| Output rules | L8-15 | P1 CLAUDE.md | As-is |
+| Backup requirement | L16-20 | P2 rules/backup.md | Separate file |
+| Rumination procedure | L21-45 | P3 skills/rumination/SKILL.md | Externalized as detailed procedure |
+| Legacy operation rule | L46-50 | Uncovered | Reason: deprecated rule |
+```
+
+### 7-3. Verification Method
+
+1. **Row count check:** Does the number of rows in the coverage map match the number of sections in the original CLAUDE.md?
+2. **Uncovered check:** Are there any "Uncovered" entries other than intentional exclusions? Are exclusion reasons documented?
+3. **P1 line count check:** Is the decomposed P1 within the 30-50 line range?
+4. **P2 line count check:** Are all P2 files under 20 lines?
+5. **P3 description check:** Are all P3 YAML descriptions action-based?
