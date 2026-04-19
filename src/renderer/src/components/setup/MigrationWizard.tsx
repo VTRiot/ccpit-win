@@ -5,6 +5,7 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card'
+import { Toast } from '../ui/toast'
 import { cn } from '../../lib/utils'
 
 interface MigrationWizardProps {
@@ -12,7 +13,7 @@ interface MigrationWizardProps {
   onSetupCompleted: () => void
 }
 
-type Step = 'scan' | 'scanning' | 'scanResult' | 'packGenerated' | 'import' | 'pitPreview' | 'password' | 'deploying' | 'result'
+type Step = 'scan' | 'scanning' | 'scanResult' | 'cpCopy' | 'convertOnClaudeAi' | 'import' | 'pitPreview' | 'password' | 'deploying' | 'result'
 
 interface ScannedFile {
   path: string
@@ -49,7 +50,7 @@ const STEP_KEYS = ['scan', 'pack', 'import', 'deploy'] as const
 
 function getStepGroupIndex(step: Step): number {
   if (step === 'scan' || step === 'scanning' || step === 'scanResult') return 0
-  if (step === 'packGenerated') return 1
+  if (step === 'cpCopy' || step === 'convertOnClaudeAi') return 1
   if (step === 'import' || step === 'pitPreview') return 2
   return 3
 }
@@ -66,6 +67,8 @@ export function MigrationWizard({ onBack, onSetupCompleted }: MigrationWizardPro
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [deployResult, setDeployResult] = useState<DeployResult | null>(null)
+  const [cpCopied, setCpCopied] = useState(false)
+  const [toastOpen, setToastOpen] = useState(false)
 
   const passwordValid = password.length >= 4 && password === passwordConfirm
   const currentGroup = getStepGroupIndex(step)
@@ -82,11 +85,17 @@ export function MigrationWizard({ onBack, onSetupCompleted }: MigrationWizardPro
   const handleGeneratePack = async (): Promise<void> => {
     const pack = await window.api.migrationGeneratePack(scannedFiles)
     setPackContent(pack)
-    setStep('packGenerated')
+    setCpCopied(false)
+    setStep('cpCopy')
+  }
+
+  const handleCopyPack = async (): Promise<void> => {
+    await window.api.clipboardWrite(packContent)
+    setCpCopied(true)
+    setToastOpen(true)
   }
 
   const handleOpenClaudeAi = async (): Promise<void> => {
-    await window.api.clipboardWrite(packContent)
     await window.api.openExternal('https://claude.ai/new')
   }
 
@@ -160,6 +169,7 @@ export function MigrationWizard({ onBack, onSetupCompleted }: MigrationWizardPro
 
   return (
     <div className="max-w-2xl mx-auto mt-8">
+      <Toast open={toastOpen} message={t('common.copied')} onClose={() => setToastOpen(false)} />
       <Button variant="ghost" size="sm" onClick={onBack} className="mb-6 -ml-2 text-muted-foreground">
         <ArrowLeft size={16} /> {t('common.back')}
       </Button>
@@ -256,41 +266,54 @@ export function MigrationWizard({ onBack, onSetupCompleted }: MigrationWizardPro
         </Card>
       )}
 
-      {step === 'packGenerated' && (
+      {step === 'cpCopy' && (
         <Card>
           <CardHeader>
-            <CardTitle>{t('migration.packTitle')}</CardTitle>
-            <CardDescription>{t('migration.packDescription')}</CardDescription>
+            <CardTitle>{t('migration.cpCopyTitle')}</CardTitle>
+            <CardDescription>{t('migration.cpCopyDescription')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="border border-border rounded-md p-3 max-h-48 overflow-auto bg-muted/30">
               <pre className="text-xs font-mono whitespace-pre-wrap text-muted-foreground">{packContent}</pre>
             </div>
             <div className="flex gap-3">
-              <Button onClick={handleOpenClaudeAi}>
-                <ExternalLink size={16} /> {t('migration.openClaudeAi')}
-              </Button>
-              <Button variant="outline" onClick={async () => { await window.api.clipboardWrite(packContent) }}>
-                <Copy size={16} /> {t('common.copy')}
+              <Button onClick={handleCopyPack} variant={cpCopied ? 'outline' : 'default'}>
+                {cpCopied ? <Check size={16} /> : <Copy size={16} />}
+                {cpCopied ? t('common.copied') : t('common.copy')}
               </Button>
             </div>
-            {/* Continue hint */}
-            <p className="text-sm text-[#22c55e]">
-              {'\u26A0'} {t('migration.continueHint')}
-            </p>
+            <div className="flex gap-3 pt-2">
+              <Button variant="outline" onClick={() => setStep('scanResult')}>{t('common.back')}</Button>
+              <Button onClick={() => setStep('convertOnClaudeAi')} disabled={!cpCopied}>
+                {t('common.next')}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-            {/* Browser guide */}
+      {step === 'convertOnClaudeAi' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('migration.convertTitle')}</CardTitle>
+            <CardDescription>{t('migration.convertDescription')}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button onClick={handleOpenClaudeAi}>
+              <ExternalLink size={16} /> {t('migration.convertOpenBtn')}
+            </Button>
+
             <div className="rounded-md border border-border bg-muted/30 p-3 space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">{t('migration.browserGuide')}</p>
-              <p className="text-xs text-muted-foreground">{t('migration.browserStep1')}</p>
-              <p className="text-xs text-muted-foreground">{t('migration.browserStep2')}</p>
-              <p className="text-xs text-muted-foreground">{t('migration.browserStep3')}</p>
+              <p className="text-xs text-muted-foreground">{t('migration.convertStep1')}</p>
+              <p className="text-xs text-muted-foreground">{t('migration.convertStep2')}</p>
+              <p className="text-xs font-medium text-[#22c55e]">{t('migration.convertStep3')}</p>
+              <p className="text-xs text-muted-foreground">{t('migration.convertStep4')}</p>
             </div>
 
-            <div className="border-t border-border pt-4">
-              <p className="text-sm text-muted-foreground mb-3">{t('migration.packImportHint')}</p>
-              <Button variant="secondary" onClick={() => setStep('import')}>
-                <FileUp size={16} /> {t('common.import')}
+            <div className="flex gap-3 pt-2">
+              <Button variant="outline" onClick={() => setStep('cpCopy')}>{t('common.back')}</Button>
+              <Button onClick={() => setStep('import')}>
+                <FileUp size={16} /> {t('common.next')}
               </Button>
             </div>
           </CardContent>
@@ -334,7 +357,7 @@ export function MigrationWizard({ onBack, onSetupCompleted }: MigrationWizardPro
                 </div>
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep('packGenerated')}>{t('common.back')}</Button>
+                  <Button variant="outline" onClick={() => setStep('convertOnClaudeAi')}>{t('common.back')}</Button>
                 </div>
               </>
             )}

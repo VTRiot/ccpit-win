@@ -68,7 +68,7 @@ What to include in P1:
 
 - Short reminder format
 - YAML frontmatter required
-- Use `paths` to narrow scope when possible (do not use the deprecated `globs`)
+- Specify glob patterns to narrow scope when possible
 - Terse rules like "Don't do X" or "Always check Y"
 
 ### 2-3. P3 (skills/) - No Line Limit
@@ -99,32 +99,6 @@ paths:
 
 - `description`: Helps CC decide when to load this rule
 - `paths`: File pattern matching (array format). Example: `["**/*.py"]` loads only when working with Python files. If unspecified, always loaded
-
-### Important: globs is deprecated
-
-The `globs:` field is a deprecated Claude Code specification and is no longer recognized.
-Always use `paths:` (array format) for scope specification.
-If existing files contain `globs:`, convert them to `paths:`.
-
-Example:
-- Old: `globs: "*.py,*.js,*.ts"`
-- New: `paths: ["**/*.py", "**/*.js", "**/*.ts"]`
-
-### Criteria for using paths
-
-| Condition | paths | Reason |
-|-----------|-------|--------|
-| Only needed when touching specific file types | `paths: ["**/*.py", "**/*.ts", ...]` | Context savings |
-| Must always be observed in all tasks | Empty or omitted (always loaded) | No gaps |
-
-Examples:
-- `library-design-check.md` → `paths: ["**/*.py", "**/*.js", "**/*.ts", "**/*.c", "**/*.cpp", "**/*.rs"]` (code changes only)
-- `magic-number-ban.md` → `paths: [...]` (code changes only)
-- `bat-powershell.md` → `paths: ["**/*.bat", "**/*.cmd", "**/*.ps1"]` (script creation only)
-- `grep-exhaustive.md` → `paths: [...]` (code investigation only)
-- `safety-absolute.md` → no paths (always loaded, mandatory for all operations)
-- `role-definition.md` → no paths (always loaded, mandatory for all sessions)
-- `rule-routing.md` → no paths (always loaded, rule change decisions can occur anytime)
 
 ### 3-2. skills/ YAML Frontmatter
 

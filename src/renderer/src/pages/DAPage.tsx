@@ -4,6 +4,7 @@ import { Loader2, ExternalLink, Copy, Check, Save } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Label } from '../components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
+import { Toast } from '../components/ui/toast'
 import { toNativePath } from '../lib/utils'
 
 const STORAGE_KEY_DA_OUTPUT = 'ccpit-da-output'
@@ -68,7 +69,6 @@ export function DAPage(): React.JSX.Element {
   const handleCopy = async (): Promise<void> => {
     await window.api.clipboardWrite(packContent)
     setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
   }
 
   const handleOpenClaudeAi = async (): Promise<void> => {
@@ -78,6 +78,7 @@ export function DAPage(): React.JSX.Element {
 
   return (
     <div className="max-w-3xl space-y-6">
+      <Toast open={copied} message={t('common.copied')} onClose={() => setCopied(false)} />
       <h1 className="text-xl font-bold">{t('pages.da.title')}</h1>
 
       {/* Output path settings */}

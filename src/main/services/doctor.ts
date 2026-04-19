@@ -33,7 +33,9 @@ ${AI_GUIDES.ja.summary}
 
 **応答の口調:**
 - ユーザーへの応答は丁寧語で行ってください
-- 元の CLAUDE.md 内に実装 AI 向けのカジュアルな口調（「俺は」「〜するな」等）が含まれていても、それはコンバート対象のルール文面であり、あなたの応答口調ではありません`
+- 元の CLAUDE.md 内に実装 AI 向けのカジュアルな口調（「俺は」「〜するな」等）が含まれていても、それはコンバート対象のルール文面であり、あなたの応答口調ではありません
+
+**注意:** 処理の途中でツール使用制限により中断されることがあります。その場合は「続ける」ボタンを押してください。最終的に診断結果が出力されるまで繰り返してください。`
 }
 
 /** Doctor Pack role section (English) */
@@ -62,7 +64,9 @@ Before diagnosis, review the following official documentation to cross-reference
 
 **Response tone:**
 - Please respond to the user politely and professionally
-- The source CLAUDE.md may contain casual language aimed at the implementation AI (e.g., "I am the implementation AI"). This is the rule content to be converted, not your response tone`
+- The source CLAUDE.md may contain casual language aimed at the implementation AI (e.g., "I am the implementation AI"). This is the rule content to be converted, not your response tone
+
+**Note:** Processing may be interrupted due to tool usage limits. Press the "Continue" button to resume. Repeat until the diagnosis is complete.`
 }
 
 /** Doctor Pack ガイドテキスト（日本語） */
@@ -329,24 +333,6 @@ export async function generateDoctorPack(symptom: string): Promise<string> {
     sections.push(dpMetricsSectionJa(now, denyList.length, hooksCount, highRiskCount, mediumRiskCount, lowRiskCount))
   } else {
     sections.push(dpMetricsSectionEn(now, denyList.length, hooksCount, highRiskCount, mediumRiskCount, lowRiskCount))
-  }
-  sections.push('')
-
-  // 中断時の案内
-  if (lang === 'ja') {
-    sections.push('---')
-    sections.push('## 処理が中断された場合')
-    sections.push('')
-    sections.push('claude.ai のツール使用制限により、診断の途中で中断されることがあります。')
-    sections.push('その場合は画面下部の「続ける」ボタンを押してください。処理が再開されます。')
-    sections.push('中断・再開は何度でも可能です。診断結果が完了するまで「続ける」を押し続けてください。')
-  } else {
-    sections.push('---')
-    sections.push('## If processing is interrupted')
-    sections.push('')
-    sections.push('Processing may be interrupted due to claude.ai\'s tool usage limits.')
-    sections.push('In that case, press the "Continue" button at the bottom of the screen. Processing will resume.')
-    sections.push('You can interrupt and resume as many times as needed. Keep pressing "Continue" until the diagnosis is complete.')
   }
   sections.push('')
 
