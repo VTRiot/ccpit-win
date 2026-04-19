@@ -29,7 +29,9 @@
 | 行動 | 前提 Skill | 発火の証跡 |
 |------|-----------|-----------|
 | コード実装を開始する | rumination | Q1〜Q4 への回答を出力済み |
-| 「修正完了」を報告する | testable-impl | Before/After 実測値を記載済み |
+| コード変更前に既存設計を確認する | refactoring | 反芻 1 回目・2 回目の記載が報告書 MD に存在 |
+| 「修正完了」を報告する | testable-impl | 報告書 MD に Before/After 実測値と完了条件全項目を記載済み |
 | 原因を特定したと報告する | investigation | 反証チェックリストを記載済み |
 | 報告書を出力する | report | `_Prompt\01_FromBuilderAi\` に MD ファイルが存在する |
+| コード変更を伴う作業を完了する | completion-interlock | 報告書 MD に実測値・完了条件全項目が記載済み |
 | コード変更を伴う作業を完了する | hooks/report-gate | Stop hook がブロックしなかった |
