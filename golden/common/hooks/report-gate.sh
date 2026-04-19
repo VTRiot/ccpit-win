@@ -5,7 +5,8 @@
 # ※ exit 2 は stdout JSON を無視するため使用しない（公式仕様）
 #
 # 判定ロジック:
-#   1. git diff で未コミットのコード変更があるか確認（.bak / CLAUDE.local.md は除外）
+#   1. git status --porcelain で未コミットのコード変更があるか確認
+#      （追跡済み変更 + 未追跡ファイル両方を検出。.bak / CLAUDE.local.md は除外）
 #   2. コード変更がなければ → exit 0（通過）
 #   3. コード変更があれば → _Prompt/_frombuilderai/ に今日の日付の MD があるか確認
 #   4. あれば → exit 0（通過）
@@ -13,7 +14,8 @@
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-.}"
 
-CHANGES=$(git -C "$PROJECT_DIR" diff --name-only HEAD 2>/dev/null \
+# 追跡済みファイルの変更 + 未追跡ファイル（新規作成）の両方を検出
+CHANGES=$(git -C "$PROJECT_DIR" status --porcelain 2>/dev/null \
   | grep -v '\.bak' \
   | grep -v 'CLAUDE\.local\.md' \
   | head -1)

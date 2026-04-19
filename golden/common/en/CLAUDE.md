@@ -29,7 +29,9 @@ If it has not, stop the action, manually load the skill, and then resume.
 | Action | Required Skill | Evidence of firing |
 |--------|----------------|--------------------|
 | Begin code implementation | rumination | Answers to Q1–Q4 are output |
-| Report "fix completed" | testable-impl | Before/After measured values are recorded |
+| Verify existing design before changing code | refactoring | 1st and 2nd rumination notes are recorded in the report MD |
+| Report "fix completed" | testable-impl | Report MD contains Before/After measured values and all completion criteria |
 | Report a confirmed root cause | investigation | Counter-evidence checklist is recorded |
 | Output a report | report | An MD file exists under `_Prompt\01_FromBuilderAi\` |
+| Complete a task involving code changes | completion-interlock | Report MD contains measured values and all completion criteria |
 | Complete a task involving code changes | hooks/report-gate | The Stop hook did not block |

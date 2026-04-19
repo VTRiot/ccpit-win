@@ -187,6 +187,28 @@ If the original CLAUDE.md has independently headed sections (`##` or `###`), pre
 
 If you're unsure whether to merge or separate, **keep them separate.** The cost of too many files is low (just more files). The cost of merging too aggressively is high (features get buried and overlooked).
 
+### 5-5. Skill Lifecycle Separation Principle
+
+A single skill file should only contain content needed at **the same lifecycle event** of CC.
+
+CC's attention resets each time a skill is loaded. However, content at the end of a long skill risks attention degradation due to compaction (context compression).
+
+**Decision criterion:** "Are the beginning and end of this skill needed at the same moment of CC's action?"
+- Yes (e.g., continuous flow of Step A → B → C → D → E) → Keep in 1 file
+- No (e.g., "pre-implementation check" and "completion declaration check") → Separate files
+
+Separating ensures CC loads the second skill fresh when it's about to declare completion, with attention reset.
+
+**Examples:**
+| Content A | Content B | Same moment? | Verdict |
+|-----------|-----------|-------------|---------|
+| Implementation steps A-E | Completion interlock (pre-completion check) | No (start vs. completion) | Separate |
+| Q1-Q4 rumination | Rumination failure conditions | Yes (both pre-implementation) | 1 file |
+| Investigation procedure | Investigation report template | No (during investigation vs. reporting) | Separate |
+| NBJ state management | NBJ self-stop prohibition rules | Yes (both during NBJ operation) | 1 file |
+
+**Pointer principle:** When separating skills, leave a one-line pointer at the end of the preceding skill: "→ Fire [next skill] now." This serves as a signpost so CC doesn't lose the flow.
+
 ---
 
 ## 6. Interlock Table Structure and Purpose

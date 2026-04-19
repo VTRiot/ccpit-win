@@ -42,11 +42,4 @@ Do not downplay issues with subjective phrasing like "no real harm."
 Write the results into the report MD file created in Step B.
 Feeling like you "wrote the report" via in-conversation text is forbidden.
 
-## Termination Interlock
-Before declaring a code-changing task complete, verify ALL of the following:
-
-| Artifact | Verification |
-|----------|--------------|
-| Report MD file | File exists in the designated directory |
-| Before / After measured values | Written inside the report MD |
-| Every concrete completion criterion | Verified inside the report MD with measured values |
+→ After Step E, you MUST fire the completion-interlock skill to run the termination check.

@@ -144,6 +144,15 @@ function cpTemplateJa(
 4. **P3 は行数制限なし。** 詳細手順書。オンデマンドロード。YAML フロントマター付き
 5. **分解後に必ずカバレッジマップを出力。** 元の全セクションの対応先を漏れなく示す
 
+**インターロック設計の義務:**
+あなたは P1 CLAUDE.md にインターロック表を必ず含めてください。
+インターロック表とは、CC が特定の行動を取る前に、対応する skill が発火済みであることを自己確認するためのチェックリストです。
+
+設計時の注意:
+- 「実装開始前のチェック」と「完了宣言前のチェック」は別の skill にしてください（ライフサイクル分離原則）
+- skill を分離した場合、前の skill の末尾に「→ 次の skill を発火せよ」のポインタを残してください
+- 詳細な基準は振り分けガイドのセクション 5 を参照してください
+
 **応答の口調:**
 - ユーザーへの応答は丁寧語で行ってください
 - 元の CLAUDE.md 内に実装 AI 向けのカジュアルな口調（「俺は」「〜するな」等）が含まれていても、それはコンバート対象のルール文面であり、あなたの応答口調ではありません
@@ -301,6 +310,15 @@ Your job is to decompose the user's existing CLAUDE.md into a MANX Protocol-comp
 3. **P2 should be under 20 lines each.** Short reminders. Always or glob-loaded. YAML frontmatter required. Description should be action-based ("Fires when ...")
 4. **P3 has no line limit.** Detailed procedure docs. On-demand loaded. YAML frontmatter required
 5. **Always output a coverage map after decomposition.** Show where every original section maps to
+
+**Interlock design obligation:**
+You must include an interlock table in P1 CLAUDE.md.
+An interlock table is a checklist where CC self-verifies that the corresponding skill has been fired before taking specific actions.
+
+Design notes:
+- "Pre-implementation check" and "pre-completion check" must be separate skills (lifecycle separation principle)
+- When separating skills, leave a pointer at the end of the preceding skill: "→ Fire [next skill] now"
+- See section 5 of the conversion guide for detailed criteria
 
 **Response tone:**
 - Please respond to the user politely and professionally
