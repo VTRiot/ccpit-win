@@ -160,11 +160,40 @@ Descriptions directly affect CC's trigger decisions. Follow these rules:
 
 ---
 
-## 5. Interlock Table Structure and Purpose
+## 5. Independence Preservation Principle
+
+### 5-1. Respect the original section structure
+
+If the original CLAUDE.md has independently headed sections (`##` or `###`), preserve them as independent files in the decomposition. Do not merge them just because they seem "related."
+
+**Decision criterion:** "Can I change one of these rules without affecting the other?" → If Yes, they should be independent files.
+
+### 5-2. Do NOT merge these
+
+| Section A | Section B | Why they must stay independent |
+|-----------|-----------|-------------------------------|
+| Investigation methodology | Investigation report output format | How to investigate vs. report template/storage are separate concerns |
+| Implementation sequence (Step A-E) | Report output template | Implementation steps vs. report formatting are separate concerns |
+| Code investigation obligations | Library design philosophy check | Investigation scope (exhaustive search) vs. respect for external code are separate concerns |
+
+### 5-3. OK to merge these
+
+| Section group | Merged into | Why merging is acceptable |
+|--------------|-------------|--------------------------|
+| NBJ / MBJ / Never-finished mode | operating-modes | All are "CC operating modes" — same concern. A single file is more convenient for mode-switching decisions |
+| Backup obligation + file operation rules | backup-before-edit | Both are "safety checks before file operations" — same concern |
+
+### 5-4. When in doubt, keep them separate
+
+If you're unsure whether to merge or separate, **keep them separate.** The cost of too many files is low (just more files). The cost of merging too aggressively is high (features get buried and overlooked).
+
+---
+
+## 6. Interlock Table Structure and Purpose
 
 The interlock table is placed in CLAUDE.md (P1) and performs skill trigger verification.
 
-### 5-1. Structure
+### 6-1. Structure
 
 ```markdown
 | Action | Required Skill | Trigger Evidence |
@@ -173,7 +202,7 @@ The interlock table is placed in CLAUDE.md (P1) and performs skill trigger verif
 | Report "fix complete" | testable-impl | Before/After measurements recorded |
 ```
 
-### 5-2. Function
+### 6-2. Function
 
 - Before CC takes a specific action, it self-verifies that the corresponding skill has been triggered
 - If not triggered, CC halts the action, manually loads the skill, and resumes
@@ -181,9 +210,9 @@ The interlock table is placed in CLAUDE.md (P1) and performs skill trigger verif
 
 ---
 
-## 6. Good and Bad Decomposition Examples
+## 7. Good and Bad Decomposition Examples
 
-### 6-1. Good Decomposition Example
+### 7-1. Good Decomposition Example
 
 **Original CLAUDE.md (excerpt):**
 ```
@@ -207,7 +236,7 @@ The interlock table is placed in CLAUDE.md (P1) and performs skill trigger verif
 
 **Why this is good:** P1 contains only identity/values. Behavioral rules go to P2. Detailed procedures go to P3. Clear separation of concerns.
 
-### 6-2. Bad Decomposition Example
+### 7-2. Bad Decomposition Example
 
 **Bad decomposition from the same source:**
 - P1 CLAUDE.md: Full Q1-Q4 text copied verbatim (exceeds 30 lines)
@@ -217,13 +246,13 @@ The interlock table is placed in CLAUDE.md (P1) and performs skill trigger verif
 
 ---
 
-## 7. Writing and Verifying Coverage Maps
+## 8. Writing and Verifying Coverage Maps
 
-### 7-1. What is a Coverage Map
+### 8-1. What is a Coverage Map
 
 A table showing which output file each **original section** of CLAUDE.md maps to. It's a verification tool to guarantee zero information loss.
 
-### 7-2. Format
+### 8-2. Format
 
 ```markdown
 | Original Section | Line Range (approx) | Output | Remarks |
@@ -235,7 +264,7 @@ A table showing which output file each **original section** of CLAUDE.md maps to
 | Legacy operation rule | L46-50 | Uncovered | Reason: deprecated rule |
 ```
 
-### 7-3. Verification Method
+### 8-3. Verification Method
 
 1. **Row count check:** Does the number of rows in the coverage map match the number of sections in the original CLAUDE.md?
 2. **Uncovered check:** Are there any "Uncovered" entries other than intentional exclusions? Are exclusion reasons documented?
