@@ -1,12 +1,16 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FreshStartWizard } from '../components/setup/FreshStartWizard'
 import { MigrationWizard } from '../components/setup/MigrationWizard'
 import { Sparkles, ArrowRightLeft } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
+import { Toast } from '../components/ui/toast'
 import logoImg from '../assets/Logo.png'
 
 type SetupMode = 'choose' | 'fresh' | 'migration'
+
+const DEBUG_TAP_COUNT = 5
+const DEBUG_TAP_INTERVAL_MS = 500
 
 interface SetupPageProps {
   onSetupCompleted: () => void
@@ -15,6 +19,29 @@ interface SetupPageProps {
 export function SetupPage({ onSetupCompleted }: SetupPageProps): React.JSX.Element {
   const [mode, setMode] = useState<SetupMode>('choose')
   const { t } = useTranslation()
+  const tapStampsRef = useRef<number[]>([])
+  const [toastOpen, setToastOpen] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  const [toastVariant, setToastVariant] = useState<'success' | 'error'>('success')
+
+  const handleLogoTap = (): void => {
+    const now = Date.now()
+    const stamps = tapStampsRef.current
+    if (stamps.length > 0 && now - stamps[stamps.length - 1] > DEBUG_TAP_INTERVAL_MS) {
+      stamps.length = 0
+    }
+    stamps.push(now)
+    if (stamps.length < DEBUG_TAP_COUNT) return
+    stamps.length = 0
+    void window.api.configGet().then((config) => {
+      const next = !config.debugMode
+      void window.api.configSet({ debugMode: next }).then(() => {
+        setToastMessage(next ? t('common.debugModeOn') : t('common.debugModeOff'))
+        setToastVariant(next ? 'success' : 'error')
+        setToastOpen(true)
+      })
+    })
+  }
 
   if (mode === 'fresh') {
     return <FreshStartWizard onBack={() => setMode('choose')} onSetupCompleted={onSetupCompleted} />
@@ -27,7 +54,14 @@ export function SetupPage({ onSetupCompleted }: SetupPageProps): React.JSX.Eleme
   return (
     <div className="max-w-xl mx-auto mt-16">
       <div className="flex flex-col items-center mb-8">
-        <img src={logoImg} alt="CCPIT" style={{ width: 400 }} className="w-auto" />
+        <img
+          src={logoImg}
+          alt="CCPIT"
+          style={{ width: 400 }}
+          className="w-auto cursor-pointer select-none"
+          draggable={false}
+          onClick={handleLogoTap}
+        />
         <p className="text-xs text-muted-foreground mt-2 tracking-widest">Protocol Interlock Tower</p>
       </div>
       <h1 className="text-2xl font-bold mb-2">{t('setup.welcome')}</h1>
@@ -58,6 +92,13 @@ export function SetupPage({ onSetupCompleted }: SetupPageProps): React.JSX.Eleme
           </CardHeader>
         </Card>
       </div>
+
+      <Toast
+        open={toastOpen}
+        message={toastMessage}
+        onClose={() => setToastOpen(false)}
+        variant={toastVariant}
+      />
     </div>
   )
 }

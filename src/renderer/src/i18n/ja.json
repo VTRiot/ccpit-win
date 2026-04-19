@@ -38,7 +38,11 @@
     "doctorPackOutput": "Doctor Pack 出力先",
     "desktop": "デスクトップ",
     "customPath": "カスタムパス",
-    "resetSetup": "セットアップを再実行"
+    "resetSetup": "セットアップを再実行",
+    "devTools": {
+      "title": "Developer Tools",
+      "enabled": "開発者ツールが有効です"
+    }
   },
   "statusbar": {
     "golden": "Golden: OK",
@@ -71,7 +75,9 @@
     "deployedFiles": "展開ファイル ({{count}})",
     "backups": "バックアップ ({{count}})",
     "runSetup": "セットアップ実行",
-    "doneGoToProjects": "完了 — プロジェクトへ"
+    "doneGoToProjects": "完了 — プロジェクトへ",
+    "debugModeOn": "🔧 デバッグモード ON",
+    "debugModeOff": "🔧 デバッグモード OFF"
   },
   "setup": {
     "welcome": "CCPIT へようこそ",
