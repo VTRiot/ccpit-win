@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, HeartPulse, Shield, Stethoscope, Bug } from 'lucide-react'
+import { X, HeartPulse, Shield, Stethoscope, Wrench } from 'lucide-react'
 import { Button } from './ui/button'
 import { cn } from '../lib/utils'
 import { HealthPage } from '../pages/HealthPage'
@@ -8,7 +8,7 @@ import { RKPage } from '../pages/RKPage'
 import { DAPage } from '../pages/DAPage'
 import { DebugPage } from '../pages/DebugPage'
 
-type Tab = 'health' | 'rk' | 'da' | 'debug'
+type Tab = 'health' | 'rk' | 'da' | 'devTools'
 
 interface MaintenanceDialogProps {
   open: boolean
@@ -30,7 +30,7 @@ export function MaintenanceDialog({ open, onClose }: MaintenanceDialogProps): Re
     { id: 'health', labelKey: 'pages.health.title', icon: HeartPulse },
     { id: 'rk', labelKey: 'settings.recoveryKit', icon: Shield },
     { id: 'da', labelKey: 'settings.doctorAnalysis', icon: Stethoscope },
-    ...(debugMode ? [{ id: 'debug' as Tab, labelKey: '', icon: Bug, label: 'Debug 🕷️' }] : []),
+    ...(debugMode ? [{ id: 'devTools' as Tab, labelKey: 'settings.devTools.title', icon: Wrench }] : []),
   ]
 
   return (
@@ -72,7 +72,7 @@ export function MaintenanceDialog({ open, onClose }: MaintenanceDialogProps): Re
           {activeTab === 'health' && <HealthPage />}
           {activeTab === 'rk' && <RKPage />}
           {activeTab === 'da' && <DAPage />}
-          {activeTab === 'debug' && debugMode && <DebugPage />}
+          {activeTab === 'devTools' && debugMode && <DebugPage />}
         </div>
       </div>
     </div>

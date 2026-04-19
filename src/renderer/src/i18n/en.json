@@ -38,7 +38,11 @@
     "doctorPackOutput": "Doctor Pack output",
     "desktop": "Desktop",
     "customPath": "Custom path",
-    "resetSetup": "Re-run setup"
+    "resetSetup": "Re-run setup",
+    "devTools": {
+      "title": "Developer Tools",
+      "enabled": "Developer tools are enabled"
+    }
   },
   "statusbar": {
     "golden": "Golden: OK",
@@ -71,7 +75,9 @@
     "deployedFiles": "Deployed files ({{count}})",
     "backups": "Backups ({{count}})",
     "runSetup": "Run Setup",
-    "doneGoToProjects": "Done — Go to Projects"
+    "doneGoToProjects": "Done — Go to Projects",
+    "debugModeOn": "🔧 Debug Mode ON",
+    "debugModeOff": "🔧 Debug Mode OFF"
   },
   "setup": {
     "welcome": "Welcome to CCPIT",
