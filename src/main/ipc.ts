@@ -1,4 +1,4 @@
-import { ipcMain, dialog, shell, clipboard, app } from 'electron'
+import { ipcMain, dialog, shell, clipboard, app, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { listTemplates, previewDeploy, deploy, checkExisting } from './services/golden'
 import {
@@ -14,7 +14,8 @@ import { listProjects, createProject, removeProject } from './services/projects'
 import { runHealthCheck, getDenyList, checkCcCli } from './services/health'
 import { takeSnapshot, listSnapshots, markKnownGood, diffSnapshot, softRestore } from './services/recovery'
 import { generateDoctorPack, saveDoctorPack, getDefaultOutputDir } from './services/doctor'
-import { getConfig, setConfig } from './services/appConfig'
+import { getConfig, setConfig, getParcFermeDir } from './services/appConfig'
+import { getState as profileGetState, switchToLegacy, switchToManx } from './services/profileSwitch'
 
 const GOLDEN_DIR = app.isPackaged
   ? join(process.resourcesPath, 'golden')
@@ -103,5 +104,22 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('clipboard:write', (_e, text: string) => {
     clipboard.writeText(text)
+  })
+
+  // --- Profile Switch ---
+  ipcMain.handle('profile:getState', () => profileGetState())
+  ipcMain.handle('profile:switchToLegacy', () => switchToLegacy())
+  ipcMain.handle('profile:switchToManx', () => switchToManx())
+
+  // --- Developer Tools (Tier S) ---
+  ipcMain.handle('dev:getCcpitDir', () => getParcFermeDir())
+  ipcMain.handle('dev:getClaudeDir', () => join(app.getPath('home'), '.claude'))
+  ipcMain.handle('dev:toggleDevTools', (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (win) win.webContents.toggleDevTools()
+  })
+  ipcMain.handle('dev:relaunchApp', () => {
+    app.relaunch()
+    app.exit(0)
   })
 }

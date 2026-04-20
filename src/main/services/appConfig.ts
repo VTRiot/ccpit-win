@@ -9,6 +9,7 @@ const DEFAULT_SPLASH_DURATION_MS = 3000
 const DEFAULT_SPLASH_RARE_CHANCE = 0.033
 
 export type Language = 'ja' | 'en'
+export type Profile = 'manx' | 'legacy'
 
 interface AppConfig {
   splashDurationMs: number
@@ -16,6 +17,9 @@ interface AppConfig {
   debugMode: boolean
   setupCompleted: boolean
   language: Language
+  currentProfile: Profile
+  legacyMasterPath?: string
+  lastBackupAt?: string
 }
 
 function getDefaults(): AppConfig {
@@ -25,7 +29,12 @@ function getDefaults(): AppConfig {
     debugMode: false,
     setupCompleted: false,
     language: 'en',
+    currentProfile: 'manx',
   }
+}
+
+export function getParcFermeDir(): string {
+  return CCPIT_DIR
 }
 
 /** 同期読み込み（起動時用） */

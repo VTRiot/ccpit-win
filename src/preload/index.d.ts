@@ -73,8 +73,17 @@ interface ParcFermeAPI {
   healthDenyList(): Promise<string[]>
   healthCcCli(): Promise<boolean>
 
-  configGet(): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en' }>
-  configSet(partial: Partial<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en' }>): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en' }>
+  configGet(): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; legacyMasterPath?: string; lastBackupAt?: string }>
+  configSet(partial: Partial<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; legacyMasterPath?: string; lastBackupAt?: string }>): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; legacyMasterPath?: string; lastBackupAt?: string }>
+
+  profileGetState(): Promise<{ currentProfile: 'manx' | 'legacy'; lastBackupAt?: string; backupDir: string; claudeDir: string; legacyMasterPath?: string }>
+  profileSwitchToLegacy(): Promise<{ backupPath: string; legacyClaudeMdPath: string }>
+  profileSwitchToManx(): Promise<{ restoredPaths: string[] }>
+
+  devGetCcpitDir(): Promise<string>
+  devGetClaudeDir(): Promise<string>
+  devToggleDevTools(): Promise<void>
+  devRelaunchApp(): Promise<void>
 
   selectFolder(): Promise<string | null>
   selectFile(): Promise<string | null>

@@ -41,7 +41,34 @@
     "resetSetup": "Re-run setup",
     "devTools": {
       "title": "Developer Tools",
-      "enabled": "Developer tools are enabled"
+      "enabled": "Developer tools are enabled",
+      "profileSwitch": {
+        "title": "Profile Switch",
+        "currentProfile": "Current profile",
+        "profileManx": "MANX",
+        "profileLegacy": "Legacy",
+        "switchToLegacy": "Switch to Legacy",
+        "switchToManx": "Switch to MANX",
+        "confirmToLegacy": "This will back up the MANX configuration in ~/.claude/ and switch to Legacy. Continue?",
+        "confirmToManx": "This will discard the Legacy configuration and restore MANX. Continue?",
+        "lastBackup": "Last backup",
+        "backupLocation": "Backup location",
+        "success": "Switch complete",
+        "never": "never"
+      },
+      "quickActions": {
+        "title": "Quick Actions",
+        "openCcpit": "Open ~/.ccpit/",
+        "openClaude": "Open ~/.claude/",
+        "reloadUi": "Reload UI",
+        "toggleDevTools": "Toggle DevTools",
+        "resetSetup": "Reset Setup",
+        "resetConfirm": "This will return you to the setup screen and relaunch the app. Continue?"
+      },
+      "configViewer": {
+        "title": "app-config.json",
+        "copy": "Copy"
+      }
     }
   },
   "statusbar": {
