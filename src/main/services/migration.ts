@@ -1,9 +1,11 @@
-import { readdir, readFile, stat, mkdir, writeFile, copyFile } from 'fs/promises'
+import { readdir, readFile, stat, mkdir, writeFile, rm } from 'fs/promises'
 import { join, basename, dirname } from 'path'
 import { existsSync, readFileSync } from 'fs'
+import { createHash } from 'crypto'
 import { app } from 'electron'
 import AdmZip from 'adm-zip'
-import { getConfig, type Language } from './appConfig'
+import { getConfig, setConfig, type Language, type PitReference } from './appConfig'
+import { createBackupZip, hasAnyBackup, getBackupDir } from './backup'
 import { CCPIT_VERSION, GITHUB_URL, CLAUDE_CODE_DOCS, AI_GUIDES } from './constants'
 
 interface ScannedFile {
@@ -701,7 +703,75 @@ export function importPitFile(filePath: string): PitPreview {
 /** 配置対象エントリ（coverage-map.md, metrics.yaml は除外） */
 const DEPLOY_EXCLUDES = ['coverage-map.md', 'metrics.yaml']
 
-/** .pit の内容を ~/.claude/ に配置 */
+/** .pit デプロイで触ってはいけない .claude/ 配下のトップレベル項目 */
+const DEPLOY_PROTECTED_TOPS = ['settings.json', 'settings.local.json', 'hooks']
+
+/** .pit デプロイ前に中身を全消去するサブディレクトリ */
+const DEPLOY_CLEAR_SUBDIRS = ['rules', 'skills']
+
+/** ~/.claude/{subdir}/ 内の全エントリを削除（ディレクトリ自体は残す） */
+async function clearClaudeSubdir(claudeDir: string, subdir: string): Promise<void> {
+  const dirPath = join(claudeDir, subdir)
+  if (!existsSync(dirPath)) return
+  const entries = await readdir(dirPath, { withFileTypes: true })
+  for (const entry of entries) {
+    await rm(join(dirPath, entry.name), { recursive: true, force: true })
+  }
+}
+
+function buildPitDeployBackupManifest(): Record<string, unknown> {
+  return {
+    created_at: new Date().toISOString(),
+    operation: 'pit_deploy_pre_backup',
+    backed_up_paths: ['CLAUDE.md', 'rules/', 'skills/', 'hooks/'],
+    restore_target: '~/.claude/',
+    note: '.pit デプロイ前の自動バックアップ。CCPIT Recovery Kit から復元可能',
+  }
+}
+
+function formatBackupTimestamp(d: Date): string {
+  const pad = (n: number): string => String(n).padStart(2, '0')
+  const ymd = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`
+  const hm = `${pad(d.getHours())}${pad(d.getMinutes())}`
+  return `${ymd}_${hm}`
+}
+
+/** entries から pitReference を構築 */
+function buildPitReference(entries: PitEntry[]): PitReference {
+  const claudeMdEntry = entries.find((e) => e.path === 'CLAUDE.md')
+  const claudeMdHash = claudeMdEntry
+    ? createHash('sha256').update(claudeMdEntry.content, 'utf-8').digest('hex')
+    : ''
+
+  const rulesList = entries
+    .filter((e) => /^rules\/[^/]+\.md$/.test(e.path))
+    .map((e) => e.path.replace(/^rules\//, ''))
+    .sort()
+
+  const skillsSet = new Set<string>()
+  for (const e of entries) {
+    const m = e.path.match(/^skills\/([^/]+)\//)
+    if (m) skillsSet.add(m[1])
+  }
+  const skillsList = [...skillsSet].sort()
+
+  return {
+    importedAt: new Date().toISOString(),
+    claudeMdHash,
+    rulesCount: rulesList.length,
+    skillsCount: skillsList.length,
+    rulesList,
+    skillsList,
+  }
+}
+
+/**
+ * .pit の内容を ~/.claude/ に配置する。
+ * - 事前: ~/.ccpit/backups/ に ZIP backup が無ければ自動作成（不可逆操作の安全網）
+ * - 既存 rules/ skills/ は中身を全削除（.bak 残骸の根治）
+ * - settings.json / hooks/ は触らない（保護対象）
+ * - 完了時: app-config.json に deploySource:'pit' と pitReference を記録
+ */
 export async function deployPitFile(
   entries: PitEntry[]
 ): Promise<{ deployed: string[]; backedUp: string[]; errors: string[] }> {
@@ -710,22 +780,44 @@ export async function deployPitFile(
   const backedUp: string[] = []
   const errors: string[] = []
 
-  const deployEntries = entries.filter((e) => !DEPLOY_EXCLUDES.includes(e.path))
+  // 1. ZIP backup ガード — 既存 backup が 1 件も無ければ自動作成
+  if (!hasAnyBackup()) {
+    const ts = formatBackupTimestamp(new Date())
+    const zipPath = join(getBackupDir(), `${ts}_pit_predeploy_backup.zip`)
+    try {
+      createBackupZip(
+        zipPath,
+        ['CLAUDE.md', 'rules', 'skills', 'hooks'],
+        buildPitDeployBackupManifest()
+      )
+      backedUp.push(zipPath)
+    } catch (err) {
+      errors.push(`backup zip: ${err instanceof Error ? err.message : String(err)}`)
+      return { deployed, backedUp, errors }
+    }
+  }
+
+  // 2. 既存 rules/ と skills/ の中身を全削除（ディレクトリ自体は残す）
+  for (const subdir of DEPLOY_CLEAR_SUBDIRS) {
+    try {
+      await clearClaudeSubdir(userClaudeDir, subdir)
+    } catch (err) {
+      errors.push(`clear ${subdir}/: ${err instanceof Error ? err.message : String(err)}`)
+    }
+  }
+
+  // 3. .pit エントリを配置（settings.json / hooks/ は保護）
+  const deployEntries = entries.filter((e) => {
+    if (DEPLOY_EXCLUDES.includes(e.path)) return false
+    const top = e.path.split(/[\\/]/)[0]
+    if (DEPLOY_PROTECTED_TOPS.includes(top)) return false
+    return true
+  })
 
   for (const entry of deployEntries) {
     const destPath = join(userClaudeDir, entry.path)
     const destDir = dirname(destPath)
-
     try {
-      // バックアップ
-      if (existsSync(destPath)) {
-        const bakPath = `${destPath}.bak`
-        if (!existsSync(bakPath)) {
-          await copyFile(destPath, bakPath)
-          backedUp.push(entry.path)
-        }
-      }
-
       await mkdir(destDir, { recursive: true })
       await writeFile(destPath, entry.content, 'utf-8')
       deployed.push(entry.path)
@@ -733,6 +825,12 @@ export async function deployPitFile(
       errors.push(`${entry.path}: ${err instanceof Error ? err.message : String(err)}`)
     }
   }
+
+  // 4. app-config.json に deploySource と pitReference を記録
+  setConfig({
+    deploySource: 'pit',
+    pitReference: buildPitReference(entries),
+  })
 
   return { deployed, backedUp, errors }
 }
