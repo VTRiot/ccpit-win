@@ -10,6 +10,16 @@ const DEFAULT_SPLASH_RARE_CHANCE = 0.033
 
 export type Language = 'ja' | 'en'
 export type Profile = 'manx' | 'legacy'
+export type DeploySource = 'golden' | 'pit'
+
+export interface PitReference {
+  importedAt: string
+  claudeMdHash: string
+  rulesCount: number
+  skillsCount: number
+  rulesList: string[]
+  skillsList: string[]
+}
 
 interface AppConfig {
   splashDurationMs: number
@@ -20,6 +30,8 @@ interface AppConfig {
   currentProfile: Profile
   legacyMasterPath?: string
   lastBackupAt?: string
+  deploySource?: DeploySource
+  pitReference?: PitReference
 }
 
 function getDefaults(): AppConfig {

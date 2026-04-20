@@ -2,7 +2,7 @@ import { readdir, readFile, copyFile, mkdir, writeFile, chmod } from 'fs/promise
 import { join, relative } from 'path'
 import { existsSync } from 'fs'
 import { app } from 'electron'
-import { getConfig } from './appConfig'
+import { getConfig, setConfig } from './appConfig'
 
 const GOLDEN_DIR = app.isPackaged
   ? join(process.resourcesPath, 'golden')
@@ -230,6 +230,9 @@ export async function deploy(
       result.deployed.push(rel + '/')
     }
   }
+
+  // Fresh Start 完了 — deploySource を 'golden' に固定し pitReference をクリア
+  setConfig({ deploySource: 'golden', pitReference: undefined })
 
   return result
 }
