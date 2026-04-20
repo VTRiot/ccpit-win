@@ -92,10 +92,24 @@ const api = {
   healthCcCli: (): Promise<boolean> => ipcRenderer.invoke('health:ccCli'),
 
   // App Config
-  configGet: (): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en' }> =>
+  configGet: (): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; legacyMasterPath?: string; lastBackupAt?: string }> =>
     ipcRenderer.invoke('config:get'),
-  configSet: (partial: Partial<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en' }>): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en' }> =>
+  configSet: (partial: Partial<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; legacyMasterPath?: string; lastBackupAt?: string }>): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; legacyMasterPath?: string; lastBackupAt?: string }> =>
     ipcRenderer.invoke('config:set', partial),
+
+  // Profile Switch
+  profileGetState: (): Promise<{ currentProfile: 'manx' | 'legacy'; lastBackupAt?: string; backupDir: string; claudeDir: string; legacyMasterPath?: string }> =>
+    ipcRenderer.invoke('profile:getState'),
+  profileSwitchToLegacy: (): Promise<{ backupPath: string; legacyClaudeMdPath: string }> =>
+    ipcRenderer.invoke('profile:switchToLegacy'),
+  profileSwitchToManx: (): Promise<{ restoredPaths: string[] }> =>
+    ipcRenderer.invoke('profile:switchToManx'),
+
+  // Developer Tools
+  devGetCcpitDir: (): Promise<string> => ipcRenderer.invoke('dev:getCcpitDir'),
+  devGetClaudeDir: (): Promise<string> => ipcRenderer.invoke('dev:getClaudeDir'),
+  devToggleDevTools: (): Promise<void> => ipcRenderer.invoke('dev:toggleDevTools'),
+  devRelaunchApp: (): Promise<void> => ipcRenderer.invoke('dev:relaunchApp'),
 
   // System
   selectFolder: (): Promise<string | null> => ipcRenderer.invoke('dialog:selectFolder'),

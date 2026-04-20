@@ -41,7 +41,34 @@
     "resetSetup": "セットアップを再実行",
     "devTools": {
       "title": "Developer Tools",
-      "enabled": "開発者ツールが有効です"
+      "enabled": "開発者ツールが有効です",
+      "profileSwitch": {
+        "title": "Profile Switch",
+        "currentProfile": "現在のプロファイル",
+        "profileManx": "MANX",
+        "profileLegacy": "Legacy",
+        "switchToLegacy": "Legacy に切替",
+        "switchToManx": "MANX に復帰",
+        "confirmToLegacy": "~/.claude/ の MANX 構成をバックアップし、Legacy に切り替えます。よろしいですか？",
+        "confirmToManx": "Legacy 構成を破棄し、MANX に復帰します。よろしいですか？",
+        "lastBackup": "最終バックアップ",
+        "backupLocation": "バックアップ先",
+        "success": "切替完了",
+        "never": "未取得"
+      },
+      "quickActions": {
+        "title": "Quick Actions",
+        "openCcpit": "~/.ccpit/ を開く",
+        "openClaude": "~/.claude/ を開く",
+        "reloadUi": "画面リロード",
+        "toggleDevTools": "DevTools 表示",
+        "resetSetup": "セットアップリセット",
+        "resetConfirm": "セットアップ画面に戻ります。アプリを再起動します。よろしいですか？"
+      },
+      "configViewer": {
+        "title": "app-config.json",
+        "copy": "コピー"
+      }
     }
   },
   "statusbar": {
