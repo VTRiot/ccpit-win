@@ -54,6 +54,16 @@ interface ParcFermeAPI {
     projectName: string
   ): Promise<{ success: boolean; created: string[]; errors: string[] }>
   projectsRemove(projectPath: string): Promise<void>
+  projectsDiscover(
+    rootPath: string
+  ): Promise<
+    { path: string; name: string; hasClaudeMd: boolean; hasCcpitDir: boolean; alreadyManaged: boolean }[]
+  >
+  projectsImport(
+    paths: string[]
+  ): Promise<{ name: string; path: string; status: string; createdAt: string }[]>
+  projectsRemoveFromList(paths: string[]): Promise<{ removed: string[] }>
+  projectsSetFavorite(projectPath: string, favorite: boolean): Promise<void>
 
   rkSnapshot(): Promise<{ id: string; timestamp: string; knownGood: boolean; label: 'manual' | 'pre-restore' | 'post-restore'; fileCount: number }>
   rkList(): Promise<{ id: string; timestamp: string; knownGood: boolean; label: 'manual' | 'pre-restore' | 'post-restore'; fileCount: number }[]>
@@ -73,12 +83,35 @@ interface ParcFermeAPI {
   healthDenyList(): Promise<string[]>
   healthCcCli(): Promise<boolean>
 
-  configGet(): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; legacyMasterPath?: string; lastBackupAt?: string }>
-  configSet(partial: Partial<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; legacyMasterPath?: string; lastBackupAt?: string }>): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; legacyMasterPath?: string; lastBackupAt?: string }>
+  configGet(): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking', { enabled: boolean }>; legacyMasterPath?: string; lastBackupAt?: string }>
+  configSet(partial: Partial<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Partial<Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking', { enabled: boolean }>>; legacyMasterPath?: string; lastBackupAt?: string }>): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking', { enabled: boolean }>; legacyMasterPath?: string; lastBackupAt?: string }>
 
   profileGetState(): Promise<{ currentProfile: 'manx' | 'legacy'; lastBackupAt?: string; backupDir: string; claudeDir: string; legacyMasterPath?: string }>
   profileSwitchToLegacy(): Promise<{ backupPath: string; legacyClaudeMdPath: string }>
   profileSwitchToManx(): Promise<{ restoredPaths: string[] }>
+
+  ccLaunch(
+    args: { projectPath: string; flags: string[] }
+  ): Promise<{ shell: string; spawned: boolean; error?: string }>
+
+  protocolRead(projectPath: string): Promise<unknown>
+  protocolWrite(projectPath: string, marker: unknown, force?: boolean): Promise<void>
+  protocolDetect(projectPath: string): Promise<unknown>
+  protocolAutoMark(
+    projectPath: string
+  ): Promise<{ written: boolean; marker: unknown }>
+  protocolProfiles(): Promise<
+    {
+      id: string
+      label: string
+      protocol: string
+      revision: string
+      stage: 'stable' | 'beta' | 'alpha' | 'experimental'
+      stage_inferred: false
+      variant: string | null
+      variant_alias: string | null
+    }[]
+  >
 
   devGetCcpitDir(): Promise<string>
   devGetClaudeDir(): Promise<string>

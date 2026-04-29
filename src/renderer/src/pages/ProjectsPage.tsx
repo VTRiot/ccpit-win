@@ -1,10 +1,27 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus, FolderOpen, Trash2, Check, X, Loader2, ExternalLink } from 'lucide-react'
+import {
+  Plus,
+  FolderOpen,
+  Trash2,
+  Check,
+  X,
+  Loader2,
+  ExternalLink,
+  Search,
+  ListMinus,
+  RefreshCw,
+  Star,
+} from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { LaunchMenu } from '../components/LaunchMenu'
+import { ProjectDiscoveryDialog } from '../components/ProjectDiscoveryDialog'
+import { RemoveFromListDialog } from '../components/RemoveFromListDialog'
+import { ProtocolBadge, type ProtocolMarkerView } from '../components/ProtocolBadge'
+import { useFeatureFlag } from '../hooks/useFeatureFlag'
 import { cn, toNativePath } from '../lib/utils'
 
 interface ProjectEntry {
@@ -12,6 +29,8 @@ interface ProjectEntry {
   path: string
   status: string
   createdAt: string
+  favorite?: boolean
+  location_type?: string
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -22,21 +41,93 @@ const STATUS_COLORS: Record<string, string> = {
 
 export function ProjectsPage(): React.JSX.Element {
   const { t } = useTranslation()
+  const showLaunchButton = useFeatureFlag('ccLaunchButton')
+  const showDetectLinkRemove = useFeatureFlag('detectLinkRemove')
+  const showProtocolBadge = useFeatureFlag('protocolBadge')
+  const autoMarkingEnabled = useFeatureFlag('autoMarking')
+  const showFavorite = useFeatureFlag('favoriteToggle')
   const [projects, setProjects] = useState<ProjectEntry[]>([])
   const [showCreate, setShowCreate] = useState(false)
+  const [showDiscover, setShowDiscover] = useState(false)
+  const [showRemoveFromList, setShowRemoveFromList] = useState(false)
   const [newName, setNewName] = useState('')
   const [newPath, setNewPath] = useState('')
   const [creating, setCreating] = useState(false)
   const [createResult, setCreateResult] = useState<{ success: boolean; created: string[]; errors: string[] } | null>(null)
+  const [launchMessage, setLaunchMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
+  const [markers, setMarkers] = useState<Record<string, ProtocolMarkerView | null>>({})
+  const [scanningMarkers, setScanningMarkers] = useState(false)
+
+  const handleLaunched = (result: { shell: string; spawned: boolean; error?: string }): void => {
+    if (result.spawned) {
+      setLaunchMessage({ kind: 'ok', text: t('pages.projects.launch.successWith', { shell: result.shell }) })
+    } else {
+      setLaunchMessage({ kind: 'err', text: result.error ?? t('pages.projects.launch.error') })
+    }
+    setTimeout(() => setLaunchMessage(null), 3000)
+  }
 
   const loadProjectList = async (): Promise<void> => {
     const list = await window.api.projectsList()
     setProjects(list)
   }
 
+  const scanMarkers = useCallback(
+    async (paths: string[], allowAutoWrite: boolean): Promise<void> => {
+      if (paths.length === 0) return
+      setScanningMarkers(true)
+      try {
+        const results = await Promise.all(
+          paths.map(async (p) => {
+            try {
+              if (allowAutoWrite) {
+                const r = await window.api.protocolAutoMark(p)
+                return [p, r.marker as ProtocolMarkerView] as const
+              }
+              const m = (await window.api.protocolRead(p)) as ProtocolMarkerView | null
+              return [p, m] as const
+            } catch {
+              return [p, null] as const
+            }
+          })
+        )
+        setMarkers((prev) => {
+          const next = { ...prev }
+          for (const [path, marker] of results) {
+            next[path] = marker
+          }
+          return next
+        })
+      } finally {
+        setScanningMarkers(false)
+      }
+    },
+    []
+  )
+
   useEffect(() => {
-    loadProjectList()
+    void loadProjectList()
   }, [])
+
+  useEffect(() => {
+    if (!showProtocolBadge) return
+    if (projects.length === 0) return
+    const paths = projects.map((p) => p.path)
+    void scanMarkers(paths, autoMarkingEnabled)
+  }, [projects, showProtocolBadge, autoMarkingEnabled, scanMarkers])
+
+  const handleRescan = async (): Promise<void> => {
+    const paths = projects.map((p) => p.path)
+    await scanMarkers(paths, autoMarkingEnabled)
+  }
+
+  const handleToggleFavorite = async (project: ProjectEntry): Promise<void> => {
+    const next = !(project.favorite ?? false)
+    await window.api.projectsSetFavorite(project.path, next)
+    setProjects((prev) =>
+      prev.map((p) => (p.path === project.path ? { ...p, favorite: next } : p))
+    )
+  }
 
   const handleSelectPath = async (): Promise<void> => {
     const folder = await window.api.selectFolder()
@@ -68,12 +159,52 @@ export function ProjectsPage(): React.JSX.Element {
 
   return (
     <div className="max-w-3xl">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 gap-2 flex-wrap">
         <h1 className="text-xl font-bold">{t('pages.projects.title')}</h1>
-        <Button onClick={() => { setShowCreate(!showCreate); setCreateResult(null) }} variant={showCreate ? 'outline' : 'default'} size="sm">
-          <Plus size={16} /> {t('pages.projects.newProject')}
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {showProtocolBadge && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRescan}
+              disabled={scanningMarkers}
+              className="gap-1.5"
+              title={t('pages.projects.protocolBadge.rescan')}
+            >
+              <RefreshCw size={14} className={scanningMarkers ? 'animate-spin' : ''} />
+              {t('pages.projects.protocolBadge.rescan')}
+            </Button>
+          )}
+          {showDetectLinkRemove && (
+            <>
+              <Button variant="outline" size="sm" onClick={() => setShowDiscover(true)} className="gap-1.5">
+                <Search size={14} />
+                {t('pages.projects.discover.button')}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowRemoveFromList(true)} className="gap-1.5">
+                <ListMinus size={14} />
+                {t('pages.projects.removeFromList.button')}
+              </Button>
+            </>
+          )}
+          <Button onClick={() => { setShowCreate(!showCreate); setCreateResult(null) }} variant={showCreate ? 'outline' : 'default'} size="sm">
+            <Plus size={16} /> {t('pages.projects.newProject')}
+          </Button>
+        </div>
       </div>
+
+      {launchMessage && (
+        <div
+          className={cn(
+            'mb-4 rounded-md border px-3 py-2 text-sm',
+            launchMessage.kind === 'ok'
+              ? 'border-green-500/30 bg-green-500/10 text-green-600'
+              : 'border-destructive/30 bg-destructive/10 text-destructive'
+          )}
+        >
+          {launchMessage.text}
+        </div>
+      )}
 
       {/* Create Form */}
       {showCreate && (
@@ -114,6 +245,29 @@ export function ProjectsPage(): React.JSX.Element {
         </Card>
       )}
 
+      {/* Discovery Dialog */}
+      {showDetectLinkRemove && (
+        <ProjectDiscoveryDialog
+          open={showDiscover}
+          onOpenChange={setShowDiscover}
+          onImported={() => {
+            void loadProjectList()
+          }}
+        />
+      )}
+
+      {/* Remove from List Dialog */}
+      {showDetectLinkRemove && (
+        <RemoveFromListDialog
+          open={showRemoveFromList}
+          onOpenChange={setShowRemoveFromList}
+          projects={projects}
+          onRemoved={() => {
+            void loadProjectList()
+          }}
+        />
+      )}
+
       {/* Project List */}
       {projects.length === 0 ? (
         <Card>
@@ -126,15 +280,47 @@ export function ProjectsPage(): React.JSX.Element {
           {projects.map((project) => (
             <Card key={project.path}>
               <CardContent className="p-4 flex items-center gap-4">
+                {showFavorite && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      'h-8 w-8',
+                      project.favorite
+                        ? 'text-yellow-400 hover:text-yellow-500'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                    onClick={() => handleToggleFavorite(project)}
+                    title={t(
+                      project.favorite
+                        ? 'pages.projects.favorite.unfavorite'
+                        : 'pages.projects.favorite.favorite'
+                    )}
+                  >
+                    <Star
+                      size={14}
+                      className={project.favorite ? 'fill-current' : ''}
+                    />
+                  </Button>
+                )}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="font-medium">{project.name}</span>
                     <span className={cn('text-xs px-2 py-0.5 rounded-full border', STATUS_COLORS[project.status] || STATUS_COLORS.uninitialized)}>
                       {t(`pages.projects.status.${project.status}`)}
                     </span>
+                    {showProtocolBadge && (
+                      <ProtocolBadge
+                        marker={markers[project.path]}
+                        loading={scanningMarkers && markers[project.path] === undefined}
+                      />
+                    )}
                   </div>
                   <div className="text-xs text-muted-foreground font-mono truncate">{toNativePath(project.path)}</div>
                 </div>
+                {showLaunchButton && (
+                  <LaunchMenu projectPath={project.path} onLaunched={handleLaunched} />
+                )}
                 <Button
                   variant="ghost"
                   size="icon"

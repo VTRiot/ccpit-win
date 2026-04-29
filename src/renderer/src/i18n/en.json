@@ -68,6 +68,18 @@
       "configViewer": {
         "title": "app-config.json",
         "copy": "Copy"
+      },
+      "featureFlags": {
+        "title": "Feature Flags",
+        "description": "Enable or disable each feature independently. When OFF, the corresponding UI is hidden completely.",
+        "resetDefaults": "Reset to defaults",
+        "keys": {
+          "ccLaunchButton": "CC Launch Button (Feature A)",
+          "detectLinkRemove": "DetectLink + Remove (Feature B)",
+          "protocolBadge": "Protocol Badge (Feature C)",
+          "favoriteToggle": "Favorite Toggle (Feature D)",
+          "autoMarking": "Auto Marking (Feature C aux)"
+        }
       }
     }
   },
@@ -104,7 +116,12 @@
     "runSetup": "Run Setup",
     "doneGoToProjects": "Done — Go to Projects",
     "debugModeOn": "🔧 Debug Mode ON",
-    "debugModeOff": "🔧 Debug Mode OFF"
+    "debugModeOff": "🔧 Debug Mode OFF",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "selectedCount": "{{selected}}/{{total}} selected",
+    "noItems": "No items",
+    "cancel": "Cancel"
   },
   "setup": {
     "welcome": "Welcome to CCPIT",
@@ -210,7 +227,54 @@
       "path": "Path",
       "statusLabel": "Status",
       "createdAt": "Created",
-      "createdFiles": "Created files ({{count}})"
+      "createdFiles": "Created files ({{count}})",
+      "openFolder": "Open folder",
+      "discover": {
+        "button": "DetectLink",
+        "title": "Discover CC Projects",
+        "description": "Scan under the given folder for projects containing CLAUDE.md. Multi-select to import in batch.",
+        "rootPlaceholder": "Root folder to scan (e.g. C:\\_Prog)",
+        "browse": "Browse",
+        "scan": "Scan",
+        "import": "Import",
+        "noResults": "No candidates found. Run a scan first.",
+        "alreadyManaged": "Already managed"
+      },
+      "removeFromList": {
+        "button": "Remove from List",
+        "title": "Remove from CCPIT List",
+        "description": "Remove selected projects from the CCPIT management list. Multi-select supported.",
+        "warning": "This does NOT delete files. The project folder, CLAUDE.md, and .ccpit/ are left untouched. Only the list entry is removed.",
+        "remove": "Remove from list"
+      },
+      "protocolBadge": {
+        "rescan": "Re-scan",
+        "inferredNotice": "⚠ stage is an inferred value",
+        "inferred": "inferred"
+      },
+      "favorite": {
+        "favorite": "Add to favorites",
+        "unfavorite": "Remove from favorites"
+      },
+      "launch": {
+        "launch": "Launch",
+        "launchTitle": "Launch Claude Code",
+        "optionsTitle": "Launch options",
+        "successWith": "Claude Code launched ({{shell}})",
+        "error": "Failed to launch",
+        "opts": {
+          "skipPermissions": "Skip permissions (dangerous)",
+          "permissionMode": "Permission mode",
+          "continueLast": "Continue last conversation (-c)",
+          "resume": "Resume session (-r)",
+          "resumePlaceholder": "Session ID or name",
+          "verbose": "Verbose (--verbose)",
+          "addDir": "Add directory (--add-dir)",
+          "addDirPlaceholder": "C:\\path1, C:\\path2 (comma separated)",
+          "ideAutoConnect": "IDE auto-connect (--ide)",
+          "effort": "Effort level"
+        }
+      }
     },
     "health": {
       "title": "Health",
