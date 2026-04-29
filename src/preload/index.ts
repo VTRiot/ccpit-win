@@ -65,6 +65,19 @@ const api = {
     ipcRenderer.invoke('projects:create', projectPath, projectName),
   projectsRemove: (projectPath: string): Promise<void> =>
     ipcRenderer.invoke('projects:remove', projectPath),
+  projectsDiscover: (
+    rootPath: string
+  ): Promise<
+    { path: string; name: string; hasClaudeMd: boolean; hasCcpitDir: boolean; alreadyManaged: boolean }[]
+  > => ipcRenderer.invoke('projects:discover', rootPath),
+  projectsImport: (
+    paths: string[]
+  ): Promise<{ name: string; path: string; status: string; createdAt: string }[]> =>
+    ipcRenderer.invoke('projects:import', paths),
+  projectsRemoveFromList: (paths: string[]): Promise<{ removed: string[] }> =>
+    ipcRenderer.invoke('projects:removeFromList', paths),
+  projectsSetFavorite: (projectPath: string, favorite: boolean): Promise<void> =>
+    ipcRenderer.invoke('projects:setFavorite', projectPath, favorite),
 
   // Recovery Kit
   rkSnapshot: (): Promise<{ id: string; timestamp: string; knownGood: boolean; label: 'manual' | 'pre-restore' | 'post-restore'; fileCount: number }> =>
@@ -92,9 +105,9 @@ const api = {
   healthCcCli: (): Promise<boolean> => ipcRenderer.invoke('health:ccCli'),
 
   // App Config
-  configGet: (): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; legacyMasterPath?: string; lastBackupAt?: string }> =>
+  configGet: (): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking', { enabled: boolean }>; legacyMasterPath?: string; lastBackupAt?: string }> =>
     ipcRenderer.invoke('config:get'),
-  configSet: (partial: Partial<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; legacyMasterPath?: string; lastBackupAt?: string }>): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; legacyMasterPath?: string; lastBackupAt?: string }> =>
+  configSet: (partial: Partial<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Partial<Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking', { enabled: boolean }>>; legacyMasterPath?: string; lastBackupAt?: string }>): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking', { enabled: boolean }>; legacyMasterPath?: string; lastBackupAt?: string }> =>
     ipcRenderer.invoke('config:set', partial),
 
   // Profile Switch
@@ -104,6 +117,39 @@ const api = {
     ipcRenderer.invoke('profile:switchToLegacy'),
   profileSwitchToManx: (): Promise<{ restoredPaths: string[] }> =>
     ipcRenderer.invoke('profile:switchToManx'),
+
+  // CC Launch
+  ccLaunch: (
+    args: { projectPath: string; flags: string[] }
+  ): Promise<{ shell: string; spawned: boolean; error?: string }> =>
+    ipcRenderer.invoke('cc:launch', args),
+
+  // Protocol Marker
+  protocolRead: (projectPath: string): Promise<unknown> =>
+    ipcRenderer.invoke('protocol:read', projectPath),
+  protocolWrite: (
+    projectPath: string,
+    marker: unknown,
+    force?: boolean
+  ): Promise<void> => ipcRenderer.invoke('protocol:write', projectPath, marker, force),
+  protocolDetect: (projectPath: string): Promise<unknown> =>
+    ipcRenderer.invoke('protocol:detect', projectPath),
+  protocolAutoMark: (
+    projectPath: string
+  ): Promise<{ written: boolean; marker: unknown }> =>
+    ipcRenderer.invoke('protocol:autoMark', projectPath),
+  protocolProfiles: (): Promise<
+    {
+      id: string
+      label: string
+      protocol: string
+      revision: string
+      stage: 'stable' | 'beta' | 'alpha' | 'experimental'
+      stage_inferred: false
+      variant: string | null
+      variant_alias: string | null
+    }[]
+  > => ipcRenderer.invoke('protocol:profiles'),
 
   // Developer Tools
   devGetCcpitDir: (): Promise<string> => ipcRenderer.invoke('dev:getCcpitDir'),
