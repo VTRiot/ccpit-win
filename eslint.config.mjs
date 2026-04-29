@@ -28,5 +28,20 @@ export default defineConfig(
       ...eslintPluginReactRefresh.configs.vite.rules
     }
   },
+  {
+    // TypeScript projects already enforce prop typing; runtime prop-types are redundant.
+    files: ['**/*.{ts,tsx}'],
+    rules: {
+      'react/prop-types': 'off'
+    }
+  },
+  {
+    // shadcn/ui standard implementation; defer to upstream (e.g. button.tsx exports
+    // both Button and buttonVariants from the same file).
+    files: ['src/renderer/src/components/ui/**/*.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off'
+    }
+  },
   eslintConfigPrettier
 )
