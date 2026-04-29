@@ -6,11 +6,18 @@ import { app } from 'electron'
 const CCPIT_DIR = join(app.getPath('home'), '.ccpit')
 const PROJECTS_FILE = join(CCPIT_DIR, 'projects.json')
 
+export type LocationType = 'local' | 'remote-readonly' | 'remote-full'
+
 export interface ProjectEntry {
   name: string
   path: string
   status: 'manx' | 'legacy' | 'uninitialized'
   createdAt: string
+  parent_id?: string | null
+  groupKey?: string | null
+  documents?: string[]
+  favorite?: boolean
+  location_type?: LocationType
 }
 
 async function ensureDir(dir: string): Promise<void> {
@@ -120,6 +127,8 @@ export async function createProject(
       path: projectPath,
       status: 'manx',
       createdAt: new Date().toISOString(),
+      location_type: 'local',
+      favorite: false,
     }
     if (existing >= 0) {
       projects[existing] = entry
@@ -152,4 +161,70 @@ export async function removeProject(projectPath: string): Promise<void> {
   const projects = await loadProjects()
   const filtered = projects.filter((p) => p.path !== projectPath)
   await saveProjects(filtered)
+}
+
+/**
+ * 複数の PJ パスを一括インポート（projects.json に追記のみ）。
+ * ファイルシステムは変更しない。CLAUDE.md は既存前提。
+ * 既に登録済みのパスはスキップ。
+ */
+export async function importProjects(paths: string[]): Promise<ProjectEntry[]> {
+  const projects = await loadProjects()
+  const existingSet = new Set(projects.map((p) => p.path.toLowerCase()))
+  const now = new Date().toISOString()
+
+  const added: ProjectEntry[] = []
+  for (const projectPath of paths) {
+    if (existingSet.has(projectPath.toLowerCase())) continue
+    const segments = projectPath.split(/[\\/]/)
+    const name = segments[segments.length - 1] || projectPath
+    const status = existsSync(projectPath) ? await detectStatus(projectPath) : 'uninitialized'
+    const entry: ProjectEntry = {
+      name,
+      path: projectPath,
+      status,
+      createdAt: now,
+      location_type: 'local',
+      favorite: false,
+    }
+    projects.push(entry)
+    added.push(entry)
+  }
+
+  if (added.length > 0) {
+    await saveProjects(projects)
+  }
+  return added
+}
+
+/**
+ * 複数の PJ パスを一括でリストから外す。
+ * ファイルシステム操作は一切行わない（PJ 本体は無傷）。
+ */
+export async function removeProjectsFromList(
+  paths: string[]
+): Promise<{ removed: string[] }> {
+  const projects = await loadProjects()
+  const targetSet = new Set(paths.map((p) => p.toLowerCase()))
+  const filtered = projects.filter((p) => !targetSet.has(p.path.toLowerCase()))
+  const removedCount = projects.length - filtered.length
+  if (removedCount > 0) {
+    await saveProjects(filtered)
+  }
+  return { removed: paths }
+}
+
+/** projects.json に登録済みのパス一覧（ステータス再判定なし、軽量） */
+export async function listManagedPaths(): Promise<string[]> {
+  const projects = await loadProjects()
+  return projects.map((p) => p.path)
+}
+
+/** Favorite フラグを toggle */
+export async function setFavorite(projectPath: string, favorite: boolean): Promise<void> {
+  const projects = await loadProjects()
+  const idx = projects.findIndex((p) => p.path === projectPath)
+  if (idx < 0) return
+  projects[idx] = { ...projects[idx], favorite }
+  await saveProjects(projects)
 }

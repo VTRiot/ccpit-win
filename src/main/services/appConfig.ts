@@ -21,13 +21,43 @@ export interface PitReference {
   skillsList: string[]
 }
 
-interface AppConfig {
+export type FeatureKey =
+  | 'ccLaunchButton'
+  | 'detectLinkRemove'
+  | 'protocolBadge'
+  | 'favoriteToggle'
+  | 'autoMarking'
+
+export interface FeatureFlag {
+  enabled: boolean
+}
+
+export type FeatureFlags = Record<FeatureKey, FeatureFlag>
+
+export const FEATURE_KEYS: readonly FeatureKey[] = [
+  'ccLaunchButton',
+  'detectLinkRemove',
+  'protocolBadge',
+  'favoriteToggle',
+  'autoMarking',
+] as const
+
+export const DEFAULT_FEATURES: FeatureFlags = {
+  ccLaunchButton: { enabled: true },
+  detectLinkRemove: { enabled: true },
+  protocolBadge: { enabled: true },
+  favoriteToggle: { enabled: true },
+  autoMarking: { enabled: true },
+}
+
+export interface AppConfig {
   splashDurationMs: number
   splashRareChance: number
   debugMode: boolean
   setupCompleted: boolean
   language: Language
   currentProfile: Profile
+  features: FeatureFlags
   legacyMasterPath?: string
   lastBackupAt?: string
   deploySource?: DeploySource
@@ -42,7 +72,24 @@ function getDefaults(): AppConfig {
     setupCompleted: false,
     language: 'en',
     currentProfile: 'manx',
+    features: { ...DEFAULT_FEATURES },
   }
+}
+
+function mergeFeatures(parsed: unknown): FeatureFlags {
+  const merged: FeatureFlags = { ...DEFAULT_FEATURES }
+  if (parsed && typeof parsed === 'object') {
+    for (const key of FEATURE_KEYS) {
+      const entry = (parsed as Record<string, unknown>)[key]
+      if (entry && typeof entry === 'object' && 'enabled' in entry) {
+        const enabled = (entry as { enabled: unknown }).enabled
+        if (typeof enabled === 'boolean') {
+          merged[key] = { enabled }
+        }
+      }
+    }
+  }
+  return merged
 }
 
 export function getParcFermeDir(): string {
@@ -55,8 +102,9 @@ export function readConfigSync(): AppConfig {
   if (!existsSync(CONFIG_FILE)) return defaults
   try {
     const content = readFileSync(CONFIG_FILE, 'utf-8')
-    const parsed = JSON.parse(content)
-    return { ...defaults, ...parsed }
+    const parsed = JSON.parse(content) as Partial<AppConfig> & { features?: unknown }
+    const features = mergeFeatures(parsed.features)
+    return { ...defaults, ...parsed, features }
   } catch {
     return defaults
   }
@@ -70,7 +118,13 @@ export function getConfig(): AppConfig {
 /** 設定値を更新 */
 export function setConfig(partial: Partial<AppConfig>): AppConfig {
   const current = readConfigSync()
-  const updated = { ...current, ...partial }
+  const updated: AppConfig = {
+    ...current,
+    ...partial,
+    features: partial.features
+      ? { ...current.features, ...partial.features }
+      : current.features,
+  }
   if (!existsSync(CCPIT_DIR)) {
     mkdirSync(CCPIT_DIR, { recursive: true })
   }

@@ -10,12 +10,30 @@ import {
   deployPitFile,
   type PitEntry,
 } from './services/migration'
-import { listProjects, createProject, removeProject } from './services/projects'
+import {
+  listProjects,
+  createProject,
+  removeProject,
+  importProjects,
+  removeProjectsFromList,
+  listManagedPaths,
+  setFavorite,
+} from './services/projects'
+import { discoverClaudeProjects } from './services/projectDiscovery'
 import { runHealthCheck, getDenyList, checkCcCli } from './services/health'
 import { takeSnapshot, listSnapshots, markKnownGood, diffSnapshot, softRestore } from './services/recovery'
 import { generateDoctorPack, saveDoctorPack, getDefaultOutputDir } from './services/doctor'
 import { getConfig, setConfig, getParcFermeDir } from './services/appConfig'
 import { getState as profileGetState, switchToLegacy, switchToManx } from './services/profileSwitch'
+import { launchCc, type LaunchArgs } from './services/ccLaunch'
+import {
+  readProtocol,
+  writeProtocol,
+  detectProtocol,
+  loadProfiles,
+  getAvailableProfiles,
+  type ProtocolMarker,
+} from './services/protocol'
 
 const GOLDEN_DIR = app.isPackaged
   ? join(process.resourcesPath, 'golden')
@@ -52,6 +70,17 @@ export function registerIpcHandlers(): void {
     createProject(projectPath, projectName)
   )
   ipcMain.handle('projects:remove', (_e, projectPath: string) => removeProject(projectPath))
+  ipcMain.handle('projects:discover', async (_e, rootPath: string) => {
+    const managed = await listManagedPaths()
+    return discoverClaudeProjects(rootPath, managed)
+  })
+  ipcMain.handle('projects:import', (_e, paths: string[]) => importProjects(paths))
+  ipcMain.handle('projects:removeFromList', (_e, paths: string[]) =>
+    removeProjectsFromList(paths)
+  )
+  ipcMain.handle('projects:setFavorite', (_e, projectPath: string, favorite: boolean) =>
+    setFavorite(projectPath, favorite)
+  )
 
   // --- Health ---
   ipcMain.handle('health:check', () => runHealthCheck())
@@ -110,6 +139,30 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('profile:getState', () => profileGetState())
   ipcMain.handle('profile:switchToLegacy', () => switchToLegacy())
   ipcMain.handle('profile:switchToManx', () => switchToManx())
+
+  // --- CC Launch ---
+  ipcMain.handle('cc:launch', (_e, args: LaunchArgs) => launchCc(args))
+
+  // --- Protocol Marker ---
+  ipcMain.handle('protocol:read', (_e, projectPath: string) => readProtocol(projectPath))
+  ipcMain.handle(
+    'protocol:write',
+    (_e, projectPath: string, marker: ProtocolMarker, force?: boolean) =>
+      writeProtocol(projectPath, marker, { force: force === true })
+  )
+  ipcMain.handle('protocol:detect', (_e, projectPath: string) => detectProtocol(projectPath))
+  ipcMain.handle('protocol:autoMark', async (_e, projectPath: string) => {
+    const existing = await readProtocol(projectPath)
+    if (existing) return { written: false, marker: existing }
+    const marker = await detectProtocol(projectPath)
+    await writeProtocol(projectPath, marker, { force: false })
+    return { written: true, marker }
+  })
+  ipcMain.handle('protocol:profiles', async () => {
+    const cfg = getConfig()
+    const profiles = await loadProfiles()
+    return getAvailableProfiles(profiles, cfg.debugMode)
+  })
 
   // --- Developer Tools (Tier S) ---
   ipcMain.handle('dev:getCcpitDir', () => getParcFermeDir())

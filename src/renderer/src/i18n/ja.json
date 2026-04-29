@@ -68,6 +68,18 @@
       "configViewer": {
         "title": "app-config.json",
         "copy": "コピー"
+      },
+      "featureFlags": {
+        "title": "Feature Flags",
+        "description": "各機能を独立して有効化/無効化します。OFF にすると UI から該当機能が消えます。",
+        "resetDefaults": "既定値に戻す",
+        "keys": {
+          "ccLaunchButton": "CC 起動ボタン (機能 A)",
+          "detectLinkRemove": "DetectLink + Remove (機能 B)",
+          "protocolBadge": "プロトコルバッジ (機能 C)",
+          "favoriteToggle": "Favorite 星マーク (機能 D)",
+          "autoMarking": "自動マーキング (機能 C 補助)"
+        }
       }
     }
   },
@@ -104,7 +116,12 @@
     "runSetup": "セットアップ実行",
     "doneGoToProjects": "完了 — プロジェクトへ",
     "debugModeOn": "🔧 デバッグモード ON",
-    "debugModeOff": "🔧 デバッグモード OFF"
+    "debugModeOff": "🔧 デバッグモード OFF",
+    "selectAll": "全選択",
+    "deselectAll": "全解除",
+    "selectedCount": "{{selected}}/{{total}} 件選択中",
+    "noItems": "項目がありません",
+    "cancel": "キャンセル"
   },
   "setup": {
     "welcome": "CCPIT へようこそ",
@@ -210,7 +227,54 @@
       "path": "パス",
       "statusLabel": "ステータス",
       "createdAt": "作成日",
-      "createdFiles": "作成ファイル ({{count}})"
+      "createdFiles": "作成ファイル ({{count}})",
+      "openFolder": "フォルダを開く",
+      "discover": {
+        "button": "DetectLink",
+        "title": "CC プロジェクトを検出",
+        "description": "指定フォルダ以下を走査し、CLAUDE.md を持つプロジェクトを検出します。複数選択して一括インポートできます。",
+        "rootPlaceholder": "走査するルートフォルダ (例: C:\\_Prog)",
+        "browse": "選択",
+        "scan": "スキャン",
+        "import": "インポート",
+        "noResults": "候補が見つかりません。スキャンを実行してください。",
+        "alreadyManaged": "既に管理下"
+      },
+      "removeFromList": {
+        "button": "リストから削除",
+        "title": "CCPIT 管理リストから削除",
+        "description": "選択した PJ を CCPIT の管理リストから外します。複数選択可能。",
+        "warning": "PJ 本体（フォルダ・CLAUDE.md・.ccpit/）には一切触りません。リストエントリの削除のみです。",
+        "remove": "リストから削除"
+      },
+      "protocolBadge": {
+        "rescan": "再スキャン",
+        "inferredNotice": "⚠ stage は自動推定値です",
+        "inferred": "推定値"
+      },
+      "favorite": {
+        "favorite": "お気に入りに追加",
+        "unfavorite": "お気に入り解除"
+      },
+      "launch": {
+        "launch": "起動",
+        "launchTitle": "Claude Code を起動",
+        "optionsTitle": "起動オプション",
+        "successWith": "Claude Code を起動しました ({{shell}})",
+        "error": "起動に失敗しました",
+        "opts": {
+          "skipPermissions": "Skip permissions（dangerous）",
+          "permissionMode": "Permission mode",
+          "continueLast": "直近の会話を継続 (-c)",
+          "resume": "セッション再開 (-r)",
+          "resumePlaceholder": "セッション ID または名前",
+          "verbose": "詳細ログ (--verbose)",
+          "addDir": "追加ディレクトリ (--add-dir)",
+          "addDirPlaceholder": "C:\\path1, C:\\path2 (カンマ区切り)",
+          "ideAutoConnect": "IDE 自動接続 (--ide)",
+          "effort": "Effort level"
+        }
+      }
     },
     "health": {
       "title": "Health",
