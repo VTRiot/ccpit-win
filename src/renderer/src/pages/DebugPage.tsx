@@ -8,9 +8,17 @@ import {
   RotateCcw,
   Copy,
   FileJson,
+  ToggleLeft,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
+import {
+  FEATURE_KEYS,
+  useFeatureFlags,
+  setFeatureFlag,
+  resetFeatureFlags,
+  type FeatureKey,
+} from '../hooks/useFeatureFlag'
 
 const AUTH_MASK_KEYS = ['password', 'authPassword', 'auth']
 
@@ -285,6 +293,9 @@ export function DebugPage(): React.JSX.Element {
         </CardContent>
       </Card>
 
+      {/* Feature Flags */}
+      <FeatureFlagsCard onChange={refreshAppConfig} />
+
       {/* app-config.json Viewer */}
       <Card>
         <CardHeader>
@@ -304,5 +315,61 @@ export function DebugPage(): React.JSX.Element {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+function FeatureFlagsCard({ onChange }: { onChange: () => Promise<void> }): React.JSX.Element {
+  const { t } = useTranslation()
+  const flags = useFeatureFlags()
+
+  const handleToggle = async (key: FeatureKey, next: boolean): Promise<void> => {
+    await setFeatureFlag(key, next)
+    await onChange()
+  }
+
+  const handleReset = async (): Promise<void> => {
+    await resetFeatureFlags()
+    await onChange()
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <ToggleLeft size={16} />
+          {t('settings.devTools.featureFlags.title')}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-xs text-muted-foreground">
+          {t('settings.devTools.featureFlags.description')}
+        </p>
+        <div className="space-y-2">
+          {FEATURE_KEYS.map((key) => {
+            const enabled = flags[key]?.enabled ?? true
+            return (
+              <label
+                key={key}
+                className="flex items-center gap-3 cursor-pointer select-none"
+              >
+                <input
+                  type="checkbox"
+                  checked={enabled}
+                  onChange={(e) => void handleToggle(key, e.target.checked)}
+                  className="h-4 w-4 cursor-pointer accent-primary"
+                />
+                <span className="text-sm">
+                  {t(`settings.devTools.featureFlags.keys.${key}`)}
+                </span>
+              </label>
+            )
+          })}
+        </div>
+        <Button variant="outline" size="sm" className="gap-2" onClick={handleReset}>
+          <RotateCcw size={14} />
+          {t('settings.devTools.featureFlags.resetDefaults')}
+        </Button>
+      </CardContent>
+    </Card>
   )
 }
