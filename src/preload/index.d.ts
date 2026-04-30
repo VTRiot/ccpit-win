@@ -83,8 +83,8 @@ interface ParcFermeAPI {
   healthDenyList(): Promise<string[]>
   healthCcCli(): Promise<boolean>
 
-  configGet(): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking', { enabled: boolean }>; legacyMasterPath?: string; lastBackupAt?: string }>
-  configSet(partial: Partial<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Partial<Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking', { enabled: boolean }>>; legacyMasterPath?: string; lastBackupAt?: string }>): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking', { enabled: boolean }>; legacyMasterPath?: string; lastBackupAt?: string }>
+  configGet(): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking' | 'editMarkerUI', { enabled: boolean }>; legacyMasterPath?: string; lastBackupAt?: string }>
+  configSet(partial: Partial<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Partial<Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking' | 'editMarkerUI', { enabled: boolean }>>; legacyMasterPath?: string; lastBackupAt?: string }>): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking' | 'editMarkerUI', { enabled: boolean }>; legacyMasterPath?: string; lastBackupAt?: string }>
 
   profileGetState(): Promise<{ currentProfile: 'manx' | 'legacy'; lastBackupAt?: string; backupDir: string; claudeDir: string; legacyMasterPath?: string }>
   profileSwitchToLegacy(): Promise<{ backupPath: string; legacyClaudeMdPath: string }>
@@ -100,6 +100,17 @@ interface ParcFermeAPI {
   protocolAutoMark(
     projectPath: string
   ): Promise<{ written: boolean; marker: unknown }>
+  protocolEditMarker(
+    projectPath: string,
+    edits: {
+      protocol: string
+      revision: string
+      stage: 'stable' | 'beta' | 'alpha' | 'experimental'
+      variant: string | null
+      variant_alias: string | null
+    }
+  ): Promise<unknown>
+  protocolRescanMarker(projectPath: string): Promise<unknown>
   protocolProfiles(): Promise<
     {
       id: string

@@ -32,7 +32,9 @@ import {
   detectProtocol,
   loadProfiles,
   getAvailableProfiles,
+  buildExplicitMarker,
   type ProtocolMarker,
+  type EditMarkerInput,
 } from './services/protocol'
 
 const GOLDEN_DIR = app.isPackaged
@@ -157,6 +159,21 @@ export function registerIpcHandlers(): void {
     const marker = await detectProtocol(projectPath)
     await writeProtocol(projectPath, marker, { force: false })
     return { written: true, marker }
+  })
+  // FSA r3 §3-3 — Edit Marker 保存。明示設定値として書き換える。
+  ipcMain.handle(
+    'protocol:editMarker',
+    async (_e, projectPath: string, edits: EditMarkerInput) => {
+      const marker = buildExplicitMarker(edits, new Date())
+      await writeProtocol(projectPath, marker, { force: true })
+      return marker
+    }
+  )
+  // FSA r3 §3-5 — Re-scan Marker。既存マーカーを上書きして再スキャン。
+  ipcMain.handle('protocol:rescanMarker', async (_e, projectPath: string) => {
+    const marker = await detectProtocol(projectPath, { force: true })
+    await writeProtocol(projectPath, marker, { force: true })
+    return marker
   })
   ipcMain.handle('protocol:profiles', async () => {
     const cfg = getConfig()

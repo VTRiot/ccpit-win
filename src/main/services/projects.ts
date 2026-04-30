@@ -11,7 +11,6 @@ export type LocationType = 'local' | 'remote-readonly' | 'remote-full'
 export interface ProjectEntry {
   name: string
   path: string
-  status: 'manx' | 'legacy' | 'uninitialized'
   createdAt: string
   parent_id?: string | null
   groupKey?: string | null
@@ -38,16 +37,6 @@ export async function loadProjects(): Promise<ProjectEntry[]> {
 async function saveProjects(projects: ProjectEntry[]): Promise<void> {
   await ensureDir(CCPIT_DIR)
   await writeFile(PROJECTS_FILE, JSON.stringify(projects, null, 2), 'utf-8')
-}
-
-/** プロジェクトのステータスを判定 */
-async function detectStatus(projectPath: string): Promise<'manx' | 'legacy' | 'uninitialized'> {
-  const claudeMdPath = join(projectPath, 'CLAUDE.md')
-  if (!existsSync(claudeMdPath)) return 'uninitialized'
-
-  const content = await readFile(claudeMdPath, 'utf-8')
-  if (content.includes('CCPIT managed') || content.includes('CCPIT managed')) return 'manx'
-  return 'legacy'
 }
 
 const P4_TEMPLATE = `# CLAUDE.md — {{PROJECT_NAME}}
@@ -125,7 +114,6 @@ export async function createProject(
     const entry: ProjectEntry = {
       name: projectName,
       path: projectPath,
-      status: 'manx',
       createdAt: new Date().toISOString(),
       location_type: 'local',
       favorite: false,
@@ -141,19 +129,9 @@ export async function createProject(
   return result
 }
 
-/** プロジェクト一覧を取得（ステータス再判定付き） */
+/** プロジェクト一覧を取得（プロトコル判定は ProtocolBadge / autoMarker 経由で行う） */
 export async function listProjects(): Promise<ProjectEntry[]> {
-  const projects = await loadProjects()
-
-  // ステータスを最新に更新
-  for (const project of projects) {
-    if (existsSync(project.path)) {
-      project.status = await detectStatus(project.path)
-    }
-  }
-
-  await saveProjects(projects)
-  return projects
+  return loadProjects()
 }
 
 /** プロジェクトを削除（レジストリからのみ。ファイルは消さない） */
@@ -178,11 +156,9 @@ export async function importProjects(paths: string[]): Promise<ProjectEntry[]> {
     if (existingSet.has(projectPath.toLowerCase())) continue
     const segments = projectPath.split(/[\\/]/)
     const name = segments[segments.length - 1] || projectPath
-    const status = existsSync(projectPath) ? await detectStatus(projectPath) : 'uninitialized'
     const entry: ProjectEntry = {
       name,
       path: projectPath,
-      status,
       createdAt: now,
       location_type: 'local',
       favorite: false,

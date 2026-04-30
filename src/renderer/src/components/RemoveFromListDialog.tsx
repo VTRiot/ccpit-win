@@ -5,7 +5,6 @@ import { toNativePath } from '../lib/utils'
 interface ProjectEntry {
   name: string
   path: string
-  status: string
   createdAt: string
 }
 
