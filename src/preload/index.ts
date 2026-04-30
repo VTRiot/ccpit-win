@@ -105,9 +105,9 @@ const api = {
   healthCcCli: (): Promise<boolean> => ipcRenderer.invoke('health:ccCli'),
 
   // App Config
-  configGet: (): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking', { enabled: boolean }>; legacyMasterPath?: string; lastBackupAt?: string }> =>
+  configGet: (): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking' | 'editMarkerUI', { enabled: boolean }>; legacyMasterPath?: string; lastBackupAt?: string }> =>
     ipcRenderer.invoke('config:get'),
-  configSet: (partial: Partial<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Partial<Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking', { enabled: boolean }>>; legacyMasterPath?: string; lastBackupAt?: string }>): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking', { enabled: boolean }>; legacyMasterPath?: string; lastBackupAt?: string }> =>
+  configSet: (partial: Partial<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Partial<Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking' | 'editMarkerUI', { enabled: boolean }>>; legacyMasterPath?: string; lastBackupAt?: string }>): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking' | 'editMarkerUI', { enabled: boolean }>; legacyMasterPath?: string; lastBackupAt?: string }> =>
     ipcRenderer.invoke('config:set', partial),
 
   // Profile Switch
@@ -138,6 +138,18 @@ const api = {
     projectPath: string
   ): Promise<{ written: boolean; marker: unknown }> =>
     ipcRenderer.invoke('protocol:autoMark', projectPath),
+  protocolEditMarker: (
+    projectPath: string,
+    edits: {
+      protocol: string
+      revision: string
+      stage: 'stable' | 'beta' | 'alpha' | 'experimental'
+      variant: string | null
+      variant_alias: string | null
+    }
+  ): Promise<unknown> => ipcRenderer.invoke('protocol:editMarker', projectPath, edits),
+  protocolRescanMarker: (projectPath: string): Promise<unknown> =>
+    ipcRenderer.invoke('protocol:rescanMarker', projectPath),
   protocolProfiles: (): Promise<
     {
       id: string

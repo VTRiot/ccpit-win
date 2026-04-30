@@ -78,7 +78,8 @@
           "detectLinkRemove": "DetectLink + Remove (機能 B)",
           "protocolBadge": "プロトコルバッジ (機能 C)",
           "favoriteToggle": "Favorite 星マーク (機能 D)",
-          "autoMarking": "自動マーキング (機能 C 補助)"
+          "autoMarking": "自動マーキング (機能 C 補助)",
+          "editMarkerUI": "Edit Marker UI (機能 E)"
         }
       }
     }
@@ -218,14 +219,8 @@
       "noProjects": "登録済みプロジェクトはありません。",
       "remove": "削除",
       "removeConfirm": "レジストリからこのプロジェクトを削除しますか？ファイルは削除されません。",
-      "status": {
-        "manx": "MANX",
-        "legacy": "レガシー",
-        "uninitialized": "未初期化"
-      },
       "name": "名前",
       "path": "パス",
-      "statusLabel": "ステータス",
       "createdAt": "作成日",
       "createdFiles": "作成ファイル ({{count}})",
       "openFolder": "フォルダを開く",
@@ -331,5 +326,22 @@
       "outputTo": "出力先: {{path}}",
       "saved": "{{path}} に保存しました"
     }
+  },
+  "launchMenu": {
+    "editMarker": "マーカーを編集",
+    "rescanMarker": "マーカーを再スキャン"
+  },
+  "editMarker": {
+    "dialogTitle": "プロトコルマーカーの編集",
+    "fieldProtocol": "Protocol",
+    "fieldRevision": "Revision",
+    "fieldStage": "Stage",
+    "fieldVariant": "Variant",
+    "fieldVariantAlias": "Variant Alias",
+    "notice": "保存すると stage_inferred は false（明示設定値）になります。",
+    "confirmSave": "現在のマーカーを上書きします、よろしいですか?",
+    "confirmRescan": "自動マーキング判定を再実行し、既存マーカーを上書きします、よろしいですか?",
+    "saveButton": "保存",
+    "cancelButton": "キャンセル"
   }
 }

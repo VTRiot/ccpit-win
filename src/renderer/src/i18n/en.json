@@ -78,7 +78,8 @@
           "detectLinkRemove": "DetectLink + Remove (Feature B)",
           "protocolBadge": "Protocol Badge (Feature C)",
           "favoriteToggle": "Favorite Toggle (Feature D)",
-          "autoMarking": "Auto Marking (Feature C aux)"
+          "autoMarking": "Auto Marking (Feature C aux)",
+          "editMarkerUI": "Edit Marker UI (Feature E)"
         }
       }
     }
@@ -218,14 +219,8 @@
       "noProjects": "No projects registered yet.",
       "remove": "Remove",
       "removeConfirm": "Remove this project from the registry? Files will not be deleted.",
-      "status": {
-        "manx": "MANX",
-        "legacy": "Legacy",
-        "uninitialized": "Uninitialized"
-      },
       "name": "Name",
       "path": "Path",
-      "statusLabel": "Status",
       "createdAt": "Created",
       "createdFiles": "Created files ({{count}})",
       "openFolder": "Open folder",
@@ -331,5 +326,22 @@
       "outputTo": "Output to: {{path}}",
       "saved": "Saved to {{path}}"
     }
+  },
+  "launchMenu": {
+    "editMarker": "Edit Marker",
+    "rescanMarker": "Re-scan Marker"
+  },
+  "editMarker": {
+    "dialogTitle": "Edit Protocol Marker",
+    "fieldProtocol": "Protocol",
+    "fieldRevision": "Revision",
+    "fieldStage": "Stage",
+    "fieldVariant": "Variant",
+    "fieldVariantAlias": "Variant Alias",
+    "notice": "Saving sets stage_inferred to false (explicit value).",
+    "confirmSave": "Overwrite the current marker. Continue?",
+    "confirmRescan": "Re-run auto-marking and overwrite the existing marker. Continue?",
+    "saveButton": "Save",
+    "cancelButton": "Cancel"
   }
 }

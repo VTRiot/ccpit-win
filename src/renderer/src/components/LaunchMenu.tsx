@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Play, MoreHorizontal } from 'lucide-react'
+import { Play, MoreHorizontal, Pencil, RotateCw } from 'lucide-react'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from './ui/dropdown-menu'
@@ -26,9 +27,21 @@ import {
 interface LaunchMenuProps {
   projectPath: string
   onLaunched?: (result: { shell: string; spawned: boolean; error?: string }) => void
+  /** FSA r3 §3-1: Edit Marker メニュー項目を表示するか（Feature Flag editMarkerUI）。 */
+  showEditMarker?: boolean
+  /** Edit Marker クリック時のハンドラ。showEditMarker が true のとき必須。 */
+  onEditMarker?: () => void
+  /** Re-scan Marker クリック時のハンドラ。showEditMarker が true のとき必須。 */
+  onRescanMarker?: () => void
 }
 
-export function LaunchMenu({ projectPath, onLaunched }: LaunchMenuProps): React.JSX.Element {
+export function LaunchMenu({
+  projectPath,
+  onLaunched,
+  showEditMarker = false,
+  onEditMarker,
+  onRescanMarker,
+}: LaunchMenuProps): React.JSX.Element {
   const { t } = useTranslation()
   const [opts, setOpts] = useState<LaunchOptions>(DEFAULT_OPTIONS)
   const [launching, setLaunching] = useState(false)
@@ -191,6 +204,26 @@ export function LaunchMenu({ projectPath, onLaunched }: LaunchMenuProps): React.
               </select>
             </div>
           </div>
+
+          {showEditMarker && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={() => onEditMarker?.()}
+                className="cursor-pointer gap-2"
+              >
+                <Pencil size={14} />
+                {t('launchMenu.editMarker')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => onRescanMarker?.()}
+                className="cursor-pointer gap-2"
+              >
+                <RotateCw size={14} />
+                {t('launchMenu.rescanMarker')}
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

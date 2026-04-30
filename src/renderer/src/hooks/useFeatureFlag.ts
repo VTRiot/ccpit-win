@@ -6,6 +6,7 @@ export type FeatureKey =
   | 'protocolBadge'
   | 'favoriteToggle'
   | 'autoMarking'
+  | 'editMarkerUI'
 
 export type FeatureFlags = Record<FeatureKey, { enabled: boolean }>
 
@@ -15,6 +16,7 @@ export const FEATURE_KEYS: readonly FeatureKey[] = [
   'protocolBadge',
   'favoriteToggle',
   'autoMarking',
+  'editMarkerUI',
 ] as const
 
 export const DEFAULT_FEATURES: FeatureFlags = {
@@ -23,6 +25,7 @@ export const DEFAULT_FEATURES: FeatureFlags = {
   protocolBadge: { enabled: true },
   favoriteToggle: { enabled: true },
   autoMarking: { enabled: true },
+  editMarkerUI: { enabled: true },
 }
 
 let cached: FeatureFlags = { ...DEFAULT_FEATURES }

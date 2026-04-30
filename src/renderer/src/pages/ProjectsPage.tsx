@@ -21,22 +21,16 @@ import { LaunchMenu } from '../components/LaunchMenu'
 import { ProjectDiscoveryDialog } from '../components/ProjectDiscoveryDialog'
 import { RemoveFromListDialog } from '../components/RemoveFromListDialog'
 import { ProtocolBadge, type ProtocolMarkerView } from '../components/ProtocolBadge'
+import { EditMarkerDialog, type EditMarkerSubmit } from '../components/EditMarkerDialog'
 import { useFeatureFlag } from '../hooks/useFeatureFlag'
 import { cn, toNativePath } from '../lib/utils'
 
 interface ProjectEntry {
   name: string
   path: string
-  status: string
   createdAt: string
   favorite?: boolean
   location_type?: string
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  manx: 'bg-green-500/10 text-green-500 border-green-500/20',
-  legacy: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-  uninitialized: 'bg-muted text-muted-foreground border-border',
 }
 
 export function ProjectsPage(): React.JSX.Element {
@@ -46,6 +40,7 @@ export function ProjectsPage(): React.JSX.Element {
   const showProtocolBadge = useFeatureFlag('protocolBadge')
   const autoMarkingEnabled = useFeatureFlag('autoMarking')
   const showFavorite = useFeatureFlag('favoriteToggle')
+  const showEditMarkerUI = useFeatureFlag('editMarkerUI')
   const [projects, setProjects] = useState<ProjectEntry[]>([])
   const [showCreate, setShowCreate] = useState(false)
   const [showDiscover, setShowDiscover] = useState(false)
@@ -57,6 +52,8 @@ export function ProjectsPage(): React.JSX.Element {
   const [launchMessage, setLaunchMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
   const [markers, setMarkers] = useState<Record<string, ProtocolMarkerView | null>>({})
   const [scanningMarkers, setScanningMarkers] = useState(false)
+  const [editMarkerOpen, setEditMarkerOpen] = useState(false)
+  const [editingPath, setEditingPath] = useState<string | null>(null)
 
   const handleLaunched = (result: { shell: string; spawned: boolean; error?: string }): void => {
     if (result.spawned) {
@@ -155,6 +152,23 @@ export function ProjectsPage(): React.JSX.Element {
 
   const handleOpenFolder = async (path: string): Promise<void> => {
     await window.api.openPath(path)
+  }
+
+  const handleOpenEditMarker = (path: string): void => {
+    setEditingPath(path)
+    setEditMarkerOpen(true)
+  }
+
+  const handleSubmitEditMarker = async (edits: EditMarkerSubmit): Promise<void> => {
+    if (!editingPath) return
+    const updated = (await window.api.protocolEditMarker(editingPath, edits)) as ProtocolMarkerView
+    setMarkers((prev) => ({ ...prev, [editingPath]: updated }))
+  }
+
+  const handleRescanMarker = async (path: string): Promise<void> => {
+    if (!confirm(t('editMarker.confirmRescan'))) return
+    const updated = (await window.api.protocolRescanMarker(path)) as ProtocolMarkerView
+    setMarkers((prev) => ({ ...prev, [path]: updated }))
   }
 
   return (
@@ -268,6 +282,19 @@ export function ProjectsPage(): React.JSX.Element {
         />
       )}
 
+      {/* Edit Marker Dialog */}
+      {showEditMarkerUI && (
+        <EditMarkerDialog
+          open={editMarkerOpen}
+          onOpenChange={(o) => {
+            setEditMarkerOpen(o)
+            if (!o) setEditingPath(null)
+          }}
+          current={editingPath ? (markers[editingPath] ?? null) : null}
+          onSubmit={handleSubmitEditMarker}
+        />
+      )}
+
       {/* Project List */}
       {projects.length === 0 ? (
         <Card>
@@ -306,9 +333,6 @@ export function ProjectsPage(): React.JSX.Element {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="font-medium">{project.name}</span>
-                    <span className={cn('text-xs px-2 py-0.5 rounded-full border', STATUS_COLORS[project.status] || STATUS_COLORS.uninitialized)}>
-                      {t(`pages.projects.status.${project.status}`)}
-                    </span>
                     {showProtocolBadge && (
                       <ProtocolBadge
                         marker={markers[project.path]}
@@ -319,7 +343,13 @@ export function ProjectsPage(): React.JSX.Element {
                   <div className="text-xs text-muted-foreground font-mono truncate">{toNativePath(project.path)}</div>
                 </div>
                 {showLaunchButton && (
-                  <LaunchMenu projectPath={project.path} onLaunched={handleLaunched} />
+                  <LaunchMenu
+                    projectPath={project.path}
+                    onLaunched={handleLaunched}
+                    showEditMarker={showEditMarkerUI}
+                    onEditMarker={() => handleOpenEditMarker(project.path)}
+                    onRescanMarker={() => void handleRescanMarker(project.path)}
+                  />
                 )}
                 <Button
                   variant="ghost"
