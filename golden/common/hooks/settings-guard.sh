@@ -16,7 +16,7 @@ if echo "$FILE_PATH" | grep -qE '(settings\.json|settings\.local\.json)'; then
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
     "permissionDecision": "deny",
-    "permissionDecisionReason": "settings.json の編集は禁止されています（hooks 二重防壁）。ルール変更が必要な場合はらいお（人間）に直接依頼してください。"
+    "permissionDecisionReason": "settings.json の編集は禁止されています（hooks 二重防壁）。ルール変更が必要な場合はユーザー（人間）に直接依頼してください。"
   }
 }
 EOF
