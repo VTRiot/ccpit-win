@@ -5,6 +5,14 @@ description: Fires when investigating root causes or bugs. Performs exhaustive c
 
 # Investigation Skill
 
+## ⚠️ When Debugging
+
+This skill is the **procedural discipline of investigation** (counter-evidence checks, exhaustive code-path enumeration, the no-guessing rule). It is NOT a symptom-indexed catalog of failure modes.
+
+When you observe a bug, defect, or unexpected behavior, fire the **`debug-toolkit`** skill in parallel and look up the menu of known failure modes (FMs) by symptom.
+
+But the `debug-toolkit` menu is also **not exhaustive**. When you encounter a symptom that is not on the menu, do **not** force-fit it to the closest FM (no heuristic over-fit). Build your own SST (Special Service Tool) when needed, and propose adding the technique to `debug-toolkit` in your completion report if it is generalizable.
+
 ## Trigger
 Fires whenever you are investigating a root cause, debugging, or isolating a problem.
 
