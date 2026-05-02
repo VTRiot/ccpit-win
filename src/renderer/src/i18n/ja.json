@@ -35,6 +35,7 @@
     "recoveryKit": "Recovery Kit",
     "snapshotPath": "スナップショット保存先",
     "doctorAnalysis": "Doctor Analysis",
+    "requestInbox": "CC リクエスト・インボックス",
     "doctorPackOutput": "Doctor Pack 出力先",
     "desktop": "デスクトップ",
     "customPath": "カスタムパス",
@@ -325,6 +326,56 @@
       "packPreview": "Pack プレビュー",
       "outputTo": "出力先: {{path}}",
       "saved": "{{path}} に保存しました"
+    }
+  },
+  "requestInbox": {
+    "title": "CC リクエスト・インボックス",
+    "description": "Claude Code (CC) が出力した settings.json への変更案を適用します。",
+    "openRequest": "リクエストファイルを開く...",
+    "parseError": "リクエストファイルの解析に失敗しました",
+    "jsonError": "提案された JSON が不正です",
+    "applying": "適用中...",
+    "apply": "適用する",
+    "empty": {
+      "line1": "まだリクエストが読み込まれていません。",
+      "line2": "CC は通常以下のパスにリクエストを書き出します:"
+    },
+    "detail": {
+      "title": "リクエスト詳細",
+      "purpose": "目的",
+      "requestId": "リクエスト ID",
+      "createdAt": "作成日時",
+      "target": "対象",
+      "status": "ステータス",
+      "filePath": "ファイル"
+    },
+    "diff": {
+      "title": "差分（現在の settings.json vs 変更案）"
+    },
+    "auth": {
+      "title": "認証",
+      "required": "auth.password が登録されています。適用するにはパスワードを入力してください。",
+      "notSet": "auth.password が未設定です。パスワード検証なしで適用されます。",
+      "placeholder": "settings.json に登録されたパスワードを入力"
+    },
+    "result": {
+      "success": "適用に成功しました",
+      "rolledBack": "適用に失敗 — 自動ロールバックを実行しました",
+      "failed": "適用に失敗しました",
+      "appliedAt": "適用日時",
+      "backup": "バックアップ"
+    },
+    "logs": {
+      "title": "変更ログ",
+      "empty": "変更ログはまだありません。"
+    },
+    "rollback": {
+      "title": "バックアップから復元",
+      "empty": "バックアップはまだありません。",
+      "button": "復元",
+      "confirm": "このバックアップから settings.json を復元します。続行しますか？",
+      "success": "復元が完了しました。",
+      "failed": "復元に失敗しました"
     }
   },
   "launchMenu": {

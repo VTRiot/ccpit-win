@@ -6,6 +6,10 @@ created_at: 2026-04-30
 
 # debug-report-gate hook 登録ガイド
 
+> **CCPIT GUI が利用可能な環境では、本手動手順より `CC Request Inbox` 機能の利用を推奨する。**
+> CC が `settings-change-request-emitter` skill で変更案 MD を出力 → CCPIT の CC Request Inbox タブから Apply の流れで、本ガイドの全手順（バックアップ・編集・構文確認・動作確認）が GUI のクリック数アクションに圧縮される。
+> 本ガイドは CCPIT が使えない環境向けの手動手順として残してある。
+
 ## 概要
 
 debug-toolkit skill の強制インターロックを有効化するため、`debug-report-gate.sh` を Claude Code の Stop hook として `settings.json` に登録する。本ガイドは **ユーザー（人間）** が実施する手順を示す。CC は `settings.json` を直接編集できないため、登録作業は人間が行う。

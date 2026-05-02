@@ -8,7 +8,7 @@ import {
   importToGolden,
   importPitFile,
   deployPitFile,
-  type PitEntry,
+  type PitEntry
 } from './services/migration'
 import {
   listProjects,
@@ -17,11 +17,17 @@ import {
   importProjects,
   removeProjectsFromList,
   listManagedPaths,
-  setFavorite,
+  setFavorite
 } from './services/projects'
 import { discoverClaudeProjects } from './services/projectDiscovery'
 import { runHealthCheck, getDenyList, checkCcCli } from './services/health'
-import { takeSnapshot, listSnapshots, markKnownGood, diffSnapshot, softRestore } from './services/recovery'
+import {
+  takeSnapshot,
+  listSnapshots,
+  markKnownGood,
+  diffSnapshot,
+  softRestore
+} from './services/recovery'
 import { generateDoctorPack, saveDoctorPack, getDefaultOutputDir } from './services/doctor'
 import { getConfig, setConfig, getParcFermeDir } from './services/appConfig'
 import { getState as profileGetState, switchToLegacy, switchToManx } from './services/profileSwitch'
@@ -34,8 +40,18 @@ import {
   getAvailableProfiles,
   buildExplicitMarker,
   type ProtocolMarker,
-  type EditMarkerInput,
+  type EditMarkerInput
 } from './services/protocol'
+import {
+  readSettingsJson,
+  parseChangeRequestMd,
+  applyChange,
+  listChangeLogs,
+  listSettingsBackups,
+  rollbackToBackup,
+  hasPasswordRegistered,
+  type ChangeRequest
+} from './services/settingsChange'
 
 const GOLDEN_DIR = app.isPackaged
   ? join(process.resourcesPath, 'golden')
@@ -59,12 +75,8 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('migration:importToGolden', (_e, blocks, templateName: string) =>
     importToGolden(blocks, GOLDEN_DIR, templateName)
   )
-  ipcMain.handle('migration:importPit', (_e, filePath: string) =>
-    importPitFile(filePath)
-  )
-  ipcMain.handle('migration:deployPit', (_e, entries: PitEntry[]) =>
-    deployPitFile(entries)
-  )
+  ipcMain.handle('migration:importPit', (_e, filePath: string) => importPitFile(filePath))
+  ipcMain.handle('migration:deployPit', (_e, entries: PitEntry[]) => deployPitFile(entries))
 
   // --- Projects ---
   ipcMain.handle('projects:list', () => listProjects())
@@ -77,9 +89,7 @@ export function registerIpcHandlers(): void {
     return discoverClaudeProjects(rootPath, managed)
   })
   ipcMain.handle('projects:import', (_e, paths: string[]) => importProjects(paths))
-  ipcMain.handle('projects:removeFromList', (_e, paths: string[]) =>
-    removeProjectsFromList(paths)
-  )
+  ipcMain.handle('projects:removeFromList', (_e, paths: string[]) => removeProjectsFromList(paths))
   ipcMain.handle('projects:setFavorite', (_e, projectPath: string, favorite: boolean) =>
     setFavorite(projectPath, favorite)
   )
@@ -116,7 +126,7 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('dialog:selectFile', async () => {
     const result = await dialog.showOpenDialog({
       properties: ['openFile'],
-      filters: [{ name: 'Markdown', extensions: ['md', 'txt'] }],
+      filters: [{ name: 'Markdown', extensions: ['md', 'txt'] }]
     })
     return result.canceled ? null : result.filePaths[0]
   })
@@ -124,7 +134,7 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('dialog:selectPitFile', async () => {
     const result = await dialog.showOpenDialog({
       properties: ['openFile'],
-      filters: [{ name: 'PIT File', extensions: ['pit'] }],
+      filters: [{ name: 'PIT File', extensions: ['pit'] }]
     })
     return result.canceled ? null : result.filePaths[0]
   })
@@ -161,14 +171,11 @@ export function registerIpcHandlers(): void {
     return { written: true, marker }
   })
   // FSA r3 §3-3 — Edit Marker 保存。明示設定値として書き換える。
-  ipcMain.handle(
-    'protocol:editMarker',
-    async (_e, projectPath: string, edits: EditMarkerInput) => {
-      const marker = buildExplicitMarker(edits, new Date())
-      await writeProtocol(projectPath, marker, { force: true })
-      return marker
-    }
-  )
+  ipcMain.handle('protocol:editMarker', async (_e, projectPath: string, edits: EditMarkerInput) => {
+    const marker = buildExplicitMarker(edits, new Date())
+    await writeProtocol(projectPath, marker, { force: true })
+    return marker
+  })
   // FSA r3 §3-5 — Re-scan Marker。既存マーカーを上書きして再スキャン。
   ipcMain.handle('protocol:rescanMarker', async (_e, projectPath: string) => {
     const marker = await detectProtocol(projectPath, { force: true })
@@ -180,6 +187,17 @@ export function registerIpcHandlers(): void {
     const profiles = await loadProfiles()
     return getAvailableProfiles(profiles, cfg.debugMode)
   })
+
+  // --- Settings Change (CC Request Inbox, 031) ---
+  ipcMain.handle('settings:read', () => readSettingsJson())
+  ipcMain.handle('settings:hasPassword', () => hasPasswordRegistered())
+  ipcMain.handle('settings:readRequest', (_e, filePath: string) => parseChangeRequestMd(filePath))
+  ipcMain.handle('settings:applyChange', (_e, request: ChangeRequest, password: string) =>
+    applyChange(request, password)
+  )
+  ipcMain.handle('settings:listLogs', () => listChangeLogs())
+  ipcMain.handle('settings:listBackups', () => listSettingsBackups())
+  ipcMain.handle('settings:rollback', (_e, backupId: string) => rollbackToBackup(backupId))
 
   // --- Developer Tools (Tier S) ---
   ipcMain.handle('dev:getCcpitDir', () => getParcFermeDir())

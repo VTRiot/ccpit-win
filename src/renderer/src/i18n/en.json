@@ -35,6 +35,7 @@
     "recoveryKit": "Recovery Kit",
     "snapshotPath": "Snapshot save path",
     "doctorAnalysis": "Doctor Analysis",
+    "requestInbox": "CC Request Inbox",
     "doctorPackOutput": "Doctor Pack output",
     "desktop": "Desktop",
     "customPath": "Custom path",
@@ -325,6 +326,56 @@
       "packPreview": "Pack Preview",
       "outputTo": "Output to: {{path}}",
       "saved": "Saved to {{path}}"
+    }
+  },
+  "requestInbox": {
+    "title": "CC Request Inbox",
+    "description": "Apply settings.json change requests emitted by Claude Code (CC).",
+    "openRequest": "Open Request File...",
+    "parseError": "Failed to parse the request file",
+    "jsonError": "Proposed JSON is invalid",
+    "applying": "Applying...",
+    "apply": "Apply",
+    "empty": {
+      "line1": "No request loaded yet.",
+      "line2": "CC writes requests under your project, e.g.:"
+    },
+    "detail": {
+      "title": "Request Details",
+      "purpose": "Purpose",
+      "requestId": "Request ID",
+      "createdAt": "Created at",
+      "target": "Target",
+      "status": "Status",
+      "filePath": "File"
+    },
+    "diff": {
+      "title": "Diff (current settings.json vs proposed)"
+    },
+    "auth": {
+      "title": "Authentication",
+      "required": "auth.password is registered. Enter it to apply.",
+      "notSet": "auth.password is not set. Apply will run without password verification.",
+      "placeholder": "Enter the password registered in settings.json"
+    },
+    "result": {
+      "success": "Applied successfully",
+      "rolledBack": "Apply failed — rolled back automatically",
+      "failed": "Apply failed",
+      "appliedAt": "Applied at",
+      "backup": "Backup"
+    },
+    "logs": {
+      "title": "Change Logs",
+      "empty": "No change logs yet."
+    },
+    "rollback": {
+      "title": "Rollback to a Backup",
+      "empty": "No backups yet.",
+      "button": "Rollback",
+      "confirm": "Restore settings.json from this backup. Continue?",
+      "success": "Rollback complete.",
+      "failed": "Rollback failed"
     }
   },
   "launchMenu": {
