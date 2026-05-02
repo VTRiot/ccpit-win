@@ -4,9 +4,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 const api = {
   // Golden
   goldenList: (): Promise<string[]> => ipcRenderer.invoke('golden:list'),
-  goldenPreview: (
-    templateName: string
-  ): Promise<{ relativePath: string; source: string }[]> =>
+  goldenPreview: (templateName: string): Promise<{ relativePath: string; source: string }[]> =>
     ipcRenderer.invoke('golden:preview', templateName),
   goldenDeploy: (
     templateName: string,
@@ -26,7 +24,13 @@ const api = {
     { path: string; name: string; lines: number; sizeBytes: number; category: string }[]
   > => ipcRenderer.invoke('migration:scan', projectPath),
   migrationGeneratePack: (
-    scannedFiles: { path: string; name: string; lines: number; sizeBytes: number; category: string }[]
+    scannedFiles: {
+      path: string
+      name: string
+      lines: number
+      sizeBytes: number
+      category: string
+    }[]
   ): Promise<string> => ipcRenderer.invoke('migration:generatePack', scannedFiles),
   migrationParseImport: (
     mdContent: string
@@ -55,9 +59,8 @@ const api = {
     ipcRenderer.invoke('migration:deployPit', entries),
 
   // Projects
-  projectsList: (): Promise<
-    { name: string; path: string; status: string; createdAt: string }[]
-  > => ipcRenderer.invoke('projects:list'),
+  projectsList: (): Promise<{ name: string; path: string; status: string; createdAt: string }[]> =>
+    ipcRenderer.invoke('projects:list'),
   projectsCreate: (
     projectPath: string,
     projectName: string
@@ -68,7 +71,13 @@ const api = {
   projectsDiscover: (
     rootPath: string
   ): Promise<
-    { path: string; name: string; hasClaudeMd: boolean; hasCcpitDir: boolean; alreadyManaged: boolean }[]
+    {
+      path: string
+      name: string
+      hasClaudeMd: boolean
+      hasCcpitDir: boolean
+      alreadyManaged: boolean
+    }[]
   > => ipcRenderer.invoke('projects:discover', rootPath),
   projectsImport: (
     paths: string[]
@@ -80,15 +89,37 @@ const api = {
     ipcRenderer.invoke('projects:setFavorite', projectPath, favorite),
 
   // Recovery Kit
-  rkSnapshot: (): Promise<{ id: string; timestamp: string; knownGood: boolean; label: 'manual' | 'pre-restore' | 'post-restore'; fileCount: number }> =>
-    ipcRenderer.invoke('rk:snapshot'),
-  rkList: (): Promise<{ id: string; timestamp: string; knownGood: boolean; label: 'manual' | 'pre-restore' | 'post-restore'; fileCount: number }[]> =>
-    ipcRenderer.invoke('rk:list'),
+  rkSnapshot: (): Promise<{
+    id: string
+    timestamp: string
+    knownGood: boolean
+    label: 'manual' | 'pre-restore' | 'post-restore'
+    fileCount: number
+  }> => ipcRenderer.invoke('rk:snapshot'),
+  rkList: (): Promise<
+    {
+      id: string
+      timestamp: string
+      knownGood: boolean
+      label: 'manual' | 'pre-restore' | 'post-restore'
+      fileCount: number
+    }[]
+  > => ipcRenderer.invoke('rk:list'),
   rkMarkKnownGood: (id: string): Promise<void> => ipcRenderer.invoke('rk:markKnownGood', id),
-  rkDiff: (id: string): Promise<
-    { relativePath: string; risk: string; status: string; currentContent?: string; snapshotContent?: string }[]
+  rkDiff: (
+    id: string
+  ): Promise<
+    {
+      relativePath: string
+      risk: string
+      status: string
+      currentContent?: string
+      snapshotContent?: string
+    }[]
   > => ipcRenderer.invoke('rk:diff', id),
-  rkRestore: (id: string): Promise<{ quarantinePath: string; restoredFiles: string[]; errors: string[] }> =>
+  rkRestore: (
+    id: string
+  ): Promise<{ quarantinePath: string; restoredFiles: string[]; errors: string[] }> =>
     ipcRenderer.invoke('rk:restore', id),
 
   // Doctor Analysis
@@ -98,45 +129,101 @@ const api = {
   daDefaultOutputDir: (): Promise<string> => ipcRenderer.invoke('da:defaultOutputDir'),
 
   // Health
-  healthCheck: (): Promise<
-    { name: string; status: string; detail: string }[]
-  > => ipcRenderer.invoke('health:check'),
+  healthCheck: (): Promise<{ name: string; status: string; detail: string }[]> =>
+    ipcRenderer.invoke('health:check'),
   healthDenyList: (): Promise<string[]> => ipcRenderer.invoke('health:denyList'),
   healthCcCli: (): Promise<boolean> => ipcRenderer.invoke('health:ccCli'),
 
   // App Config
-  configGet: (): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking' | 'editMarkerUI', { enabled: boolean }>; legacyMasterPath?: string; lastBackupAt?: string }> =>
-    ipcRenderer.invoke('config:get'),
-  configSet: (partial: Partial<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Partial<Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking' | 'editMarkerUI', { enabled: boolean }>>; legacyMasterPath?: string; lastBackupAt?: string }>): Promise<{ splashDurationMs: number; splashRareChance: number; debugMode: boolean; setupCompleted: boolean; language: 'ja' | 'en'; currentProfile: 'manx' | 'legacy'; features: Record<'ccLaunchButton' | 'detectLinkRemove' | 'protocolBadge' | 'favoriteToggle' | 'autoMarking' | 'editMarkerUI', { enabled: boolean }>; legacyMasterPath?: string; lastBackupAt?: string }> =>
-    ipcRenderer.invoke('config:set', partial),
+  configGet: (): Promise<{
+    splashDurationMs: number
+    splashRareChance: number
+    debugMode: boolean
+    setupCompleted: boolean
+    language: 'ja' | 'en'
+    currentProfile: 'manx' | 'legacy'
+    features: Record<
+      | 'ccLaunchButton'
+      | 'detectLinkRemove'
+      | 'protocolBadge'
+      | 'favoriteToggle'
+      | 'autoMarking'
+      | 'editMarkerUI',
+      { enabled: boolean }
+    >
+    legacyMasterPath?: string
+    lastBackupAt?: string
+  }> => ipcRenderer.invoke('config:get'),
+  configSet: (
+    partial: Partial<{
+      splashDurationMs: number
+      splashRareChance: number
+      debugMode: boolean
+      setupCompleted: boolean
+      language: 'ja' | 'en'
+      currentProfile: 'manx' | 'legacy'
+      features: Partial<
+        Record<
+          | 'ccLaunchButton'
+          | 'detectLinkRemove'
+          | 'protocolBadge'
+          | 'favoriteToggle'
+          | 'autoMarking'
+          | 'editMarkerUI',
+          { enabled: boolean }
+        >
+      >
+      legacyMasterPath?: string
+      lastBackupAt?: string
+    }>
+  ): Promise<{
+    splashDurationMs: number
+    splashRareChance: number
+    debugMode: boolean
+    setupCompleted: boolean
+    language: 'ja' | 'en'
+    currentProfile: 'manx' | 'legacy'
+    features: Record<
+      | 'ccLaunchButton'
+      | 'detectLinkRemove'
+      | 'protocolBadge'
+      | 'favoriteToggle'
+      | 'autoMarking'
+      | 'editMarkerUI',
+      { enabled: boolean }
+    >
+    legacyMasterPath?: string
+    lastBackupAt?: string
+  }> => ipcRenderer.invoke('config:set', partial),
 
   // Profile Switch
-  profileGetState: (): Promise<{ currentProfile: 'manx' | 'legacy'; lastBackupAt?: string; backupDir: string; claudeDir: string; legacyMasterPath?: string }> =>
-    ipcRenderer.invoke('profile:getState'),
+  profileGetState: (): Promise<{
+    currentProfile: 'manx' | 'legacy'
+    lastBackupAt?: string
+    backupDir: string
+    claudeDir: string
+    legacyMasterPath?: string
+  }> => ipcRenderer.invoke('profile:getState'),
   profileSwitchToLegacy: (): Promise<{ backupPath: string; legacyClaudeMdPath: string }> =>
     ipcRenderer.invoke('profile:switchToLegacy'),
   profileSwitchToManx: (): Promise<{ restoredPaths: string[] }> =>
     ipcRenderer.invoke('profile:switchToManx'),
 
   // CC Launch
-  ccLaunch: (
-    args: { projectPath: string; flags: string[] }
-  ): Promise<{ shell: string; spawned: boolean; error?: string }> =>
+  ccLaunch: (args: {
+    projectPath: string
+    flags: string[]
+  }): Promise<{ shell: string; spawned: boolean; error?: string }> =>
     ipcRenderer.invoke('cc:launch', args),
 
   // Protocol Marker
   protocolRead: (projectPath: string): Promise<unknown> =>
     ipcRenderer.invoke('protocol:read', projectPath),
-  protocolWrite: (
-    projectPath: string,
-    marker: unknown,
-    force?: boolean
-  ): Promise<void> => ipcRenderer.invoke('protocol:write', projectPath, marker, force),
+  protocolWrite: (projectPath: string, marker: unknown, force?: boolean): Promise<void> =>
+    ipcRenderer.invoke('protocol:write', projectPath, marker, force),
   protocolDetect: (projectPath: string): Promise<unknown> =>
     ipcRenderer.invoke('protocol:detect', projectPath),
-  protocolAutoMark: (
-    projectPath: string
-  ): Promise<{ written: boolean; marker: unknown }> =>
+  protocolAutoMark: (projectPath: string): Promise<{ written: boolean; marker: unknown }> =>
     ipcRenderer.invoke('protocol:autoMark', projectPath),
   protocolEditMarker: (
     projectPath: string,
@@ -163,6 +250,50 @@ const api = {
     }[]
   > => ipcRenderer.invoke('protocol:profiles'),
 
+  // Settings Change (CC Request Inbox, 031)
+  settingsRead: (): Promise<string> => ipcRenderer.invoke('settings:read'),
+  settingsHasPassword: (): Promise<boolean> => ipcRenderer.invoke('settings:hasPassword'),
+  settingsReadRequest: (
+    filePath: string
+  ): Promise<{
+    filePath: string
+    frontmatter: {
+      request_id: string
+      created_at: string
+      purpose: string
+      target: string
+      status: 'pending' | 'applied' | 'rolled_back' | 'rejected'
+    }
+    rawMarkdown: string
+    proposedSettingsJson: string
+    proposedSettingsParsed: unknown | null
+    parseError: string | null
+  }> => ipcRenderer.invoke('settings:readRequest', filePath),
+  settingsApplyChange: (
+    request: unknown,
+    password: string
+  ): Promise<{
+    success: boolean
+    backupPath?: string
+    appliedAt?: string
+    error?: string
+    rolledBack?: boolean
+  }> => ipcRenderer.invoke('settings:applyChange', request, password),
+  settingsListLogs: (): Promise<
+    {
+      timestamp: string
+      request_id: string
+      purpose: string
+      result: 'applied' | 'rolled_back' | 'failed'
+      backup_path: string
+      error?: string
+    }[]
+  > => ipcRenderer.invoke('settings:listLogs'),
+  settingsListBackups: (): Promise<{ id: string; path: string; sizeBytes: number }[]> =>
+    ipcRenderer.invoke('settings:listBackups'),
+  settingsRollback: (backupId: string): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('settings:rollback', backupId),
+
   // Developer Tools
   devGetCcpitDir: (): Promise<string> => ipcRenderer.invoke('dev:getCcpitDir'),
   devGetClaudeDir: (): Promise<string> => ipcRenderer.invoke('dev:getClaudeDir'),
@@ -174,8 +305,9 @@ const api = {
   selectFile: (): Promise<string | null> => ipcRenderer.invoke('dialog:selectFile'),
   selectPitFile: (): Promise<string | null> => ipcRenderer.invoke('dialog:selectPitFile'),
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:openExternal', url),
-  openPath: (folderPath: string): Promise<string> => ipcRenderer.invoke('shell:openPath', folderPath),
-  clipboardWrite: (text: string): Promise<void> => ipcRenderer.invoke('clipboard:write', text),
+  openPath: (folderPath: string): Promise<string> =>
+    ipcRenderer.invoke('shell:openPath', folderPath),
+  clipboardWrite: (text: string): Promise<void> => ipcRenderer.invoke('clipboard:write', text)
 }
 
 if (process.contextIsolated) {

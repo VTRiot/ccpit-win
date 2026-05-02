@@ -6,6 +6,10 @@ created_at: 2026-04-30
 
 # debug-report-gate Hook Registration Guide
 
+> **When CCPIT GUI is available, prefer the `CC Request Inbox` feature over the manual procedure below.**
+> Have CC emit a change-request MD via the `settings-change-request-emitter` skill, then load it from the CC Request Inbox tab in CCPIT and click Apply. The entire procedure (backup, edit, syntax check, post-write verification) collapses to a few GUI clicks.
+> This guide remains as the manual fallback for environments without CCPIT.
+
 ## Overview
 
 To activate the hard interlock of the debug-toolkit skill, register `debug-report-gate.sh` as a Stop hook in Claude Code's `settings.json`. This guide describes the steps the **user (human)** performs. CC cannot edit `settings.json` directly, so registration must be done by a person.
