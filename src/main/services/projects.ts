@@ -2,9 +2,30 @@
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { app } from 'electron'
+import {
+  resolveDirCreatedAt,
+  runCreatedAtToCtimeMigration,
+  type MigrationNotice,
+  type ProjectsMigrationPaths
+} from './projectsMigration'
 
 const CCPIT_DIR = join(app.getPath('home'), '.ccpit')
 const PROJECTS_FILE = join(CCPIT_DIR, 'projects.json')
+const MIGRATIONS_FILE = join(CCPIT_DIR, 'migrations.json')
+
+const MIGRATION_PATHS: ProjectsMigrationPaths = {
+  parcFermeDir: CCPIT_DIR,
+  projectsFile: PROJECTS_FILE,
+  migrationsFile: MIGRATIONS_FILE
+}
+
+let pendingMigrationNotice: MigrationNotice | null = null
+
+export function consumePendingMigrationNotice(): MigrationNotice | null {
+  const notice = pendingMigrationNotice
+  pendingMigrationNotice = null
+  return notice
+}
 
 export type LocationType = 'local' | 'remote-readonly' | 'remote-full'
 
@@ -28,6 +49,10 @@ async function ensureDir(dir: string): Promise<void> {
 /** projects.json を読み込む */
 export async function loadProjects(): Promise<ProjectEntry[]> {
   await ensureDir(CCPIT_DIR)
+  const notice = await runCreatedAtToCtimeMigration(MIGRATION_PATHS)
+  if (notice) {
+    pendingMigrationNotice = notice
+  }
   if (!existsSync(PROJECTS_FILE)) return []
   const content = await readFile(PROJECTS_FILE, 'utf-8')
   return JSON.parse(content)
@@ -66,19 +91,19 @@ export async function createProject(
   const filesToCreate: { path: string; content: string }[] = [
     {
       path: join(projectPath, 'CLAUDE.md'),
-      content: P4_TEMPLATE.replace('{{PROJECT_NAME}}', projectName),
+      content: P4_TEMPLATE.replace('{{PROJECT_NAME}}', projectName)
     },
     {
       path: join(projectPath, 'CLAUDE.local.md'),
-      content: `# CLAUDE.local.md — ${projectName}\n\n> ローカル固有設定。Git にコミットしない。\n`,
-    },
+      content: `# CLAUDE.local.md — ${projectName}\n\n> ローカル固有設定。Git にコミットしない。\n`
+    }
   ]
 
   const dirsToCreate = [
     join(projectPath, '.claude', 'rules'),
     join(projectPath, '_Prompt', '_Prj'),
     join(projectPath, '_Prompt', '_fromdesignai'),
-    join(projectPath, '_Prompt', '_frombuilderai'),
+    join(projectPath, '_Prompt', '_frombuilderai')
   ]
 
   // ディレクトリ作成
@@ -114,9 +139,9 @@ export async function createProject(
     const entry: ProjectEntry = {
       name: projectName,
       path: projectPath,
-      createdAt: new Date().toISOString(),
+      createdAt: await resolveDirCreatedAt(projectPath),
       location_type: 'local',
-      favorite: false,
+      favorite: false
     }
     if (existing >= 0) {
       projects[existing] = entry
@@ -149,7 +174,6 @@ export async function removeProject(projectPath: string): Promise<void> {
 export async function importProjects(paths: string[]): Promise<ProjectEntry[]> {
   const projects = await loadProjects()
   const existingSet = new Set(projects.map((p) => p.path.toLowerCase()))
-  const now = new Date().toISOString()
 
   const added: ProjectEntry[] = []
   for (const projectPath of paths) {
@@ -159,9 +183,9 @@ export async function importProjects(paths: string[]): Promise<ProjectEntry[]> {
     const entry: ProjectEntry = {
       name,
       path: projectPath,
-      createdAt: now,
+      createdAt: await resolveDirCreatedAt(projectPath),
       location_type: 'local',
-      favorite: false,
+      favorite: false
     }
     projects.push(entry)
     added.push(entry)
@@ -177,9 +201,7 @@ export async function importProjects(paths: string[]): Promise<ProjectEntry[]> {
  * 複数の PJ パスを一括でリストから外す。
  * ファイルシステム操作は一切行わない（PJ 本体は無傷）。
  */
-export async function removeProjectsFromList(
-  paths: string[]
-): Promise<{ removed: string[] }> {
+export async function removeProjectsFromList(paths: string[]): Promise<{ removed: string[] }> {
   const projects = await loadProjects()
   const targetSet = new Set(paths.map((p) => p.toLowerCase()))
   const filtered = projects.filter((p) => !targetSet.has(p.path.toLowerCase()))

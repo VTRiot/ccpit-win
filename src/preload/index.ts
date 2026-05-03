@@ -87,6 +87,8 @@ const api = {
     ipcRenderer.invoke('projects:removeFromList', paths),
   projectsSetFavorite: (projectPath: string, favorite: boolean): Promise<void> =>
     ipcRenderer.invoke('projects:setFavorite', projectPath, favorite),
+  projectsConsumeMigrationNotice: (): Promise<{ migrated: number; total: number } | null> =>
+    ipcRenderer.invoke('projects:consumeMigrationNotice'),
 
   // Recovery Kit
   rkSnapshot: (): Promise<{

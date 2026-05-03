@@ -218,6 +218,7 @@
       "createSuccess": "Project created successfully",
       "createError": "Error creating project",
       "noProjects": "No projects registered yet.",
+      "noFavorites": "No favorites yet",
       "remove": "Remove",
       "removeConfirm": "Remove this project from the registry? Files will not be deleted.",
       "name": "Name",
@@ -251,6 +252,20 @@
       "favorite": {
         "favorite": "Add to favorites",
         "unfavorite": "Remove from favorites"
+      },
+      "filter": {
+        "favoritesOnly": "★ Favorites only"
+      },
+      "sort": {
+        "label": "Sort",
+        "dateDesc": "Newest first",
+        "dateAsc": "Oldest first",
+        "nameAsc": "Name (A-Z)",
+        "nameDesc": "Name (Z-A)",
+        "favoritesFirst": "Favorites first"
+      },
+      "migration": {
+        "createdAtUpdated": "Project list updated ({{count}} items)"
       },
       "launch": {
         "launch": "Launch",

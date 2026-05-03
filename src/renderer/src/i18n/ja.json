@@ -218,6 +218,7 @@
       "createSuccess": "プロジェクトを作成しました",
       "createError": "プロジェクト作成エラー",
       "noProjects": "登録済みプロジェクトはありません。",
+      "noFavorites": "★ お気に入りがありません",
       "remove": "削除",
       "removeConfirm": "レジストリからこのプロジェクトを削除しますか？ファイルは削除されません。",
       "name": "名前",
@@ -251,6 +252,20 @@
       "favorite": {
         "favorite": "お気に入りに追加",
         "unfavorite": "お気に入り解除"
+      },
+      "filter": {
+        "favoritesOnly": "★ お気に入りのみ"
+      },
+      "sort": {
+        "label": "並び順",
+        "dateDesc": "新しい順",
+        "dateAsc": "古い順",
+        "nameAsc": "名前順 (A-Z)",
+        "nameDesc": "名前順 (Z-A)",
+        "favoritesFirst": "★ 優先"
+      },
+      "migration": {
+        "createdAtUpdated": "プロジェクト一覧を更新しました（{{count}} 件）"
       },
       "launch": {
         "launch": "起動",
