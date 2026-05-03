@@ -12,11 +12,21 @@ import {
   ListMinus,
   RefreshCw,
   Star,
+  ChevronDown,
 } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { Checkbox } from '../components/ui/checkbox'
+import { Toast } from '../components/ui/toast'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from '../components/ui/dropdown-menu'
 import { LaunchMenu } from '../components/LaunchMenu'
 import { ProjectDiscoveryDialog } from '../components/ProjectDiscoveryDialog'
 import { RemoveFromListDialog } from '../components/RemoveFromListDialog'
@@ -24,6 +34,14 @@ import { ProtocolBadge, type ProtocolMarkerView } from '../components/ProtocolBa
 import { EditMarkerDialog, type EditMarkerSubmit } from '../components/EditMarkerDialog'
 import { useFeatureFlag } from '../hooks/useFeatureFlag'
 import { cn, toNativePath } from '../lib/utils'
+import {
+  applyProjectsView,
+  loadProjectsViewState,
+  saveProjectsViewState,
+  SORT_MODES,
+  type ProjectsViewState,
+  type SortMode,
+} from '../lib/projectsView'
 
 interface ProjectEntry {
   name: string
@@ -54,6 +72,17 @@ export function ProjectsPage(): React.JSX.Element {
   const [scanningMarkers, setScanningMarkers] = useState(false)
   const [editMarkerOpen, setEditMarkerOpen] = useState(false)
   const [editingPath, setEditingPath] = useState<string | null>(null)
+  const [viewState, setViewState] = useState<ProjectsViewState>(() => loadProjectsViewState())
+  const [migrationToast, setMigrationToast] = useState<{ open: boolean; count: number }>({
+    open: false,
+    count: 0,
+  })
+
+  useEffect(() => {
+    saveProjectsViewState(viewState)
+  }, [viewState])
+
+  const visibleProjects = applyProjectsView(projects, viewState)
 
   const handleLaunched = (result: { shell: string; spawned: boolean; error?: string }): void => {
     if (result.spawned) {
@@ -103,7 +132,13 @@ export function ProjectsPage(): React.JSX.Element {
   )
 
   useEffect(() => {
-    void loadProjectList()
+    void (async (): Promise<void> => {
+      await loadProjectList()
+      const notice = await window.api.projectsConsumeMigrationNotice()
+      if (notice && notice.migrated > 0) {
+        setMigrationToast({ open: true, count: notice.migrated })
+      }
+    })()
   }, [])
 
   useEffect(() => {
@@ -173,6 +208,12 @@ export function ProjectsPage(): React.JSX.Element {
 
   return (
     <div className="max-w-3xl">
+      <Toast
+        open={migrationToast.open}
+        message={t('pages.projects.migration.createdAtUpdated', { count: migrationToast.count })}
+        onClose={() => setMigrationToast((prev) => ({ ...prev, open: false }))}
+        durationMs={5000}
+      />
       <div className="flex items-center justify-between mb-6 gap-2 flex-wrap">
         <h1 className="text-xl font-bold">{t('pages.projects.title')}</h1>
         <div className="flex items-center gap-2 flex-wrap">
@@ -201,9 +242,46 @@ export function ProjectsPage(): React.JSX.Element {
               </Button>
             </>
           )}
+          {showFavorite && (
+            <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
+              <Checkbox
+                checked={viewState.filterFavoritesOnly}
+                onCheckedChange={(checked) =>
+                  setViewState((prev) => ({
+                    ...prev,
+                    filterFavoritesOnly: checked === true,
+                  }))
+                }
+                aria-label={t('pages.projects.filter.favoritesOnly')}
+              />
+              <span>{t('pages.projects.filter.favoritesOnly')}</span>
+            </label>
+          )}
           <Button onClick={() => { setShowCreate(!showCreate); setCreateResult(null) }} variant={showCreate ? 'outline' : 'default'} size="sm">
             <Plus size={16} /> {t('pages.projects.newProject')}
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                {t('pages.projects.sort.label')}: {t(`pages.projects.sort.${viewState.sortMode}`)}
+                <ChevronDown size={14} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuRadioGroup
+                value={viewState.sortMode}
+                onValueChange={(value) =>
+                  setViewState((prev) => ({ ...prev, sortMode: value as SortMode }))
+                }
+              >
+                {SORT_MODES.map((mode) => (
+                  <DropdownMenuRadioItem key={mode} value={mode}>
+                    {t(`pages.projects.sort.${mode}`)}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -302,9 +380,15 @@ export function ProjectsPage(): React.JSX.Element {
             {t('pages.projects.noProjects')}
           </CardContent>
         </Card>
+      ) : visibleProjects.length === 0 ? (
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground">
+            {t('pages.projects.noFavorites')}
+          </CardContent>
+        </Card>
       ) : (
         <div className="space-y-2">
-          {projects.map((project) => (
+          {visibleProjects.map((project) => (
             <Card key={project.path}>
               <CardContent className="p-4 flex items-center gap-4">
                 {showFavorite && (

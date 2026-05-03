@@ -17,7 +17,8 @@ import {
   importProjects,
   removeProjectsFromList,
   listManagedPaths,
-  setFavorite
+  setFavorite,
+  consumePendingMigrationNotice
 } from './services/projects'
 import { discoverClaudeProjects } from './services/projectDiscovery'
 import { runHealthCheck, getDenyList, checkCcCli } from './services/health'
@@ -93,6 +94,7 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('projects:setFavorite', (_e, projectPath: string, favorite: boolean) =>
     setFavorite(projectPath, favorite)
   )
+  ipcMain.handle('projects:consumeMigrationNotice', () => consumePendingMigrationNotice())
 
   // --- Health ---
   ipcMain.handle('health:check', () => runHealthCheck())

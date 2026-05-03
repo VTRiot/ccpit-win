@@ -52,9 +52,7 @@ interface ParcFermeAPI {
     projectName: string
   ): Promise<{ success: boolean; created: string[]; errors: string[] }>
   projectsRemove(projectPath: string): Promise<void>
-  projectsDiscover(
-    rootPath: string
-  ): Promise<
+  projectsDiscover(rootPath: string): Promise<
     {
       path: string
       name: string
@@ -68,6 +66,7 @@ interface ParcFermeAPI {
   ): Promise<{ name: string; path: string; status: string; createdAt: string }[]>
   projectsRemoveFromList(paths: string[]): Promise<{ removed: string[] }>
   projectsSetFavorite(projectPath: string, favorite: boolean): Promise<void>
+  projectsConsumeMigrationNotice(): Promise<{ migrated: number; total: number } | null>
 
   rkSnapshot(): Promise<{
     id: string
@@ -86,9 +85,7 @@ interface ParcFermeAPI {
     }[]
   >
   rkMarkKnownGood(id: string): Promise<void>
-  rkDiff(
-    id: string
-  ): Promise<
+  rkDiff(id: string): Promise<
     {
       relativePath: string
       risk: string
