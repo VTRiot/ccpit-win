@@ -1,6 +1,17 @@
 export * from './types'
-export { readProtocol, getProtocolFilePath } from './protocolReader'
-export { writeProtocol, type WriteOptions } from './protocolWriter'
+export {
+  readProtocol,
+  readProtocolHistory,
+  getLatestManualEntry,
+  getCurrentMarker,
+  getProtocolFilePath,
+} from './protocolReader'
+export {
+  appendProtocolEntry,
+  parseAppliedAtToIso,
+  writeProtocol,
+  type WriteOptions,
+} from './protocolWriter'
 export {
   detectProtocol,
   deriveMarker,

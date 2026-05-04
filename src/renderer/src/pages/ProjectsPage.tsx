@@ -32,6 +32,7 @@ import { ProjectDiscoveryDialog } from '../components/ProjectDiscoveryDialog'
 import { RemoveFromListDialog } from '../components/RemoveFromListDialog'
 import { ProtocolBadge, type ProtocolMarkerView } from '../components/ProtocolBadge'
 import { EditMarkerDialog, type EditMarkerSubmit } from '../components/EditMarkerDialog'
+import { FullRescanConfirmDialog } from '../components/FullRescanConfirmDialog'
 import { useFeatureFlag } from '../hooks/useFeatureFlag'
 import { cn, toNativePath } from '../lib/utils'
 import {
@@ -49,6 +50,7 @@ interface ProjectEntry {
   createdAt: string
   favorite?: boolean
   location_type?: string
+  // 034-B: confirmed 廃止。明示意思は protocol.json の history (append-only event log) に統合。
 }
 
 export function ProjectsPage(): React.JSX.Element {
@@ -73,9 +75,33 @@ export function ProjectsPage(): React.JSX.Element {
   const [editMarkerOpen, setEditMarkerOpen] = useState(false)
   const [editingPath, setEditingPath] = useState<string | null>(null)
   const [viewState, setViewState] = useState<ProjectsViewState>(() => loadProjectsViewState())
-  const [migrationToast, setMigrationToast] = useState<{ open: boolean; count: number }>({
+  // 034-B: 2 マイグレーション通知を結合表示するため message 形式に変更
+  const [migrationToast, setMigrationToast] = useState<{ open: boolean; message: string }>({
     open: false,
-    count: 0,
+    message: '',
+  })
+  // 034-B (UX 課題 3): 各 PJ の「手動編集済み」判定情報。ProtocolBadge アイコン表示と Tooltip 用
+  const [historyMeta, setHistoryMeta] = useState<
+    Record<string, { hasManual: boolean; lastManualAt: string | null; historyCount: number }>
+  >({})
+  // 034 + 034-B: Full Re-scan 用の状態（changed/unchanged 追加）
+  const [fullRescanDialogOpen, setFullRescanDialogOpen] = useState(false)
+  const [fullRescanToast, setFullRescanToast] = useState<{
+    open: boolean
+    kind: 'success' | 'error'
+    processed: number
+    skipped: number
+    failed: number
+    changed: number
+    unchanged: number
+  }>({
+    open: false,
+    kind: 'success',
+    processed: 0,
+    skipped: 0,
+    failed: 0,
+    changed: 0,
+    unchanged: 0,
   })
 
   useEffect(() => {
@@ -97,6 +123,28 @@ export function ProjectsPage(): React.JSX.Element {
     const list = await window.api.projectsList()
     setProjects(list)
   }
+
+  // 034-B: 各 PJ の hasManualEntry / lastManualAt / historyCount を取得
+  const fetchHistoryMeta = useCallback(async (paths: string[]): Promise<void> => {
+    if (paths.length === 0) return
+    const results = await Promise.all(
+      paths.map(async (p) => {
+        try {
+          const r = await window.api.protocolHasManualEntry(p)
+          return [p, r] as const
+        } catch {
+          return [p, { hasManual: false, lastManualAt: null, historyCount: 0 }] as const
+        }
+      })
+    )
+    setHistoryMeta((prev) => {
+      const next = { ...prev }
+      for (const [path, meta] of results) {
+        next[path] = meta
+      }
+      return next
+    })
+  }, [])
 
   const scanMarkers = useCallback(
     async (paths: string[], allowAutoWrite: boolean): Promise<void> => {
@@ -134,24 +182,88 @@ export function ProjectsPage(): React.JSX.Element {
   useEffect(() => {
     void (async (): Promise<void> => {
       await loadProjectList()
-      const notice = await window.api.projectsConsumeMigrationNotice()
-      if (notice && notice.migrated > 0) {
-        setMigrationToast({ open: true, count: notice.migrated })
+      // 034-B: 2 マイグレーション通知を取得して結合
+      const createdAtNotice = await window.api.projectsConsumeMigrationNotice()
+      const historyNotice = await window.api.projectsConsumeProtocolHistoryMigrationNotice()
+      const messages: string[] = []
+      if (createdAtNotice && createdAtNotice.migrated > 0) {
+        messages.push(
+          t('pages.projects.migration.createdAtUpdated', { count: createdAtNotice.migrated })
+        )
+      }
+      if (historyNotice && historyNotice.migrated > 0) {
+        messages.push(
+          t('pages.projects.migration.protocolHistoryV2', { count: historyNotice.migrated })
+        )
+      }
+      if (messages.length > 0) {
+        setMigrationToast({ open: true, message: messages.join('\n') })
       }
     })()
-  }, [])
+  }, [t])
 
   useEffect(() => {
     if (!showProtocolBadge) return
     if (projects.length === 0) return
     const paths = projects.map((p) => p.path)
     void scanMarkers(paths, autoMarkingEnabled)
-  }, [projects, showProtocolBadge, autoMarkingEnabled, scanMarkers])
+    void fetchHistoryMeta(paths)
+  }, [projects, showProtocolBadge, autoMarkingEnabled, scanMarkers, fetchHistoryMeta])
 
-  const handleRescan = async (): Promise<void> => {
-    const paths = projects.map((p) => p.path)
-    await scanMarkers(paths, autoMarkingEnabled)
+  // 034: Full Re-scan の起点。確認ダイアログを開くだけで、実行は executeFullRescan で行う。
+  const handleFullRescan = (): void => {
+    setFullRescanDialogOpen(true)
   }
+
+  // 034-B: Full Re-scan 実行（根治版、append-only history）。
+  // - main 側 IPC で全 PJ を強制再判定（履歴に manual エントリある PJ は保護）
+  // - 完了後に projects/markers/historyMeta を再 load
+  // - scanningMarkers state を true に維持して NR-8（実行中の他操作）を抑止
+  // - 戻り値の changed/unchanged を Toast に表示（UX 課題 2）
+  const executeFullRescan = async (): Promise<void> => {
+    setFullRescanDialogOpen(false)
+    setScanningMarkers(true)
+    try {
+      const result = await window.api.protocolFullRescan()
+      await loadProjectList()
+      const paths = projects.map((p) => p.path)
+      if (paths.length > 0) {
+        await scanMarkers(paths, false)
+        await fetchHistoryMeta(paths)
+      }
+      setFullRescanToast({
+        open: true,
+        kind: result.failed > 0 ? 'error' : 'success',
+        processed: result.processed,
+        skipped: result.skipped,
+        failed: result.failed,
+        changed: result.changed,
+        unchanged: result.unchanged,
+      })
+    } catch (e) {
+      console.error('fullRescan error:', e)
+      setFullRescanToast({
+        open: true,
+        kind: 'error',
+        processed: 0,
+        skipped: 0,
+        failed: -1,
+        changed: 0,
+        unchanged: 0,
+      })
+    } finally {
+      setScanningMarkers(false)
+    }
+  }
+
+  // 034-B: 再判定対象件数は履歴ベースで main 側 IPC から取得
+  const [fullRescanTargetCount, setFullRescanTargetCount] = useState(0)
+  useEffect(() => {
+    void (async (): Promise<void> => {
+      const target = await window.api.protocolCountFullRescanTargets()
+      setFullRescanTargetCount(target)
+    })()
+  }, [projects, historyMeta])
 
   const handleToggleFavorite = async (project: ProjectEntry): Promise<void> => {
     const next = !(project.favorite ?? false)
@@ -198,6 +310,8 @@ export function ProjectsPage(): React.JSX.Element {
     if (!editingPath) return
     const updated = (await window.api.protocolEditMarker(editingPath, edits)) as ProtocolMarkerView
     setMarkers((prev) => ({ ...prev, [editingPath]: updated }))
+    // 034-B: main 側で履歴に manual エントリが追加される（appendProtocolEntry）。
+    // confirmed フィールドは廃止、ProtocolBadge の hasManualEntry は次回 hasManualEntry 取得で反映。
   }
 
   const handleRescanMarker = async (path: string): Promise<void> => {
@@ -210,9 +324,31 @@ export function ProjectsPage(): React.JSX.Element {
     <div className="max-w-3xl">
       <Toast
         open={migrationToast.open}
-        message={t('pages.projects.migration.createdAtUpdated', { count: migrationToast.count })}
+        message={migrationToast.message}
         onClose={() => setMigrationToast((prev) => ({ ...prev, open: false }))}
+        durationMs={6000}
+      />
+      <Toast
+        open={fullRescanToast.open}
+        message={
+          fullRescanToast.kind === 'success'
+            ? t('pages.projects.fullRescan.success', {
+                processed: fullRescanToast.processed,
+                changed: fullRescanToast.changed,
+                unchanged: fullRescanToast.unchanged,
+                skipped: fullRescanToast.skipped,
+              })
+            : t('pages.projects.fullRescan.error', { failed: fullRescanToast.failed })
+        }
+        variant={fullRescanToast.kind}
+        onClose={() => setFullRescanToast((prev) => ({ ...prev, open: false }))}
         durationMs={5000}
+      />
+      <FullRescanConfirmDialog
+        open={fullRescanDialogOpen}
+        onOpenChange={setFullRescanDialogOpen}
+        targetCount={fullRescanTargetCount}
+        onConfirm={() => void executeFullRescan()}
       />
       <div className="flex items-center justify-between mb-6 gap-2 flex-wrap">
         <h1 className="text-xl font-bold">{t('pages.projects.title')}</h1>
@@ -221,13 +357,13 @@ export function ProjectsPage(): React.JSX.Element {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleRescan}
+              onClick={handleFullRescan}
               disabled={scanningMarkers}
               className="gap-1.5"
-              title={t('pages.projects.protocolBadge.rescan')}
+              title={t('pages.projects.protocolBadge.fullRescan')}
             >
               <RefreshCw size={14} className={scanningMarkers ? 'animate-spin' : ''} />
-              {t('pages.projects.protocolBadge.rescan')}
+              {t('pages.projects.protocolBadge.fullRescan')}
             </Button>
           )}
           {showDetectLinkRemove && (
@@ -360,7 +496,7 @@ export function ProjectsPage(): React.JSX.Element {
         />
       )}
 
-      {/* Edit Marker Dialog */}
+      {/* Edit Marker Dialog (034-B: projectPath 追加で履歴セクション表示) */}
       {showEditMarkerUI && (
         <EditMarkerDialog
           open={editMarkerOpen}
@@ -369,6 +505,7 @@ export function ProjectsPage(): React.JSX.Element {
             if (!o) setEditingPath(null)
           }}
           current={editingPath ? (markers[editingPath] ?? null) : null}
+          projectPath={editingPath}
           onSubmit={handleSubmitEditMarker}
         />
       )}
@@ -421,6 +558,9 @@ export function ProjectsPage(): React.JSX.Element {
                       <ProtocolBadge
                         marker={markers[project.path]}
                         loading={scanningMarkers && markers[project.path] === undefined}
+                        hasManualEntry={historyMeta[project.path]?.hasManual}
+                        lastManualAt={historyMeta[project.path]?.lastManualAt}
+                        historyCount={historyMeta[project.path]?.historyCount}
                       />
                     )}
                   </div>

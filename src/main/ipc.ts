@@ -18,7 +18,8 @@ import {
   removeProjectsFromList,
   listManagedPaths,
   setFavorite,
-  consumePendingMigrationNotice
+  consumePendingMigrationNotice,
+  consumePendingProtocolHistoryMigrationNotice
 } from './services/projects'
 import { discoverClaudeProjects } from './services/projectDiscovery'
 import { runHealthCheck, getDenyList, checkCcCli } from './services/health'
@@ -35,12 +36,13 @@ import { getState as profileGetState, switchToLegacy, switchToManx } from './ser
 import { launchCc, type LaunchArgs } from './services/ccLaunch'
 import {
   readProtocol,
-  writeProtocol,
+  readProtocolHistory,
+  getLatestManualEntry,
+  appendProtocolEntry,
   detectProtocol,
   loadProfiles,
   getAvailableProfiles,
   buildExplicitMarker,
-  type ProtocolMarker,
   type EditMarkerInput
 } from './services/protocol'
 import {
@@ -95,6 +97,10 @@ export function registerIpcHandlers(): void {
     setFavorite(projectPath, favorite)
   )
   ipcMain.handle('projects:consumeMigrationNotice', () => consumePendingMigrationNotice())
+  // 034-B: protocol-history-v2 マイグレーション通知（別 slot）。
+  ipcMain.handle('projects:consumeProtocolHistoryMigrationNotice', () =>
+    consumePendingProtocolHistoryMigrationNotice()
+  )
 
   // --- Health ---
   ipcMain.handle('health:check', () => runHealthCheck())
@@ -157,32 +163,104 @@ export function registerIpcHandlers(): void {
   // --- CC Launch ---
   ipcMain.handle('cc:launch', (_e, args: LaunchArgs) => launchCc(args))
 
-  // --- Protocol Marker ---
+  // --- Protocol Marker (034-B: append-only event log) ---
   ipcMain.handle('protocol:read', (_e, projectPath: string) => readProtocol(projectPath))
-  ipcMain.handle(
-    'protocol:write',
-    (_e, projectPath: string, marker: ProtocolMarker, force?: boolean) =>
-      writeProtocol(projectPath, marker, { force: force === true })
-  )
   ipcMain.handle('protocol:detect', (_e, projectPath: string) => detectProtocol(projectPath))
+
+  // 034-B: 自動マーキング。auto エントリを履歴に append。
+  // 旧仕様の「既存マーカー保護」は append-only で不要化（過去エントリは物理的に消えない）。
   ipcMain.handle('protocol:autoMark', async (_e, projectPath: string) => {
     const existing = await readProtocol(projectPath)
     if (existing) return { written: false, marker: existing }
     const marker = await detectProtocol(projectPath)
-    await writeProtocol(projectPath, marker, { force: false })
+    await appendProtocolEntry(projectPath, 'auto', marker)
     return { written: true, marker }
   })
-  // FSA r3 §3-3 — Edit Marker 保存。明示設定値として書き換える。
+
+  // 034-B: Edit Marker 保存。manual エントリを履歴に append。
+  // 設計: 履歴の存在自体が「明示意思」の正典証跡。setConfirmed は廃止。
   ipcMain.handle('protocol:editMarker', async (_e, projectPath: string, edits: EditMarkerInput) => {
     const marker = buildExplicitMarker(edits, new Date())
-    await writeProtocol(projectPath, marker, { force: true })
+    await appendProtocolEntry(projectPath, 'manual', marker)
     return marker
   })
-  // FSA r3 §3-5 — Re-scan Marker。既存マーカーを上書きして再スキャン。
+
+  // 034-B: per-PJ Re-scan。auto エントリを履歴に append。
+  // 過去の manual エントリは履歴に残るため、readProtocol は最新 manual を優先（NR-4）。
   ipcMain.handle('protocol:rescanMarker', async (_e, projectPath: string) => {
     const marker = await detectProtocol(projectPath, { force: true })
-    await writeProtocol(projectPath, marker, { force: true })
+    await appendProtocolEntry(projectPath, 'auto', marker)
     return marker
+  })
+
+  // 034-B: Full Re-scan 根治版。
+  // - skip 判定: 履歴に manual エントリが 1 件でもあれば skip（過去の手動意思を保護）
+  // - append-only: 過去エントリは物理的に消えない、追加のみ
+  // - 戻り値拡張: changed/unchanged を計算して UX 改善（r3 §3-5）
+  ipcMain.handle('protocol:fullRescan', async () => {
+    const projects = await listProjects()
+    let processed = 0
+    let skipped = 0
+    let failed = 0
+    let changed = 0
+    let unchanged = 0
+    for (const p of projects) {
+      const latestManual = await getLatestManualEntry(p.path)
+      if (latestManual !== null) {
+        skipped++
+        continue
+      }
+      try {
+        // append 前に旧 marker を読み diff 判定（changed/unchanged）
+        const previousCurrent = await readProtocol(p.path)
+        const newMarker = await detectProtocol(p.path, { force: true })
+        await appendProtocolEntry(p.path, 'auto', newMarker)
+        processed++
+        if (
+          previousCurrent &&
+          previousCurrent.protocol === newMarker.protocol &&
+          previousCurrent.revision === newMarker.revision
+        ) {
+          unchanged++
+        } else {
+          changed++
+        }
+      } catch (e) {
+        failed++
+        console.error(`[protocol:fullRescan] failed for ${p.path}:`, e)
+      }
+    }
+    return { processed, skipped, failed, changed, unchanged }
+  })
+
+  // 034-B (UX 課題 1): 履歴閲覧 UI 用 IPC。Edit Marker Dialog 内の履歴セクションで使用。
+  ipcMain.handle('protocol:readHistory', (_e, projectPath: string) =>
+    readProtocolHistory(projectPath)
+  )
+
+  // 034-B (UX 課題 3): 軽量「手動編集済み」判定 IPC。ProtocolBadge アイコン表示判定で使用。
+  ipcMain.handle('protocol:hasManualEntry', async (_e, projectPath: string) => {
+    const history = await readProtocolHistory(projectPath)
+    if (!history) return { hasManual: false, lastManualAt: null, historyCount: 0 }
+    const manuals = history.filter((e) => e.source === 'manual')
+    const lastManualAt = manuals.length > 0 ? manuals[manuals.length - 1].timestamp : null
+    return {
+      hasManual: manuals.length > 0,
+      lastManualAt,
+      historyCount: history.length,
+    }
+  })
+
+  // 034-B: Full Re-scan 対象件数（confirmed 廃止後、履歴ベースで判定）。
+  // 確認ダイアログの動的件数表示で使用。
+  ipcMain.handle('protocol:countFullRescanTargets', async () => {
+    const projects = await listProjects()
+    let target = 0
+    for (const p of projects) {
+      const latestManual = await getLatestManualEntry(p.path)
+      if (latestManual === null) target++
+    }
+    return target
   })
   ipcMain.handle('protocol:profiles', async () => {
     const cfg = getConfig()

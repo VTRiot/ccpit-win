@@ -245,9 +245,12 @@
         "remove": "リストから削除"
       },
       "protocolBadge": {
-        "rescan": "再スキャン",
+        "untagged": "未分類",
+        "fullRescan": "Full Re-scan",
         "inferredNotice": "⚠ stage は自動推定値です",
-        "inferred": "推定値"
+        "inferred": "推定値",
+        "manualEdited": "手動編集済み",
+        "historyEntries": "件"
       },
       "favorite": {
         "favorite": "お気に入りに追加",
@@ -265,7 +268,18 @@
         "favoritesFirst": "★ 優先"
       },
       "migration": {
-        "createdAtUpdated": "プロジェクト一覧を更新しました（{{count}} 件）"
+        "createdAtUpdated": "プロジェクト一覧を更新しました（{{count}} 件）",
+        "protocolHistoryV2": "過去の編集が履歴として保存されるようになりました（{{count}} 件移行）"
+      },
+      "fullRescanDialog": {
+        "title": "全プロジェクトを再判定しますか？",
+        "body": "{{count}} 件のプロジェクトのプロトコル判定を最新ロジックで再実行します。\n手動で編集したマーカー（確定済み）は保護されます。",
+        "confirm": "実行",
+        "cancel": "キャンセル"
+      },
+      "fullRescan": {
+        "success": "{{processed}} 件を再判定（変更 {{changed}} / 不変 {{unchanged}} / 保護 {{skipped}}）",
+        "error": "再判定中にエラーが発生しました（{{failed}} 件失敗）"
       },
       "launch": {
         "launch": "起動",
@@ -408,6 +422,12 @@
     "confirmSave": "現在のマーカーを上書きします、よろしいですか?",
     "confirmRescan": "自動マーキング判定を再実行し、既存マーカーを上書きします、よろしいですか?",
     "saveButton": "保存",
-    "cancelButton": "キャンセル"
+    "cancelButton": "キャンセル",
+    "history": {
+      "title": "編集履歴",
+      "empty": "まだ履歴がありません。",
+      "sourceManual": "手動",
+      "sourceAuto": "自動"
+    }
   }
 }

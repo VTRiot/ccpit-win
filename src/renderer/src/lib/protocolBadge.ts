@@ -31,6 +31,21 @@ export interface BadgeView {
   isInferred: boolean
 }
 
+/**
+ * 034: BadgeView.text の i18n マッピング（計画書 r2 §2-2 案 B 採用）。
+ * 純粋関数 formatBadgeView はリテラル文字列を返し、ここで i18n キー解決を行う。
+ *
+ * 将来 i18n 化候補（本タスクスコープ外、マッピングテーブルの空席）:
+ *   - 'Legacy' / 'Legacy *'        → pages.projects.protocolBadge.legacy
+ *   - 'GOLDEN 5.0 β' 等の動的組立  → 動的キー化を要設計（revision/stage を i18n に渡す）
+ *
+ * テスト容易性のため component から lib に移動して純粋関数として配置。
+ */
+export function localizeBadgeText(text: string, translate: (key: string) => string): string {
+  if (text === 'Untagged') return translate('pages.projects.protocolBadge.untagged')
+  return text
+}
+
 export function formatBadgeView(m: ProtocolMarkerView | null): BadgeView | null {
   if (!m) return null
 
@@ -44,10 +59,13 @@ export function formatBadgeView(m: ProtocolMarkerView | null): BadgeView | null 
 
   if (m.protocol === 'unknown') {
     if (m.detection_confidence === 'unknown') return null
+    // 034: R3b 等で protocol='unknown' になったマーカーは中立表現「Untagged」で表示する。
+    // 「MANX ?」表示は MANX 推進バイアス（希望的観測）の誤誘導を生むため廃止。
+    // unknown 状態に「stage 推定」マーカー（*）は意味矛盾なので isInferred:false 固定。
     return {
-      text: 'MANX ?' + (m.stage_inferred ? ' *' : ''),
-      className: 'bg-emerald-300/20 text-emerald-500 border-emerald-500/30',
-      isInferred: m.stage_inferred,
+      text: 'Untagged',
+      className: 'bg-muted/40 text-muted-foreground border-border',
+      isInferred: false,
     }
   }
 

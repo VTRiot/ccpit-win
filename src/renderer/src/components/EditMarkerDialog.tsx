@@ -11,6 +11,7 @@ import {
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
+import { ProtocolHistoryList } from './ProtocolHistoryList'
 import type { ProtocolMarkerView } from '../lib/protocolBadge'
 
 const STAGE_OPTIONS = ['stable', 'beta', 'alpha', 'experimental'] as const
@@ -31,6 +32,8 @@ interface EditMarkerDialogProps {
   onOpenChange: (open: boolean) => void
   /** ダイアログを開いた時点の現値。null の場合は新規入力扱い。 */
   current: ProtocolMarkerView | null
+  // 034-B (UX 課題 1): 履歴閲覧セクションのため。null の場合は履歴表示しない。
+  projectPath: string | null
   onSubmit: (edits: EditMarkerSubmit) => void | Promise<void>
 }
 
@@ -38,6 +41,7 @@ export function EditMarkerDialog({
   open,
   onOpenChange,
   current,
+  projectPath,
   onSubmit,
 }: EditMarkerDialogProps): React.JSX.Element {
   const { t } = useTranslation()
@@ -137,6 +141,9 @@ export function EditMarkerDialog({
             />
           </div>
         </div>
+
+        {/* 034-B (UX 課題 1): 履歴閲覧セクション */}
+        {open && <ProtocolHistoryList projectPath={projectPath} />}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>

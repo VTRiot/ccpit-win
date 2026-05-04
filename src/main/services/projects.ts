@@ -5,6 +5,7 @@ import { app } from 'electron'
 import {
   resolveDirCreatedAt,
   runCreatedAtToCtimeMigration,
+  runProtocolHistoryV2Migration,
   type MigrationNotice,
   type ProjectsMigrationPaths
 } from './projectsMigration'
@@ -27,6 +28,17 @@ export function consumePendingMigrationNotice(): MigrationNotice | null {
   return notice
 }
 
+// 034-B: protocol-history-v2 マイグレーション通知（別 slot）。
+// 既存 pendingMigrationNotice (createdAt 用) と独立して管理することで、
+// 起動時に複数マイグレーションが走った場合に両方の Toast を表示できる。
+let pendingProtocolHistoryMigrationNotice: MigrationNotice | null = null
+
+export function consumePendingProtocolHistoryMigrationNotice(): MigrationNotice | null {
+  const notice = pendingProtocolHistoryMigrationNotice
+  pendingProtocolHistoryMigrationNotice = null
+  return notice
+}
+
 export type LocationType = 'local' | 'remote-readonly' | 'remote-full'
 
 export interface ProjectEntry {
@@ -38,6 +50,10 @@ export interface ProjectEntry {
   documents?: string[]
   favorite?: boolean
   location_type?: LocationType
+  // 034-B: confirmed フィールドは廃止。
+  // 「明示意思」の正典は protocol.json の history（append-only event log）に統合。
+  // Full Re-scan の skip 判定は getLatestManualEntry(path) で行う。
+  // 既存データの confirmed フィールドはマイグレーションで削除される（v1→v2 同時実施）。
 }
 
 async function ensureDir(dir: string): Promise<void> {
@@ -49,10 +65,22 @@ async function ensureDir(dir: string): Promise<void> {
 /** projects.json を読み込む */
 export async function loadProjects(): Promise<ProjectEntry[]> {
   await ensureDir(CCPIT_DIR)
-  const notice = await runCreatedAtToCtimeMigration(MIGRATION_PATHS)
-  if (notice) {
-    pendingMigrationNotice = notice
+
+  // 033-B: createdAt → ctime マイグレーション
+  const createdAtNotice = await runCreatedAtToCtimeMigration(MIGRATION_PATHS)
+  if (createdAtNotice) {
+    pendingMigrationNotice = createdAtNotice
   }
+
+  // 034-B: protocol-history-v2 マイグレーション
+  // - 各 PJ の .ccpit/protocol.json を v1 → v2 (append-only history) に変換
+  // - projects.json から confirmed フィールドを削除
+  // - バックアップ作成、冪等
+  const protocolHistoryNotice = await runProtocolHistoryV2Migration(MIGRATION_PATHS)
+  if (protocolHistoryNotice) {
+    pendingProtocolHistoryMigrationNotice = protocolHistoryNotice
+  }
+
   if (!existsSync(PROJECTS_FILE)) return []
   const content = await readFile(PROJECTS_FILE, 'utf-8')
   return JSON.parse(content)
@@ -226,3 +254,6 @@ export async function setFavorite(projectPath: string, favorite: boolean): Promi
   projects[idx] = { ...projects[idx], favorite }
   await saveProjects(projects)
 }
+
+// 034-B: setConfirmed 関数は廃止（confirmed フィールドが廃止されたため）。
+// 「明示意思」の永続化は appendProtocolEntry(path, 'manual', marker) で行う（protocol.json の history）。
