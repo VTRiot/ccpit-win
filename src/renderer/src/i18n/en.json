@@ -245,9 +245,12 @@
         "remove": "Remove from list"
       },
       "protocolBadge": {
-        "rescan": "Re-scan",
+        "untagged": "Untagged",
+        "fullRescan": "Full Re-scan",
         "inferredNotice": "⚠ stage is an inferred value",
-        "inferred": "inferred"
+        "inferred": "inferred",
+        "manualEdited": "Manually edited",
+        "historyEntries": "entries"
       },
       "favorite": {
         "favorite": "Add to favorites",
@@ -265,7 +268,18 @@
         "favoritesFirst": "Favorites first"
       },
       "migration": {
-        "createdAtUpdated": "Project list updated ({{count}} items)"
+        "createdAtUpdated": "Project list updated ({{count}} items)",
+        "protocolHistoryV2": "Past edits are now saved as history ({{count}} project(s) migrated)"
+      },
+      "fullRescanDialog": {
+        "title": "Re-scan all projects?",
+        "body": "Re-runs protocol detection for {{count}} project(s) with the latest logic.\nProjects with manually-edited markers (confirmed) are protected.",
+        "confirm": "Run",
+        "cancel": "Cancel"
+      },
+      "fullRescan": {
+        "success": "Re-scanned {{processed}} project(s) ({{changed}} changed / {{unchanged}} unchanged / {{skipped}} protected)",
+        "error": "Re-scan failed ({{failed}} project(s) errored)"
       },
       "launch": {
         "launch": "Launch",
@@ -408,6 +422,12 @@
     "confirmSave": "Overwrite the current marker. Continue?",
     "confirmRescan": "Re-run auto-marking and overwrite the existing marker. Continue?",
     "saveButton": "Save",
-    "cancelButton": "Cancel"
+    "cancelButton": "Cancel",
+    "history": {
+      "title": "Edit history",
+      "empty": "No history yet.",
+      "sourceManual": "manual",
+      "sourceAuto": "auto"
+    }
   }
 }

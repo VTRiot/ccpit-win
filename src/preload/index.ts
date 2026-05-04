@@ -59,8 +59,15 @@ const api = {
     ipcRenderer.invoke('migration:deployPit', entries),
 
   // Projects
-  projectsList: (): Promise<{ name: string; path: string; status: string; createdAt: string }[]> =>
-    ipcRenderer.invoke('projects:list'),
+  projectsList: (): Promise<
+    {
+      name: string
+      path: string
+      status: string
+      createdAt: string
+      // 034-B: confirmed 廃止。明示意思は protocol.json の history に統合。
+    }[]
+  > => ipcRenderer.invoke('projects:list'),
   projectsCreate: (
     projectPath: string,
     projectName: string
@@ -89,6 +96,11 @@ const api = {
     ipcRenderer.invoke('projects:setFavorite', projectPath, favorite),
   projectsConsumeMigrationNotice: (): Promise<{ migrated: number; total: number } | null> =>
     ipcRenderer.invoke('projects:consumeMigrationNotice'),
+  // 034-B: protocol-history-v2 マイグレーション通知。
+  projectsConsumeProtocolHistoryMigrationNotice: (): Promise<{
+    migrated: number
+    total: number
+  } | null> => ipcRenderer.invoke('projects:consumeProtocolHistoryMigrationNotice'),
 
   // Recovery Kit
   rkSnapshot: (): Promise<{
@@ -239,6 +251,25 @@ const api = {
   ): Promise<unknown> => ipcRenderer.invoke('protocol:editMarker', projectPath, edits),
   protocolRescanMarker: (projectPath: string): Promise<unknown> =>
     ipcRenderer.invoke('protocol:rescanMarker', projectPath),
+  // 034-B: Full Re-scan 根治版 — append-only history、changed/unchanged 件数も返却。
+  protocolFullRescan: (): Promise<{
+    processed: number
+    skipped: number
+    failed: number
+    changed: number
+    unchanged: number
+  }> => ipcRenderer.invoke('protocol:fullRescan'),
+  // 034-B (UX 課題 1): 履歴閲覧用。Edit Marker Dialog 内の履歴セクションで使用。
+  protocolReadHistory: (projectPath: string): Promise<unknown[] | null> =>
+    ipcRenderer.invoke('protocol:readHistory', projectPath),
+  // 034-B (UX 課題 3): 軽量「手動編集済み」判定。ProtocolBadge アイコン表示用。
+  protocolHasManualEntry: (
+    projectPath: string
+  ): Promise<{ hasManual: boolean; lastManualAt: string | null; historyCount: number }> =>
+    ipcRenderer.invoke('protocol:hasManualEntry', projectPath),
+  // 034-B: Full Re-scan 対象件数（履歴ベース）。確認ダイアログの動的件数表示用。
+  protocolCountFullRescanTargets: (): Promise<number> =>
+    ipcRenderer.invoke('protocol:countFullRescanTargets'),
   protocolProfiles: (): Promise<
     {
       id: string

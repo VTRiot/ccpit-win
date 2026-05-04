@@ -46,7 +46,15 @@ interface ParcFermeAPI {
     entries: { path: string; content: string; lines: number }[]
   ): Promise<{ deployed: string[]; backedUp: string[]; errors: string[] }>
 
-  projectsList(): Promise<{ name: string; path: string; status: string; createdAt: string }[]>
+  projectsList(): Promise<
+    {
+      name: string
+      path: string
+      status: string
+      createdAt: string
+      // 034-B: confirmed 廃止。明示意思は protocol.json の history に統合。
+    }[]
+  >
   projectsCreate(
     projectPath: string,
     projectName: string
@@ -67,6 +75,11 @@ interface ParcFermeAPI {
   projectsRemoveFromList(paths: string[]): Promise<{ removed: string[] }>
   projectsSetFavorite(projectPath: string, favorite: boolean): Promise<void>
   projectsConsumeMigrationNotice(): Promise<{ migrated: number; total: number } | null>
+  // 034-B: protocol-history-v2 マイグレーション通知。
+  projectsConsumeProtocolHistoryMigrationNotice(): Promise<{
+    migrated: number
+    total: number
+  } | null>
 
   rkSnapshot(): Promise<{
     id: string
@@ -197,6 +210,22 @@ interface ParcFermeAPI {
     }
   ): Promise<unknown>
   protocolRescanMarker(projectPath: string): Promise<unknown>
+  // 034-B: Full Re-scan 根治版 — append-only history、changed/unchanged 件数も返却。
+  protocolFullRescan(): Promise<{
+    processed: number
+    skipped: number
+    failed: number
+    changed: number
+    unchanged: number
+  }>
+  // 034-B (UX 課題 1): 履歴閲覧用。
+  protocolReadHistory(projectPath: string): Promise<unknown[] | null>
+  // 034-B (UX 課題 3): 軽量「手動編集済み」判定。
+  protocolHasManualEntry(
+    projectPath: string
+  ): Promise<{ hasManual: boolean; lastManualAt: string | null; historyCount: number }>
+  // 034-B: Full Re-scan 対象件数（履歴ベース）。
+  protocolCountFullRescanTargets(): Promise<number>
   protocolProfiles(): Promise<
     {
       id: string
