@@ -55,6 +55,12 @@ import {
   hasPasswordRegistered,
   type ChangeRequest
 } from './services/settingsChange'
+import { generateExtensionsSummary, formatAsMarkdown } from './services/cces/summaryGenerator'
+import { validateProjectPath } from './services/cces/extensionScanner'
+import {
+  type CcesGenerateResult,
+  OVERSIZED_THRESHOLD_BYTES
+} from './services/cces/types'
 
 const GOLDEN_DIR = app.isPackaged
   ? join(process.resourcesPath, 'golden')
@@ -154,6 +160,40 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('clipboard:write', (_e, text: string) => {
     clipboard.writeText(text)
   })
+
+  // --- CCES (036, ClaudeCode-ExtensionsSummary Ver.1.0) ---
+  ipcMain.handle(
+    'cces:generate',
+    async (_e, args: { projectPath: string }): Promise<CcesGenerateResult> => {
+      try {
+        const validationError = validateProjectPath(args.projectPath)
+        if (validationError) {
+          return { ok: false, error: validationError }
+        }
+        const claudeDir = join(app.getPath('home'), '.claude')
+        const cfg = getConfig()
+        const opening = cfg.cces?.openingText ?? ''
+        const summary = await generateExtensionsSummary({
+          claudeDir,
+          projectPath: args.projectPath,
+          opening
+        })
+        const markdown = formatAsMarkdown(summary)
+        const bytes = Buffer.byteLength(markdown, 'utf8')
+        clipboard.writeText(markdown)
+        return {
+          ok: true,
+          summary,
+          markdown,
+          bytes,
+          oversized: bytes > OVERSIZED_THRESHOLD_BYTES
+        }
+      } catch (e) {
+        const reason = e instanceof Error ? e.message : String(e)
+        return { ok: false, error: reason }
+      }
+    }
+  )
 
   // --- Profile Switch ---
   ipcMain.handle('profile:getState', () => profileGetState())

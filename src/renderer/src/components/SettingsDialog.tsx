@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, Settings, Wrench, Info, RotateCcw } from 'lucide-react'
+import { X, Settings, Wrench, Info, RotateCcw, Clipboard, RefreshCcw } from 'lucide-react'
 import { Button } from './ui/button'
 import { Label } from './ui/label'
 import { cn } from '../lib/utils'
@@ -20,6 +20,44 @@ export function SettingsDialogTrigger(props: SettingsDialogProps): React.JSX.Ele
   const [maintenanceOpen, setMaintenanceOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
   const { t } = useTranslation()
+
+  // 036: CCES settings (opening text + allowAllProjects switch)
+  const [ccesOpening, setCcesOpening] = useState<string>('')
+  const [ccesAllowAll, setCcesAllowAll] = useState<boolean>(true)
+
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const cfg = await window.api.configGet()
+        if (cancelled) return
+        setCcesOpening(cfg.cces?.openingText ?? '')
+        setCcesAllowAll(cfg.cces?.allowAllProjects ?? true)
+      } catch {
+        /* ignore */
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [open])
+
+  const persistCces = async (next: { openingText?: string; allowAllProjects?: boolean }): Promise<void> => {
+    try {
+      const cfg = await window.api.configGet()
+      const merged = { ...(cfg.cces ?? {}), ...next }
+      await window.api.configSet({ cces: merged })
+    } catch {
+      /* ignore — UI keeps optimistic value */
+    }
+  }
+
+  const resetCcesOpeningToDefault = (): void => {
+    const def = t('settings.cces.openingDefault')
+    setCcesOpening(def)
+    void persistCces({ openingText: def })
+  }
 
   const handleOpenMaintenance = (): void => {
     setOpen(false)
@@ -108,6 +146,79 @@ export function SettingsDialogTrigger(props: SettingsDialogProps): React.JSX.Ele
                     {t('settings.light')}
                   </button>
                 </div>
+              </div>
+
+              {/* CCES divider */}
+              <div className="relative py-1">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-card px-3 text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Clipboard size={12} />
+                    {t('settings.cces.title')}
+                  </span>
+                </div>
+              </div>
+
+              {/* CCES opening text */}
+              <div className="space-y-2">
+                <Label>{t('settings.cces.openingLabel')}</Label>
+                <textarea
+                  rows={3}
+                  value={ccesOpening}
+                  placeholder={t('settings.cces.openingDefault')}
+                  onChange={(e) => setCcesOpening(e.target.value)}
+                  onBlur={() => void persistCces({ openingText: ccesOpening })}
+                  className="w-full rounded-md border border-border bg-background text-foreground p-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full gap-2 text-muted-foreground"
+                  onClick={resetCcesOpeningToDefault}
+                >
+                  <RefreshCcw size={14} />
+                  {t('settings.cces.openingReset')}
+                </Button>
+              </div>
+
+              {/* CCES allow-all-projects toggle (Phase 1: stored only, activated in 037) */}
+              <div className="space-y-2">
+                <Label>{t('settings.cces.allowAllProjectsLabel')}</Label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setCcesAllowAll(true)
+                      void persistCces({ allowAllProjects: true })
+                    }}
+                    className={cn(
+                      'flex-1 px-3 py-2 rounded-md text-sm font-medium border transition-colors',
+                      ccesAllowAll
+                        ? 'border-primary bg-primary/10 text-foreground'
+                        : 'border-border text-muted-foreground hover:bg-accent',
+                    )}
+                  >
+                    {t('settings.cces.allowAllOn')}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCcesAllowAll(false)
+                      void persistCces({ allowAllProjects: false })
+                    }}
+                    className={cn(
+                      'flex-1 px-3 py-2 rounded-md text-sm font-medium border transition-colors',
+                      !ccesAllowAll
+                        ? 'border-primary bg-primary/10 text-foreground'
+                        : 'border-border text-muted-foreground hover:bg-accent',
+                    )}
+                  >
+                    {t('settings.cces.allowAllOff')}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {t('settings.cces.allowAllProjectsHelp')}
+                </p>
               </div>
 
               {/* Maintenance divider */}

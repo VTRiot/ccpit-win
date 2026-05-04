@@ -13,6 +13,7 @@ import {
   RefreshCw,
   Star,
   ChevronDown,
+  Clipboard,
 } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -117,6 +118,40 @@ export function ProjectsPage(): React.JSX.Element {
       setLaunchMessage({ kind: 'err', text: result.error ?? t('pages.projects.launch.error') })
     }
     setTimeout(() => setLaunchMessage(null), 3000)
+  }
+
+  // 036: CCES Generate. Per-project click → calls main with that project's path.
+  const [ccesBusy, setCcesBusy] = useState<string | null>(null)
+  const handleCcesGenerate = async (projectPath: string, projectName: string): Promise<void> => {
+    setCcesBusy(projectPath)
+    try {
+      const result = await window.api.ccesGenerate({ projectPath })
+      if (result.ok) {
+        const kb = (result.bytes / 1024).toFixed(1)
+        if (result.oversized) {
+          setLaunchMessage({
+            kind: 'err',
+            text: t('pages.projects.cces.oversizedWarning', { project: projectName, size: kb }),
+          })
+        } else {
+          setLaunchMessage({
+            kind: 'ok',
+            text: t('pages.projects.cces.copied', { project: projectName, size: kb }),
+          })
+        }
+      } else {
+        setLaunchMessage({
+          kind: 'err',
+          text: t('pages.projects.cces.error', { reason: result.error }),
+        })
+      }
+    } catch (e) {
+      const reason = e instanceof Error ? e.message : String(e)
+      setLaunchMessage({ kind: 'err', text: t('pages.projects.cces.error', { reason }) })
+    } finally {
+      setCcesBusy(null)
+      setTimeout(() => setLaunchMessage(null), 3000)
+    }
   }
 
   const loadProjectList = async (): Promise<void> => {
@@ -575,6 +610,18 @@ export function ProjectsPage(): React.JSX.Element {
                     onRescanMarker={() => void handleRescanMarker(project.path)}
                   />
                 )}
+                {/* 036: CCES Generate (per-project, clipboard-based) */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={ccesBusy === project.path}
+                  onClick={() => void handleCcesGenerate(project.path, project.name)}
+                  title={t('pages.projects.cces.tooltip')}
+                  className="bg-[hsl(180_55%_42%)] hover:bg-[hsl(180_55%_50%)] text-white border-[hsl(180_55%_42%)] gap-1.5"
+                >
+                  {ccesBusy === project.path ? <Loader2 size={14} className="animate-spin" /> : <Clipboard size={14} />}
+                  {t('pages.projects.cces.generate')}
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"

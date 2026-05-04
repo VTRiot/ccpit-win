@@ -137,6 +137,7 @@ interface ParcFermeAPI {
     >
     legacyMasterPath?: string
     lastBackupAt?: string
+    cces?: { openingText?: string; allowAllProjects?: boolean }
   }>
   configSet(
     partial: Partial<{
@@ -159,6 +160,7 @@ interface ParcFermeAPI {
       >
       legacyMasterPath?: string
       lastBackupAt?: string
+      cces?: { openingText?: string; allowAllProjects?: boolean }
     }>
   ): Promise<{
     splashDurationMs: number
@@ -178,6 +180,7 @@ interface ParcFermeAPI {
     >
     legacyMasterPath?: string
     lastBackupAt?: string
+    cces?: { openingText?: string; allowAllProjects?: boolean }
   }>
 
   profileGetState(): Promise<{
@@ -289,6 +292,17 @@ interface ParcFermeAPI {
   openExternal(url: string): Promise<void>
   openPath(folderPath: string): Promise<string>
   clipboardWrite(text: string): Promise<void>
+  // 036: CCES Ver.1.0
+  ccesGenerate(args: { projectPath: string }): Promise<
+    | {
+        ok: true
+        markdown: string
+        bytes: number
+        oversized: boolean
+        summary: { metadata: { projectName: string } } & Record<string, unknown>
+      }
+    | { ok: false; error: string }
+  >
 }
 
 declare global {

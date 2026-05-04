@@ -40,6 +40,16 @@
     "desktop": "デスクトップ",
     "customPath": "カスタムパス",
     "resetSetup": "セットアップを再実行",
+    "cces": {
+      "title": "CCES（装備サマリ）",
+      "openingLabel": "冒頭文",
+      "openingDefault": "以下は、本プロジェクトで起動した Claude Code の現在の装備サマリです。CC が利用可能なツール・スキル・制約を把握する手がかりとしてご活用ください。",
+      "openingReset": "デフォルトに戻す",
+      "allowAllProjectsLabel": "MANX 非準拠 PJ でも CCES を有効にする",
+      "allowAllOn": "ON（全 PJ）",
+      "allowAllOff": "OFF（MANX のみ）",
+      "allowAllProjectsHelp": "現状はこのスイッチに関係なく全 PJ で CCES が有効です。037（R3b 修正）完了後にこのスイッチが有効化され、OFF にすると Legacy PJ では灰抜きになります。"
+    },
     "devTools": {
       "title": "Developer Tools",
       "enabled": "開発者ツールが有効です",
@@ -299,6 +309,13 @@
           "ideAutoConnect": "IDE 自動接続 (--ide)",
           "effort": "Effort level"
         }
+      },
+      "cces": {
+        "generate": "CCES 生成",
+        "tooltip": "Claude Code がこの PJ で起動したときの装備サマリをクリップボードに出力",
+        "copied": "{{project}} のサマリを ClipBoard に格納しました（{{size}} KB）",
+        "oversizedWarning": "{{project}} のサマリは {{size}} KB と大きめです（処理は完了済み）",
+        "error": "CCES 生成に失敗: {{reason}}"
       }
     },
     "health": {
