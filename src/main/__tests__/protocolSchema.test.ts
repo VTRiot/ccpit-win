@@ -9,10 +9,10 @@ import { join } from 'path'
  * 失敗時は CONTRIBUTING.md のチェックリストを参照する。
  */
 
-const PARC_FERME_ROOT = join(__dirname, '..', '..', '..')
+const REPO_ROOT = join(__dirname, '..', '..', '..')
 
 function readSrc(relPath: string): string {
-  return readFileSync(join(PARC_FERME_ROOT, relPath), 'utf-8')
+  return readFileSync(join(REPO_ROOT, relPath), 'utf-8')
 }
 
 describe('034-B Phase 2-G: schema check', () => {

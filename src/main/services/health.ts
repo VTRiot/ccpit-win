@@ -48,13 +48,31 @@ async function listMdFiles(dirPath: string): Promise<string[]> {
     .sort()
 }
 
-/** skills/ 配下で SKILL.md を持つサブディレクトリ名一覧（sorted） */
+/**
+ * skills/ 配下で SKILL.md を持つサブディレクトリ名一覧（sorted）
+ *
+ * Flat: skills/<name>/SKILL.md → "<name>"
+ * Grouping subdir (1 段ネスト): skills/<group>/<name>/SKILL.md → "<name>"
+ *   例: skills/catalysts/dual-axis-translation/SKILL.md → "dual-axis-translation"
+ *   グルーピング名 (catalysts 等) 自体は skill 名として返さない
+ */
 async function listSkillNames(dirPath: string): Promise<string[]> {
   if (!existsSync(dirPath)) return []
   const entries = await readdir(dirPath, { withFileTypes: true })
   const out: string[] = []
   for (const e of entries) {
-    if (e.isDirectory() && existsSync(join(dirPath, e.name, 'SKILL.md'))) out.push(e.name)
+    if (!e.isDirectory()) continue
+    const childPath = join(dirPath, e.name)
+    if (existsSync(join(childPath, 'SKILL.md'))) {
+      out.push(e.name)
+      continue
+    }
+    const grandchildren = await readdir(childPath, { withFileTypes: true })
+    for (const gc of grandchildren) {
+      if (gc.isDirectory() && existsSync(join(childPath, gc.name, 'SKILL.md'))) {
+        out.push(gc.name)
+      }
+    }
   }
   return out.sort()
 }

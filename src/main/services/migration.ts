@@ -748,10 +748,18 @@ function buildPitReference(entries: PitEntry[]): PitReference {
     .map((e) => e.path.replace(/^rules\//, ''))
     .sort()
 
+  // SKILL.md の親ディレクトリ名をスキル名として抽出する。
+  // Flat: skills/<name>/SKILL.md → "<name>"
+  // Grouping (1 段ネスト): skills/<group>/<name>/SKILL.md → "<name>"
+  // グルーピング名 (catalysts 等) を誤って skill 名として捕捉しないため、
+  // path の最初のセグメントではなく SKILL.md の親セグメントを採用する。
   const skillsSet = new Set<string>()
   for (const e of entries) {
-    const m = e.path.match(/^skills\/([^/]+)\//)
-    if (m) skillsSet.add(m[1])
+    if (!e.path.endsWith('/SKILL.md')) continue
+    const parts = e.path.split('/')
+    if (parts.length >= 3 && parts[0] === 'skills') {
+      skillsSet.add(parts[parts.length - 2])
+    }
   }
   const skillsList = [...skillsSet].sort()
 

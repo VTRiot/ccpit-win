@@ -53,6 +53,29 @@ export const DEFAULT_FEATURES: FeatureFlags = {
   editMarkerUI: { enabled: true },
 }
 
+/**
+ * CCES (036, ClaudeCode-ExtensionsSummary Ver.1.0) settings.
+ *
+ * `openingText` is read each time `cces:generate` runs and prepended to the summary.
+ *
+ * `allowAllProjects` is the staged-rollout switch:
+ * - 段階 1 (本タスク): UI に表示するが、ボタン enable 判定では使わない（実 enable は常に true）
+ * - 段階 2 (037 完了後): デフォルト値を逆転 (true → false) し、Legacy PJ で disable する判定に使う
+ *
+ * Why this exists in Ver.1.0 (despite `allowAllProjects` not being checked yet):
+ * - 段階 2 で R3b 修正後、信頼できる MANX 準拠判定が可能になる。
+ *   そのとき、本フィールドのデフォルト値を逆転し、ProjectsPage で marker を見て
+ *   ボタン enable/disable を切り替える実装を追加するだけで段階 2 が完成する。
+ * - 段階 1 で永続化と UI を完成させておくことで、段階 2 の実装が
+ *   「初期値変更 + 判定ロジック追加」のみで済む。
+ *
+ * DO NOT REMOVE without consulting 037 implementation plan.
+ */
+export interface CcesConfig {
+  openingText?: string
+  allowAllProjects?: boolean // 段階 1 default: true, 段階 2 default: false
+}
+
 export interface AppConfig {
   splashDurationMs: number
   splashRareChance: number
@@ -65,6 +88,7 @@ export interface AppConfig {
   lastBackupAt?: string
   deploySource?: DeploySource
   pitReference?: PitReference
+  cces?: CcesConfig
 }
 
 function getDefaults(): AppConfig {

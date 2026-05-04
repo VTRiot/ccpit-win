@@ -167,6 +167,7 @@ const api = {
     >
     legacyMasterPath?: string
     lastBackupAt?: string
+    cces?: { openingText?: string; allowAllProjects?: boolean }
   }> => ipcRenderer.invoke('config:get'),
   configSet: (
     partial: Partial<{
@@ -189,6 +190,7 @@ const api = {
       >
       legacyMasterPath?: string
       lastBackupAt?: string
+      cces?: { openingText?: string; allowAllProjects?: boolean }
     }>
   ): Promise<{
     splashDurationMs: number
@@ -208,6 +210,7 @@ const api = {
     >
     legacyMasterPath?: string
     lastBackupAt?: string
+    cces?: { openingText?: string; allowAllProjects?: boolean }
   }> => ipcRenderer.invoke('config:set', partial),
 
   // Profile Switch
@@ -340,7 +343,20 @@ const api = {
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:openExternal', url),
   openPath: (folderPath: string): Promise<string> =>
     ipcRenderer.invoke('shell:openPath', folderPath),
-  clipboardWrite: (text: string): Promise<void> => ipcRenderer.invoke('clipboard:write', text)
+  clipboardWrite: (text: string): Promise<void> => ipcRenderer.invoke('clipboard:write', text),
+  // 036: CCES (ClaudeCode-ExtensionsSummary) Ver.1.0
+  ccesGenerate: (
+    args: { projectPath: string }
+  ): Promise<
+    | {
+        ok: true
+        markdown: string
+        bytes: number
+        oversized: boolean
+        summary: { metadata: { projectName: string } } & Record<string, unknown>
+      }
+    | { ok: false; error: string }
+  > => ipcRenderer.invoke('cces:generate', args)
 }
 
 if (process.contextIsolated) {
