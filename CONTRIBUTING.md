@@ -6,7 +6,7 @@ This document captures invariants and review checklists that have been earned th
 
 CCPIT treats *user-explicit intent* (a user manually editing a Protocol Marker) as a first-class concept that must survive automated re-scans. The history of these edits is the source of truth.
 
-The 034-B incident taught us that splitting this concept across two storage representations (`projects.json.confirmed` flag + `protocol.json.detection_confidence:'explicit'`) is a structural bug source — the two representations drift out of sync, and an automated process that consults only one of them silently destroys the other.
+Splitting this concept across two storage representations (e.g. a boolean flag in `projects.json` plus a confidence enum in `protocol.json`) is a structural bug source — the two representations drift out of sync, and an automated process that consults only one of them silently destroys the other.
 
 ### Invariants
 
@@ -27,8 +27,14 @@ When adding any field that records "the user explicitly chose X":
 
 These invariants are also enforced by tests in `src/main/services/protocol/__tests__/protocolHistorySchema.test.ts`. If you find yourself updating a test to relax these checks, the change is almost certainly wrong — talk to the maintainers first.
 
-## Past incidents that earned these rules
+## How these rules were earned
 
-- **034 (R3b display + Full Re-scan)**: shipped `confirmed` boolean on `ProjectEntry` as a Lazy-migration field. Existing manually-edited markers had `confirmed: undefined` and were unprotected. Full Re-scan destroyed all of them.
-- **034-A (investigation)**: identified the structural cause as "two parallel representations of explicit intent that don't synchronise."
-- **034-B (this fix)**: replaced both representations with a single append-only event log in `protocol.json` v2. Bugs of the same shape are now structurally impossible.
+These invariants did not arrive in advance. They were extracted from a real bug shipped during the v0.x development of CCPIT
+
+1. **A `confirmed` boolean was added to `ProjectEntry`** as a lazy-migration field marking user-explicit intent. Existing manually-edited markers had `confirmed: undefined` and were unprotected against automated re-scans.
+
+2. **Investigation revealed the structural cause**: two parallel representations of explicit intent (a flag in `projects.json` and `detection_confidence: 'explicit'` in `protocol.json`) were not synchronized. An automated process consulting only one representation silently destroyed signals recorded only in the other.
+
+3. **The fix replaced both representations** with a single append-only event log (`protocol.json` v2). Bugs of the same shape — automated processes silently destroying user intent recorded in a parallel representation — are now structurally impossible.
+
+The lesson: when "explicit user intent" is a domain concept, give it exactly one canonical representation. Anything else is a synchronization bug waiting to happen.
