@@ -123,8 +123,7 @@ export function ProtocolBadge({
             <span
               className={cn(
                 'inline-flex items-center rounded-full border px-2 py-0.5 text-xs cursor-help',
-                view.className,
-                view.isInferred && 'opacity-70'
+                view.className
               )}
             >
               {localizeBadgeText(view.text, t)}

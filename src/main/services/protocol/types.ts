@@ -25,6 +25,21 @@ export interface ProtocolProfile {
   variant_alias: string | null
 }
 
+/**
+ * FSA r7 §5: CLAUDE.md 冒頭 YAML フロントマター自己宣言。
+ * MANX_Protocol r8 §9-5/§9-6 で憲法レベル成文化される仕様。
+ *
+ * - manxVersion: 必須 (e.g. "r7", "r8")
+ * - manxRole   : オプション (default: "managed")
+ *   - "managed": グローバル ~/.claude/ MANX を継承運用 (Raiko/MdriveSetup)
+ *   - "host"   : MANX を提供・管理する側、レガシー保護を内蔵 (CCDG2)
+ *   - "local"  : PJ ローカルに完全 MANX 構造あり (R1/R2 該当)
+ */
+export interface ManxFrontmatter {
+  manxVersion: string
+  manxRole: 'managed' | 'host' | 'local'
+}
+
 // 034-B: 履歴形式 (protocol.json v2)
 //
 // 「明示意思」の出所証跡を単一の `source` フィールドで表現する union 型。
