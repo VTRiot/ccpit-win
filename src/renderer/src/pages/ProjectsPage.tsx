@@ -374,7 +374,7 @@ export function ProjectsPage(): React.JSX.Element {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-5xl mx-auto">
       <Toast
         open={migrationToast.open}
         message={migrationToast.message}
@@ -405,14 +405,14 @@ export function ProjectsPage(): React.JSX.Element {
       />
       <div className="flex items-center justify-between mb-6 gap-2 flex-wrap">
         <h1 className="text-xl font-bold">{t('pages.projects.title')}</h1>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-1 items-center gap-2 flex-wrap justify-end">
           {showProtocolBadge && (
             <Button
               variant="outline"
               size="sm"
               onClick={handleFullRescan}
               disabled={scanningMarkers}
-              className="gap-1.5"
+              className="order-1 gap-1.5"
               title={t('pages.projects.protocolBadge.fullRescan')}
             >
               <RefreshCw size={14} className={scanningMarkers ? 'animate-spin' : ''} />
@@ -421,56 +421,67 @@ export function ProjectsPage(): React.JSX.Element {
           )}
           {showDetectLinkRemove && (
             <>
-              <Button variant="outline" size="sm" onClick={() => setShowDiscover(true)} className="gap-1.5">
+              <Button variant="outline" size="sm" onClick={() => setShowDiscover(true)} className="order-2 gap-1.5">
                 <Search size={14} />
                 {t('pages.projects.discover.button')}
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowRemoveFromList(true)} className="gap-1.5">
+              <Button variant="outline" size="sm" onClick={() => setShowRemoveFromList(true)} className="order-3 gap-1.5">
                 <ListMinus size={14} />
                 {t('pages.projects.removeFromList.button')}
               </Button>
             </>
           )}
-          {showFavorite && (
-            <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
-              <Checkbox
-                checked={viewState.filterFavoritesOnly}
-                onCheckedChange={(checked) =>
-                  setViewState((prev) => ({
-                    ...prev,
-                    filterFavoritesOnly: checked === true,
-                  }))
-                }
-                aria-label={t('pages.projects.filter.favoritesOnly')}
-              />
-              <span>{t('pages.projects.filter.favoritesOnly')}</span>
-            </label>
-          )}
-          <Button onClick={() => { setShowCreate(!showCreate); setCreateResult(null) }} variant={showCreate ? 'outline' : 'default'} size="sm">
+          {/* SortGroup: 並び順 + ★お気に入り (要件 2: 常に並び順 → お気に入り の順)
+              order-5 xl:order-4 で「+ 新規」と前後切替 (要件 3: xl 以上で 1 段化)
+              w-full justify-end xl:w-auto で xl 未満は下段右寄せ折返、xl 以上は 1 段で通常配置 */}
+          <div className="order-5 xl:order-4 flex w-full xl:w-auto items-center justify-end gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  {t('pages.projects.sort.label')}: {t(`pages.projects.sort.${viewState.sortMode}`)}
+                  <ChevronDown size={14} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuRadioGroup
+                  value={viewState.sortMode}
+                  onValueChange={(value) =>
+                    setViewState((prev) => ({ ...prev, sortMode: value as SortMode }))
+                  }
+                >
+                  {SORT_MODES.map((mode) => (
+                    <DropdownMenuRadioItem key={mode} value={mode}>
+                      {t(`pages.projects.sort.${mode}`)}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {showFavorite && (
+              <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
+                <Checkbox
+                  checked={viewState.filterFavoritesOnly}
+                  onCheckedChange={(checked) =>
+                    setViewState((prev) => ({
+                      ...prev,
+                      filterFavoritesOnly: checked === true,
+                    }))
+                  }
+                  aria-label={t('pages.projects.filter.favoritesOnly')}
+                />
+                <span>{t('pages.projects.filter.favoritesOnly')}</span>
+              </label>
+            )}
+          </div>
+          {/* 要件 4: 「+ 新規プロジェクト」は常に右上 (xl 未満は上段最右、xl 以上は 1 段最右) */}
+          <Button
+            onClick={() => { setShowCreate(!showCreate); setCreateResult(null) }}
+            variant={showCreate ? 'outline' : 'default'}
+            size="sm"
+            className="order-4 xl:order-5"
+          >
             <Plus size={16} /> {t('pages.projects.newProject')}
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5">
-                {t('pages.projects.sort.label')}: {t(`pages.projects.sort.${viewState.sortMode}`)}
-                <ChevronDown size={14} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuRadioGroup
-                value={viewState.sortMode}
-                onValueChange={(value) =>
-                  setViewState((prev) => ({ ...prev, sortMode: value as SortMode }))
-                }
-              >
-                {SORT_MODES.map((mode) => (
-                  <DropdownMenuRadioItem key={mode} value={mode}>
-                    {t(`pages.projects.sort.${mode}`)}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
 
