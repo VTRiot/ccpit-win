@@ -201,7 +201,13 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('profile:switchToManx', () => switchToManx())
 
   // --- CC Launch ---
-  ipcMain.handle('cc:launch', (_e, args: LaunchArgs) => launchCc(args))
+  ipcMain.handle('cc:launch', (e, args: LaunchArgs) => {
+    // 037 Phase 2-C 追加: 起動した子ウィンドウを最前面に出すため、spawn 前に
+    // 親 CCPIT を blur してアクティブ状態を解除する。新規 wt 等が起動した時点で
+    // フォアグラウンドを取りやすくなる。CCPIT 自体はクリックで再アクティブ化可能。
+    BrowserWindow.fromWebContents(e.sender)?.blur()
+    return launchCc(args)
+  })
 
   // --- Protocol Marker (034-B: append-only event log) ---
   ipcMain.handle('protocol:read', (_e, projectPath: string) => readProtocol(projectPath))
