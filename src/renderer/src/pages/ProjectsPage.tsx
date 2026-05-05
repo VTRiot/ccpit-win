@@ -44,6 +44,7 @@ import {
   type ProjectsViewState,
   type SortMode,
 } from '../lib/projectsView'
+import { isCcesEnabled, CCES_CONFIG_CHANGED_EVENT } from '../lib/ccesEnabled'
 
 interface ProjectEntry {
   name: string
@@ -122,6 +123,23 @@ export function ProjectsPage(): React.JSX.Element {
 
   // 036: CCES Generate. Per-project click → calls main with that project's path.
   const [ccesBusy, setCcesBusy] = useState<string | null>(null)
+  // 037 Phase 2-B: CCES 有効性スイッチ（cces.allowAllProjects）の現在値。
+  // - false (既定): manx / manx-host のみボタン enable、他は灰抜き
+  // - true: 全 PJ enable（MaintenanceDialog の CCES Advanced タブで切替）
+  const [ccesAllowAll, setCcesAllowAll] = useState<boolean>(false)
+  useEffect(() => {
+    const refetch = async (): Promise<void> => {
+      try {
+        const cfg = await window.api.configGet()
+        setCcesAllowAll(cfg.cces?.allowAllProjects ?? false)
+      } catch {
+        /* keep current value */
+      }
+    }
+    void refetch()
+    window.addEventListener(CCES_CONFIG_CHANGED_EVENT, refetch)
+    return () => window.removeEventListener(CCES_CONFIG_CHANGED_EVENT, refetch)
+  }, [])
   const handleCcesGenerate = async (projectPath: string, projectName: string): Promise<void> => {
     setCcesBusy(projectPath)
     try {
@@ -611,17 +629,29 @@ export function ProjectsPage(): React.JSX.Element {
                   />
                 )}
                 {/* 036: CCES Generate (per-project, clipboard-based) */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={ccesBusy === project.path}
-                  onClick={() => void handleCcesGenerate(project.path, project.name)}
-                  title={t('pages.projects.cces.tooltip')}
-                  className="bg-[hsl(180_55%_42%)] hover:bg-[hsl(180_55%_50%)] text-white border-[hsl(180_55%_42%)] gap-1.5"
-                >
-                  {ccesBusy === project.path ? <Loader2 size={14} className="animate-spin" /> : <Clipboard size={14} />}
-                  {t('pages.projects.cces.generate')}
-                </Button>
+                {/* 037 Phase 2-B: スイッチ × 自動判定で disabled / tooltip を切替 */}
+                {(() => {
+                  const enabled = isCcesEnabled(markers[project.path], ccesAllowAll)
+                  const busy = ccesBusy === project.path
+                  return (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={busy || !enabled}
+                      onClick={() => void handleCcesGenerate(project.path, project.name)}
+                      title={t(enabled ? 'pages.projects.cces.tooltip' : 'pages.projects.cces.disabledTooltip')}
+                      className={cn(
+                        'gap-1.5',
+                        enabled
+                          ? 'bg-[hsl(180_55%_42%)] hover:bg-[hsl(180_55%_50%)] text-white border-[hsl(180_55%_42%)]'
+                          : 'opacity-40',
+                      )}
+                    >
+                      {busy ? <Loader2 size={14} className="animate-spin" /> : <Clipboard size={14} />}
+                      {t('pages.projects.cces.generate')}
+                    </Button>
+                  )
+                })()}
                 <Button
                   variant="ghost"
                   size="icon"
