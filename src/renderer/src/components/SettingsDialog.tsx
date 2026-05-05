@@ -21,9 +21,8 @@ export function SettingsDialogTrigger(props: SettingsDialogProps): React.JSX.Ele
   const [aboutOpen, setAboutOpen] = useState(false)
   const { t } = useTranslation()
 
-  // 036: CCES settings (opening text + allowAllProjects switch)
+  // 036: CCES settings (opening text). allowAllProjects switch was moved to MaintenanceDialog (037 Phase 2-B).
   const [ccesOpening, setCcesOpening] = useState<string>('')
-  const [ccesAllowAll, setCcesAllowAll] = useState<boolean>(true)
 
   useEffect(() => {
     if (!open) return
@@ -33,7 +32,6 @@ export function SettingsDialogTrigger(props: SettingsDialogProps): React.JSX.Ele
         const cfg = await window.api.configGet()
         if (cancelled) return
         setCcesOpening(cfg.cces?.openingText ?? '')
-        setCcesAllowAll(cfg.cces?.allowAllProjects ?? true)
       } catch {
         /* ignore */
       }
@@ -181,44 +179,6 @@ export function SettingsDialogTrigger(props: SettingsDialogProps): React.JSX.Ele
                   <RefreshCcw size={14} />
                   {t('settings.cces.openingReset')}
                 </Button>
-              </div>
-
-              {/* CCES allow-all-projects toggle (Phase 1: stored only, activated in 037) */}
-              <div className="space-y-2">
-                <Label>{t('settings.cces.allowAllProjectsLabel')}</Label>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      setCcesAllowAll(true)
-                      void persistCces({ allowAllProjects: true })
-                    }}
-                    className={cn(
-                      'flex-1 px-3 py-2 rounded-md text-sm font-medium border transition-colors',
-                      ccesAllowAll
-                        ? 'border-primary bg-primary/10 text-foreground'
-                        : 'border-border text-muted-foreground hover:bg-accent',
-                    )}
-                  >
-                    {t('settings.cces.allowAllOn')}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setCcesAllowAll(false)
-                      void persistCces({ allowAllProjects: false })
-                    }}
-                    className={cn(
-                      'flex-1 px-3 py-2 rounded-md text-sm font-medium border transition-colors',
-                      !ccesAllowAll
-                        ? 'border-primary bg-primary/10 text-foreground'
-                        : 'border-border text-muted-foreground hover:bg-accent',
-                    )}
-                  >
-                    {t('settings.cces.allowAllOff')}
-                  </button>
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {t('settings.cces.allowAllProjectsHelp')}
-                </p>
               </div>
 
               {/* Maintenance divider */}

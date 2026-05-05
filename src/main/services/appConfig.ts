@@ -54,26 +54,23 @@ export const DEFAULT_FEATURES: FeatureFlags = {
 }
 
 /**
- * CCES (036, ClaudeCode-ExtensionsSummary Ver.1.0) settings.
+ * CCES (036, ClaudeCode-ExtensionsSummary) settings.
  *
  * `openingText` is read each time `cces:generate` runs and prepended to the summary.
  *
  * `allowAllProjects` is the staged-rollout switch:
- * - 段階 1 (本タスク): UI に表示するが、ボタン enable 判定では使わない（実 enable は常に true）
- * - 段階 2 (037 完了後): デフォルト値を逆転 (true → false) し、Legacy PJ で disable する判定に使う
+ * - 段階 1: UI に表示するが、ボタン enable 判定では使わない（default true）
+ * - 段階 2 (037 Phase 2-B、本コード): デフォルト false。
+ *   ProjectsPage の CCES Generate ボタンが marker.protocol を見て disable する判定に使われる。
+ *   - false (default): manx / manx-host のみ有効、legacy / unknown は灰抜き
+ *   - true: 全 PJ 有効（例外運用用）
  *
- * Why this exists in Ver.1.0 (despite `allowAllProjects` not being checked yet):
- * - 段階 2 で R3b 修正後、信頼できる MANX 準拠判定が可能になる。
- *   そのとき、本フィールドのデフォルト値を逆転し、ProjectsPage で marker を見て
- *   ボタン enable/disable を切り替える実装を追加するだけで段階 2 が完成する。
- * - 段階 1 で永続化と UI を完成させておくことで、段階 2 の実装が
- *   「初期値変更 + 判定ロジック追加」のみで済む。
- *
- * DO NOT REMOVE without consulting 037 implementation plan.
+ * 既存ユーザーの設定値は readConfigSync の `{ ...defaults, ...parsed }` マージで保持される。
+ * デフォルト値の変更はあくまで「新規ユーザー」「CONFIG_FILE に cces キー欠落」のケースに適用。
  */
 export interface CcesConfig {
   openingText?: string
-  allowAllProjects?: boolean // 段階 1 default: true, 段階 2 default: false
+  allowAllProjects?: boolean // 段階 2 default: false
 }
 
 export interface AppConfig {
@@ -100,6 +97,7 @@ function getDefaults(): AppConfig {
     language: 'en',
     currentProfile: 'manx',
     features: { ...DEFAULT_FEATURES },
+    cces: { allowAllProjects: false },
   }
 }
 
@@ -119,6 +117,16 @@ function mergeFeatures(parsed: unknown): FeatureFlags {
   return merged
 }
 
+function mergeCces(parsed: unknown): CcesConfig {
+  const merged: CcesConfig = { allowAllProjects: false }
+  if (parsed && typeof parsed === 'object') {
+    const p = parsed as Record<string, unknown>
+    if (typeof p.openingText === 'string') merged.openingText = p.openingText
+    if (typeof p.allowAllProjects === 'boolean') merged.allowAllProjects = p.allowAllProjects
+  }
+  return merged
+}
+
 export function getParcFermeDir(): string {
   return CCPIT_DIR
 }
@@ -129,9 +137,13 @@ export function readConfigSync(): AppConfig {
   if (!existsSync(CONFIG_FILE)) return defaults
   try {
     const content = readFileSync(CONFIG_FILE, 'utf-8')
-    const parsed = JSON.parse(content) as Partial<AppConfig> & { features?: unknown }
+    const parsed = JSON.parse(content) as Partial<AppConfig> & {
+      features?: unknown
+      cces?: unknown
+    }
     const features = mergeFeatures(parsed.features)
-    return { ...defaults, ...parsed, features }
+    const cces = mergeCces(parsed.cces)
+    return { ...defaults, ...parsed, features, cces }
   } catch {
     return defaults
   }

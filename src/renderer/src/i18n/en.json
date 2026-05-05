@@ -44,11 +44,14 @@
       "title": "CCES (Extensions Summary)",
       "openingLabel": "Opening text",
       "openingDefault": "The following is a snapshot of my current Claude Code Extensions for this project. Please use it to understand what tools, skills, and constraints I have configured.",
-      "openingReset": "Reset to default",
+      "openingReset": "Reset to default"
+    },
+    "ccesAdvanced": {
+      "title": "CCES Advanced",
       "allowAllProjectsLabel": "Allow CCES on non-MANX projects",
       "allowAllOn": "On (all projects)",
       "allowAllOff": "Off (MANX only)",
-      "allowAllProjectsHelp": "Currently CCES is enabled on every project regardless of this switch. After 037 (R3b fix), this switch becomes effective: Off restricts CCES to MANX-conformant projects, leaving Legacy projects greyed out."
+      "allowAllProjectsHelp": "Off (default): CCES is enabled only on MANX-conformant projects (manx / manx-host). On other projects (legacy / unknown), the CCES Generate button is greyed out.\nOn: enables CCES on all projects (advanced/exception use)."
     },
     "devTools": {
       "title": "Developer Tools",
@@ -313,6 +316,7 @@
       "cces": {
         "generate": "CCES Generate",
         "tooltip": "Copy a summary of Claude Code's extensions for this project to the clipboard",
+        "disabledTooltip": "CCES is enabled only on MANX-conformant projects. To allow all projects, use Maintenance > CCES Advanced.",
         "copied": "Copied for {{project}} ({{size}} KB)",
         "oversizedWarning": "Generated for {{project}} ({{size}} KB) — summary is large, consider trimming",
         "error": "CCES generation failed: {{reason}}"

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, HeartPulse, Shield, Stethoscope, Wrench, Inbox } from 'lucide-react'
+import { X, HeartPulse, Shield, Stethoscope, Wrench, Inbox, Clipboard } from 'lucide-react'
 import { Button } from './ui/button'
 import { cn } from '../lib/utils'
 import { HealthPage } from '../pages/HealthPage'
@@ -8,8 +8,9 @@ import { RKPage } from '../pages/RKPage'
 import { DAPage } from '../pages/DAPage'
 import { DebugPage } from '../pages/DebugPage'
 import { CCRequestInboxPage } from '../pages/CCRequestInboxPage'
+import { CcesAdvancedPage } from '../pages/CcesAdvancedPage'
 
-type Tab = 'health' | 'rk' | 'da' | 'inbox' | 'devTools'
+type Tab = 'health' | 'rk' | 'da' | 'inbox' | 'ccesAdvanced' | 'devTools'
 
 interface MaintenanceDialogProps {
   open: boolean
@@ -35,6 +36,7 @@ export function MaintenanceDialog({
     { id: 'rk', labelKey: 'settings.recoveryKit', icon: Shield },
     { id: 'da', labelKey: 'settings.doctorAnalysis', icon: Stethoscope },
     { id: 'inbox', labelKey: 'settings.requestInbox', icon: Inbox },
+    { id: 'ccesAdvanced', labelKey: 'settings.ccesAdvanced.title', icon: Clipboard },
     ...(debugMode
       ? [{ id: 'devTools' as Tab, labelKey: 'settings.devTools.title', icon: Wrench }]
       : [])
@@ -80,6 +82,7 @@ export function MaintenanceDialog({
           {activeTab === 'rk' && <RKPage />}
           {activeTab === 'da' && <DAPage />}
           {activeTab === 'inbox' && <CCRequestInboxPage />}
+          {activeTab === 'ccesAdvanced' && <CcesAdvancedPage />}
           {activeTab === 'devTools' && debugMode && <DebugPage />}
         </div>
       </div>

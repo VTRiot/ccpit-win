@@ -44,11 +44,14 @@
       "title": "CCES（装備サマリ）",
       "openingLabel": "冒頭文",
       "openingDefault": "以下は、本プロジェクトで起動した Claude Code の現在の装備サマリです。CC が利用可能なツール・スキル・制約を把握する手がかりとしてご活用ください。",
-      "openingReset": "デフォルトに戻す",
+      "openingReset": "デフォルトに戻す"
+    },
+    "ccesAdvanced": {
+      "title": "CCES Advanced",
       "allowAllProjectsLabel": "MANX 非準拠 PJ でも CCES を有効にする",
       "allowAllOn": "ON（全 PJ）",
       "allowAllOff": "OFF（MANX のみ）",
-      "allowAllProjectsHelp": "現状はこのスイッチに関係なく全 PJ で CCES が有効です。037（R3b 修正）完了後にこのスイッチが有効化され、OFF にすると Legacy PJ では灰抜きになります。"
+      "allowAllProjectsHelp": "OFF（既定）: MANX 準拠（manx / manx-host）の PJ でのみ CCES を有効にします。それ以外（legacy / unknown）の PJ では CCES Generate ボタンが灰抜きになります。\nON: すべての PJ で CCES を有効にします（例外運用用）。"
     },
     "devTools": {
       "title": "Developer Tools",
@@ -313,6 +316,7 @@
       "cces": {
         "generate": "CCES 生成",
         "tooltip": "Claude Code がこの PJ で起動したときの装備サマリをクリップボードに出力",
+        "disabledTooltip": "CCES は MANX 準拠 PJ のみ有効です。Maintenance > CCES Advanced で全 PJ 有効化できます。",
         "copied": "{{project}} のサマリを ClipBoard に格納しました（{{size}} KB）",
         "oversizedWarning": "{{project}} のサマリは {{size}} KB と大きめです（処理は完了済み）",
         "error": "CCES 生成に失敗: {{reason}}"
