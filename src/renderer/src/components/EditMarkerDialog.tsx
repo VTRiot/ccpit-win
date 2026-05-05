@@ -17,7 +17,7 @@ import type { ProtocolMarkerView } from '../lib/protocolBadge'
 const STAGE_OPTIONS = ['stable', 'beta', 'alpha', 'experimental'] as const
 type Stage = (typeof STAGE_OPTIONS)[number]
 
-const PROTOCOL_SUGGESTIONS = ['manx', 'asama', 'macau', 'legacy', 'unknown']
+const PROTOCOL_SUGGESTIONS = ['manx', 'manx-host', 'asama', 'macau', 'legacy', 'unknown']
 
 export interface EditMarkerSubmit {
   protocol: string

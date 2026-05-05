@@ -8,6 +8,9 @@ import {
   gatherInputs,
   buildExplicitMarker,
   formatAppliedAt,
+  isGlobalManxInherited,
+  isCCDGV1Hardlink,
+  parseManxFrontmatter,
   LEGACY_LINE_THRESHOLD,
   APP_VERSION,
   REVISION_UNKNOWN,
@@ -52,6 +55,8 @@ function emptyInputs(): DetectInputs {
     mergedHasSkills: false,
     mergedHasRules: false,
     mergedHasSettings: false,
+    claudeMdNlink: 1, // FSA r7: 通常ファイル (nlink=1)
+    manxFrontmatter: null, // FSA r7: YAML 自己宣言なし
   }
 }
 
@@ -59,7 +64,8 @@ function emptyInputs(): DetectInputs {
  * テストヘルパ: フラグから merged を再計算する。
  * `mergedHas*` を手で書き忘れないようにするためのもの。
  *
- * FSA r4: グローバル `~/.claude/` は judgment 材料外。merged の OR には含めない。
+ * FSA r5: グローバル `~/.claude/` は merged 計算に含めない (R1/R2/R3a/R3b の挙動は不変)。
+ *   ただし R5 (グローバル MANX 継承判定) では参照される。本ヘルパは merged のみ扱う。
  */
 function withMerged(partial: Partial<DetectInputs>): DetectInputs {
   const base = { ...emptyInputs(), ...partial }
@@ -274,14 +280,16 @@ describe('autoMarker — derived marker shape', () => {
 })
 
 // ────────────────────────────────────────────────────────────────────
-// FSA r4 §2-7 — 2 ソース統合スキャン（グローバル除外）追加ケース
-// r3 で global を judgment 材料に含めていた Case 20/21/23/24 は r4 仕様に更新済み
+// FSA r5 §2-5/§2-7 — 2 ソース統合スキャン (グローバル merged 除外) + R5 グローバル MANX 継承判定
+// r4 で「judgment 材料外」とされた global hooks/skills/rules は r5 で R5 のみ参照する
+// 既存 Case 20/21/23/24/28/30 + CCDG2 specimen は r5 仕様に更新済み
 // ────────────────────────────────────────────────────────────────────
 
-describe('autoMarker — FSA r4 §2-7 (2-source merged scan, global excluded)', () => {
-  // Case 20 (r4 更新): グローバルのみ MANX 構成 + PJ 内 .claude/settings → r4 では judgment に使われない
-  // CCDG2 検体パターンと等価。r3 では manx/high だったが r4 では unknown/low。
-  it('Case 20 (r4 spec change): global hooks/skills/rules + local .claude/settings → unknown, low (NOT manx)', () => {
+describe('autoMarker — FSA r5 §2-5/§2-7 (2-source merged scan + R5 global manx-inheritance)', () => {
+  // Case 20 (r7 再更新): R5 撤廃により global MANX 完備でも R3b にフォールバック。
+  // CCDG2 検体パターン: 44 行 CLAUDE.md + .claude/settings + global MANX、YAML 自己宣言なし (実装時点)。
+  // r5/r6 では manx/low → r7 では unknown/low。CCDG2 を MANX-Host として扱うには YAML 追加が必要。
+  it('Case 20 (r7 spec change): global MANX + local settings + no YAML → R3b unknown, low', () => {
     const inputs = withMerged({
       hasClaudeMd: true,
       claudeMdLines: 44,
@@ -298,14 +306,15 @@ describe('autoMarker — FSA r4 §2-7 (2-source merged scan, global excluded)', 
     expect(result.detection_confidence).toBe('low')
   })
 
-  // Case 21 (r4 更新): グローバル hooks のみ + CLAUDE.md → r4 では judgment に使われない → R3b
-  it('Case 21 (r4 spec change): global hooks only + CLAUDE.md → unknown, low (NOT manx)', () => {
+  // Case 21 (r5 不変): グローバル hooks のみ (skills/rules 欠) → R5 不発火 → R3b unknown/low
+  it('Case 21 (r5): global hooks only + CLAUDE.md → R5 NOT fires (incomplete) → unknown, low', () => {
     const inputs = withMerged({
       hasClaudeMd: true,
       claudeMdLines: 30,
       hasHooksGlobal: true,
     })
     expect(inputs.mergedHasHooks).toBe(false)
+    expect(isGlobalManxInherited(inputs)).toBe(false)
     const result = deriveMarker(inputs)
     expect(result.protocol).toBe('unknown')
     expect(result.detection_confidence).toBe('low')
@@ -326,8 +335,8 @@ describe('autoMarker — FSA r4 §2-7 (2-source merged scan, global excluded)', 
     expect(result.detection_confidence).toBe('high')
   })
 
-  // Case 23 (r4 更新): evidence 4 セクション記録 + global 注記 + merged が global 除外であること
-  it('Case 23 (r4): evidence records 4 sections with global "informational only" note and merged "excludes global"', () => {
+  // Case 23 (r7 再更新): evidence 5 セクション (local/local.claude/global/merged/manx_yaml) + R5 retired 注記 + nlink
+  it('Case 23 (r7): evidence has "R5 retired in r7", nlink + manx_yaml sections', () => {
     const inputs = withMerged({
       hasClaudeMd: true,
       claudeMdLines: 425,
@@ -338,14 +347,16 @@ describe('autoMarker — FSA r4 §2-7 (2-source merged scan, global excluded)', 
     })
     const result = deriveMarker(inputs)
     const ev = result.detection_evidence ?? ''
-    expect(ev).toContain('local: CLAUDE.md=true(425行)')
+    expect(ev).toContain('local: CLAUDE.md=true(425行')
+    expect(ev).toContain('nlink=1')
     expect(ev).toContain('local.claude:')
-    expect(ev).toContain('global.claude (informational only, not used for judgment):')
+    expect(ev).toContain('global.claude (informational only, R5 retired in r7):')
     expect(ev).toContain('merged (excludes global): hooks=false, skills=false, rules=false, settings.json=true')
+    expect(ev).toContain('manx_yaml: (none)')
   })
 
-  // Case 24 (r4 更新): グローバル hooks/skills/rules は judgment 材料外
-  it('Case 24 (r4 spec change): global hooks/skills/rules are NOT counted (merged excludes global)', () => {
+  // Case 24 (r7 再更新): R5 撤廃により global MANX 完備でも R3b にフォールバック (50 行)
+  it('Case 24 (r7 spec change): global MANX + 50 lines + no YAML → R3b unknown, low', () => {
     const inputs = withMerged({
       hasClaudeMd: true,
       claudeMdLines: 50,
@@ -358,13 +369,16 @@ describe('autoMarker — FSA r4 §2-7 (2-source merged scan, global excluded)', 
     expect(inputs.mergedHasSkills).toBe(false)
     expect(inputs.mergedHasRules).toBe(false)
     expect(inputs.mergedHasSettings).toBe(false)
+    // isGlobalManxInherited は @deprecated として動作維持 (互換性)
+    expect(isGlobalManxInherited(inputs)).toBe(true)
     const result = deriveMarker(inputs)
     expect(result.protocol).toBe('unknown')
     expect(result.detection_confidence).toBe('low')
   })
 
-  // Case 28: CanAna 検体（CLAUDE.md のみ + グローバル MANX 構成）→ R3b
-  it('Case 28 (CanAna specimen): CLAUDE.md only + global MANX setup → R3b unknown, low', () => {
+  // Case 28 (r7 再更新, CanAna specimen): R5 撤廃により global MANX のみで MANX 化しない (R3b)
+  // CanAna は最古二層 AI PJ、らいおが Edit Marker UI で 'legacy' 手動設定する運用
+  it('Case 28 (r7 spec change, CanAna specimen): CLAUDE.md + global MANX → R3b unknown, low', () => {
     const inputs = withMerged({
       hasClaudeMd: true,
       claudeMdLines: 80,
@@ -387,8 +401,8 @@ describe('autoMarker — FSA r4 §2-7 (2-source merged scan, global excluded)', 
     expect(inputs.mergedHasHooks).toBe(false)
   })
 
-  // Case 30: detection_evidence の global セクションに informational 注記が含まれる
-  it('Case 30: evidence global section contains "informational only, not used for judgment"', () => {
+  // Case 30 (r7 再更新): detection_evidence の global セクションに R5 retired 注記
+  it('Case 30 (r7): evidence global section contains "informational only, R5 retired in r7"', () => {
     const inputs = withMerged({
       hasHooksGlobal: true,
       hasSkillsGlobal: true,
@@ -396,8 +410,326 @@ describe('autoMarker — FSA r4 §2-7 (2-source merged scan, global excluded)', 
     })
     const result = deriveMarker(inputs)
     const ev = result.detection_evidence ?? ''
-    expect(ev).toContain('informational only, not used for judgment')
+    expect(ev).toContain('informational only, R5 retired in r7')
     expect(ev).toContain('merged (excludes global)')
+  })
+})
+
+// ────────────────────────────────────────────────────────────────────
+// FSA r7 §3-5 — R5 撤廃 + R0a (ハードリンク) + R6/R7 (YAML 自己宣言) 新規
+// Case 31〜38 を r7 仕様に更新 (旧 R5 → R3a/R3b にフォールバック、YAML 経路を追加)
+// Case 39〜50 を新規追加 (R0a/R6/R7/R3a 強化の網羅)
+// ────────────────────────────────────────────────────────────────────
+
+describe('autoMarker — FSA r7 §3 R0a (CCDG-V1 hardlink detection)', () => {
+  // Case 31 (旧 R5 基本完備 → r7 では R3a で legacy/high): CLAUDE.md 60行 + global MANX のみ
+  // → 旧 R5 で manx/low → r7 撤廃により R3b にフォールバック (CLAUDE.md ≤200 行 + ローカル MANX なし)
+  it('Case 31 (r7 R5 retired): CLAUDE.md 60 + global MANX only → R3b unknown, low', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 60,
+      hasHooksGlobal: true,
+      hasSkillsGlobal: true,
+      hasRulesGlobal: true,
+    })
+    // R5 deprecated 関数は維持 (互換性)
+    expect(isGlobalManxInherited(inputs)).toBe(true)
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('unknown')
+    expect(result.detection_confidence).toBe('low')
+  })
+
+  // Case 32 (旧 R5 短い CLAUDE.md → r7 R3b): 10行 + global MANX → unknown, low
+  it('Case 32 (r7 R5 retired): CLAUDE.md 10 + global MANX → R3b unknown, low', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 10,
+      hasHooksGlobal: true,
+      hasSkillsGlobal: true,
+      hasRulesGlobal: true,
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('unknown')
+    expect(result.detection_confidence).toBe('low')
+  })
+
+  // Case 33 (旧 R5 長い CLAUDE.md → r7 R3a Legacy): 500行 + global MANX → legacy, high
+  it('Case 33 (r7 R5 retired, R3a fires): CLAUDE.md 500 + global MANX → R3a legacy, high', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 500,
+      hasHooksGlobal: true,
+      hasSkillsGlobal: true,
+      hasRulesGlobal: true,
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('legacy')
+    expect(result.detection_confidence).toBe('high')
+  })
+
+  // Case 34-36 (R5 boundary 旧仕様): r7 でも R3b にフォールバックで unknown/low (挙動不変)
+  it('Case 34 (r7): CLAUDE.md + global skills/rules only → R3b unknown, low', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 30,
+      hasSkillsGlobal: true,
+      hasRulesGlobal: true,
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('unknown')
+    expect(result.detection_confidence).toBe('low')
+  })
+
+  it('Case 35 (r7): CLAUDE.md + global hooks/rules only → R3b unknown, low', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 30,
+      hasHooksGlobal: true,
+      hasRulesGlobal: true,
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('unknown')
+    expect(result.detection_confidence).toBe('low')
+  })
+
+  it('Case 36 (r7): CLAUDE.md + global hooks/skills only → R3b unknown, low', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 30,
+      hasHooksGlobal: true,
+      hasSkillsGlobal: true,
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('unknown')
+    expect(result.detection_confidence).toBe('low')
+  })
+
+  // Case 37 (優先順位 R1 > R0a でない場合): ローカル MANX 完備 + global MANX → R1 manx/high (不変)
+  it('Case 37 (priority R1 fires when no hardlink): full local MANX + global MANX → R1 manx, high', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 60,
+      hasHooksLocal: true,
+      hasSkillsLocal: true,
+      hasRulesLocal: true,
+      hasSettingsDotClaudeLocal: true,
+      hasHooksGlobal: true,
+      hasSkillsGlobal: true,
+      hasRulesGlobal: true,
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('manx')
+    expect(result.detection_confidence).toBe('high')
+  })
+
+  // Case 38 (R4 維持): CLAUDE.md なし → unknown, unknown
+  it('Case 38 (r7 R4): no CLAUDE.md → unknown, unknown', () => {
+    const inputs = withMerged({
+      hasHooksGlobal: true,
+      hasSkillsGlobal: true,
+      hasRulesGlobal: true,
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('unknown')
+    expect(result.detection_confidence).toBe('unknown')
+  })
+
+  // ========== r7 NEW: R0a CCDG-V1 ハードリンク検出 ==========
+
+  // Case 39 (R0a 基本): nlink=13 + CLAUDE.md 632 行 → legacy/high
+  it('Case 39 (R0a): nlink=13 + CLAUDE.md 632 lines → legacy, high (CCDG-V1 detected)', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 632,
+      claudeMdNlink: 13,
+    })
+    expect(isCCDGV1Hardlink(inputs.claudeMdNlink)).toBe(true)
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('legacy')
+    expect(result.detection_confidence).toBe('high')
+  })
+
+  // Case 40 (R0a 短い): nlink=13 + CLAUDE.md 50 行 → legacy/high (nlink>1 のみで発火)
+  it('Case 40 (R0a short CLAUDE.md): nlink=13 + 50 lines → legacy, high', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 50,
+      claudeMdNlink: 13,
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('legacy')
+    expect(result.detection_confidence).toBe('high')
+  })
+
+  // Case 41 (R0a > R1 優先): nlink=13 + ローカル MANX 完備 → R0a が R1 より優先 → legacy
+  // ハードリンク検出は他の何にも勝る (Self-host を装っても物理構造で本物が分かる)
+  it('Case 41 (priority R0a > R1): nlink=13 + R1 complete → legacy/high (R0a wins)', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 60,
+      claudeMdNlink: 13,
+      hasHooksLocal: true,
+      hasSkillsLocal: true,
+      hasRulesLocal: true,
+      hasSettingsDotClaudeLocal: true,
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('legacy')
+    expect(result.detection_confidence).toBe('high')
+  })
+
+  // Case 42 (R0a 不発火境界): nlink=1 (通常ファイル) → R0a スキップ
+  it('Case 42 (R0a boundary): nlink=1 + CLAUDE.md 632 → R3a (not R0a)', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 632,
+      claudeMdNlink: 1,
+    })
+    expect(isCCDGV1Hardlink(inputs.claudeMdNlink)).toBe(false)
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('legacy') // R3a fires (lines > 200)
+    expect(result.detection_confidence).toBe('high')
+  })
+})
+
+// ========== r7 NEW: R6 / R7 YAML 自己宣言 ==========
+
+describe('autoMarker — FSA r7 §5 R6/R7 (YAML self-declaration)', () => {
+  // Case 43 (R6 default managed): YAML manx_version=r8, role 省略 → manx, low (default managed)
+  it('Case 43 (R6 default): YAML manx_version=r8 only → manx, low (managed default)', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 15,
+      manxFrontmatter: { manxVersion: 'r8', manxRole: 'managed' },
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('manx')
+    expect(result.detection_confidence).toBe('low')
+  })
+
+  // Case 44 (R7 host): YAML manx_role=host → manx-host, low
+  it('Case 44 (R7): YAML manx_role=host → manx-host, low', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 44,
+      manxFrontmatter: { manxVersion: 'r8', manxRole: 'host' },
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('manx-host')
+    expect(result.detection_confidence).toBe('low')
+  })
+
+  // Case 45 (R6 vs R3a 優先): YAML + 行数 500 → R6 が R3a より優先 (manx, low)
+  it('Case 45 (priority R6 > R3a): YAML manx_role=managed + 500 lines → manx, low', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 500,
+      manxFrontmatter: { manxVersion: 'r8', manxRole: 'managed' },
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('manx')
+    expect(result.detection_confidence).toBe('low')
+  })
+
+  // Case 46 (YAML 無効): manxFrontmatter=null → R3b へフォールバック
+  it('Case 46 (YAML missing): no manxFrontmatter + 30 lines → R3b unknown, low', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 30,
+      manxFrontmatter: null,
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('unknown')
+    expect(result.detection_confidence).toBe('low')
+  })
+
+  // Case 47 (R7 local role): YAML manx_role=local + ローカル MANX なし → R6 経路で manx, low
+  // (local 役割は今は manx 表示、将来別扱いの余地)
+  it('Case 47 (R7 local role): YAML manx_role=local → manx, low (R6 fallback)', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 50,
+      manxFrontmatter: { manxVersion: 'r8', manxRole: 'local' },
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('manx')
+    expect(result.detection_confidence).toBe('low')
+  })
+
+  // Case 48 (R0a vs R7 優先): nlink=13 + YAML manx_role=host → R0a が R7 より優先 → legacy
+  it('Case 48 (priority R0a > R7): nlink=13 + YAML manx_role=host → legacy, high (R0a wins)', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 632,
+      claudeMdNlink: 13,
+      manxFrontmatter: { manxVersion: 'r8', manxRole: 'host' },
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('legacy')
+    expect(result.detection_confidence).toBe('high')
+  })
+
+  // Case 49 (R7 vs R6 優先): YAML manx_role=host → R7 (manx-host) が R6 (manx) より優先
+  it('Case 49 (priority R7 > R6): YAML manx_role=host wins over default managed', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 44,
+      manxFrontmatter: { manxVersion: 'r8', manxRole: 'host' },
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('manx-host')
+  })
+
+  // Case 50 (R3a 不変): nlink=1 + 632 行 + YAML なし → R3a legacy, high (CCDG-V1 でない巨大 CLAUDE.md)
+  it('Case 50 (R3a unchanged): nlink=1 + 632 lines + no YAML → R3a legacy, high', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 632,
+      claudeMdNlink: 1,
+      manxFrontmatter: null,
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('legacy')
+    expect(result.detection_confidence).toBe('high')
+  })
+})
+
+// ========== r7 NEW: parseManxFrontmatter 単体テスト ==========
+
+describe('autoMarker — parseManxFrontmatter (FSA r7 §5)', () => {
+  it('parses valid frontmatter with version + role', async () => {
+    const path = join(workdir, 'CLAUDE.md')
+    await writeFile(path, '---\nmanx_version: r8\nmanx_role: host\n---\n\n# Title\n', 'utf-8')
+    const result = await parseManxFrontmatter(path)
+    expect(result).toEqual({ manxVersion: 'r8', manxRole: 'host' })
+  })
+
+  it('defaults manx_role to "managed" when omitted', async () => {
+    const path = join(workdir, 'CLAUDE.md')
+    await writeFile(path, '---\nmanx_version: r8\n---\n\n# Title\n', 'utf-8')
+    const result = await parseManxFrontmatter(path)
+    expect(result).toEqual({ manxVersion: 'r8', manxRole: 'managed' })
+  })
+
+  it('returns null when manx_version missing (required)', async () => {
+    const path = join(workdir, 'CLAUDE.md')
+    await writeFile(path, '---\nmanx_role: host\n---\n\n# Title\n', 'utf-8')
+    const result = await parseManxFrontmatter(path)
+    expect(result).toBeNull()
+  })
+
+  it('returns null when no frontmatter at all', async () => {
+    const path = join(workdir, 'CLAUDE.md')
+    await writeFile(path, '# Title\nmanx_version: r8\n', 'utf-8')
+    const result = await parseManxFrontmatter(path)
+    expect(result).toBeNull()
+  })
+
+  it('treats invalid manx_role as default "managed"', async () => {
+    const path = join(workdir, 'CLAUDE.md')
+    await writeFile(path, '---\nmanx_version: r8\nmanx_role: invalid_role\n---\n', 'utf-8')
+    const result = await parseManxFrontmatter(path)
+    expect(result).toEqual({ manxVersion: 'r8', manxRole: 'managed' })
   })
 })
 
@@ -482,10 +814,16 @@ describe('autoMarker — FSA r3 §3-8 (Edit Marker / Re-scan Marker)', () => {
 })
 
 describe('autoMarker — CCDG2 specimen verification', () => {
-  it('Case 20-CCDG2 (r4 spec change): real CCDG2 repo → unknown, low (PJ has no MANX setup; global is informational only)', async () => {
+  it('Case 20-CCDG2 (r7 spec change): real CCDG2 repo → R3b unknown/low (YAML pending; manx-host after らいお adds YAML)', async () => {
     // 注意: 本ケースは検証マシンの実態に依存する E2E 的テスト。
-    // FSA r4: CCDG2 は PJ 直下にも .claude/ にも hooks/skills/rules を持たない。
-    //   グローバル ~/.claude/ に MANX 構成があっても judgment 材料外なので unknown/low が正解。
+    // FSA r7: R5 撤廃により global MANX のみでは MANX 化しない。
+    //   CCDG2 を MANX-Host として表示するには CLAUDE.md 冒頭に YAML 追加 (らいお手動):
+    //     ---
+    //     manx_version: r8
+    //     manx_role: host
+    //     ---
+    //   YAML 追加後は R7 経由で manx-host/low になる。実装時点 (YAML 未追加) では R3b → unknown/low。
+    //   nlink=1 (CCDG2 ルート CLAUDE.md は独立ファイル、CCDG-V1 ハードリンクではない) → R0a 不発火。
     const ccdg2 = 'C:\\_Prog\\_WinSoftDev\\CCDG2'
     const { stat } = await import('fs/promises')
     let exists = false
@@ -500,19 +838,33 @@ describe('autoMarker — CCDG2 specimen verification', () => {
     const inputs = await gatherInputs(ccdg2)
     expect(inputs.hasClaudeMd).toBe(true)
     expect(inputs.hasSettingsDotClaudeLocal).toBe(true) // .claude/settings.local.json
-    // グローバルには MANX 構成あり（情報として記録される）
+    // グローバルには MANX 構成あり (r7 では informational only)
     expect(inputs.hasHooksGlobal).toBe(true)
     expect(inputs.hasSkillsGlobal).toBe(true)
     expect(inputs.hasRulesGlobal).toBe(true)
-    // しかし merged は PJ 直下 + .claude/ のみ → false（グローバル除外）
+    // merged は PJ 直下 + .claude/ のみ → false (R1/R2 不発火)
     expect(inputs.mergedHasHooks).toBe(false)
     expect(inputs.mergedHasSkills).toBe(false)
     expect(inputs.mergedHasRules).toBe(false)
     expect(inputs.mergedHasSettings).toBe(true) // settings.local.json があるので true
-
-    const marker = deriveMarker(inputs)
-    // R3b: CLAUDE.md ≤ 200 行 + no merged hooks/skills → unknown, low
-    expect(marker.protocol).toBe('unknown')
-    expect(marker.detection_confidence).toBe('low')
+    // CCDG2 は独立ファイル (CCDG-V1 ハードリンクではない)
+    expect(inputs.claudeMdNlink).toBe(1)
+    // YAML 自己宣言は らいお手動追加待ち (実装時点では未追加 → null)
+    // ただし「らいおが既に YAML を追加済」なら manxFrontmatter は { r8, host } になり、R7 → manx-host
+    // 本テストは「どちらでも矛盾しない」よう振り分け
+    if (inputs.manxFrontmatter !== null) {
+      const marker = deriveMarker(inputs)
+      if (inputs.manxFrontmatter.manxRole === 'host') {
+        expect(marker.protocol).toBe('manx-host')
+      } else {
+        expect(marker.protocol).toBe('manx')
+      }
+      expect(marker.detection_confidence).toBe('low')
+    } else {
+      // YAML 未追加: R3b → unknown/low (CCDG2 の現状 44 行 CLAUDE.md)
+      const marker = deriveMarker(inputs)
+      expect(marker.protocol).toBe('unknown')
+      expect(marker.detection_confidence).toBe('low')
+    }
   })
 })

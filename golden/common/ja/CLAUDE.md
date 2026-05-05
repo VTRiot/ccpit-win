@@ -8,6 +8,7 @@
 - プロジェクト定義があれば `_Prompt/` 配下を参照せよ
 
 ## 価値観
+- 「動くもの」第一責務。テスト PASS / typecheck OK は前提条件であり完了条件ではない。実機で動く（ユーザー視認可能）まで「完了」と宣言するな。「ユーザー手動」と書く前に、それが本当に CC 不可能なのか 1 回自問せよ（git push 以外はほぼ CC 可能）
 - 根治志向。症状隠しの Shallow Fix を許すな
 - 推測禁止。分からなければ調べるか聞け
 - バックアップ必須。上書き前に .bak を取れ
@@ -30,8 +31,9 @@
 |------|-----------|-----------|
 | コード実装を開始する | rumination | Q1〜Q4 への回答を出力済み |
 | コード変更前に既存設計を確認する | refactoring | 反芻 1 回目・2 回目の記載が報告書 MD に存在 |
-| 「修正完了」を報告する | testable-impl | 報告書 MD に Before/After 実測値と完了条件全項目を記載済み |
+| 「修正完了」を報告する | testable-impl + completion-interlock | 3 階層 Before/After（コード / 実機 UX / らいお FB）記載済み + らいお FB 受領済み |
+| 複数ファイル（2 件以上）編集して らいお / 設計 AI に視認依頼する | testable-impl 多ファイル提出 ZIP 化 | ZIP ファイルが報告書と同じフォルダに配置済み + ZIP 直下の お品書き.md に各ファイル産地と確認ポイント記載済み |
 | 原因を特定したと報告する | investigation | 反証チェックリストを記載済み |
 | 報告書を出力する | report | `_Prompt\01_FromBuilderAi\` に MD ファイルが存在する |
-| コード変更を伴う作業を完了する | completion-interlock | 報告書 MD に実測値・完了条件全項目が記載済み |
+| コード変更を伴う作業を完了する | completion-interlock | 報告書 MD に 3 階層 Before/After 記載済み + 禁止フレーズ未使用 |
 | コード変更を伴う作業を完了する | hooks/report-gate | Stop hook がブロックしなかった |
