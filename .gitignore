@@ -4,3 +4,8 @@ out
 .DS_Store
 .eslintcache
 *.log*
+
+# Editor / tool backup files
+*.bak
+*.bak2
+*.bak.*

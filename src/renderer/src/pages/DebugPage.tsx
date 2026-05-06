@@ -275,6 +275,7 @@ export function DebugPage(): React.JSX.Element {
           <div className="space-y-1">
             <p className="text-sm font-medium">{t('settings.splashRareChance')}</p>
             <p className="text-xs text-muted-foreground">{t('settings.splashRareChanceDescription')}</p>
+            <p className="text-xs text-amber-500 mt-0.5">{t('settings.splashRareChanceNotice')}</p>
             <div className="flex items-center gap-3 mt-1">
               <input
                 type="range"

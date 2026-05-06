@@ -30,6 +30,7 @@
     "splashDurationDescription": "起動時のスプラッシュ表示時間 (ms)。次回起動時に反映されます。",
     "splashRareChance": "レア演出確率",
     "splashRareChanceDescription": "レア演出の出現確率 (0-1)",
+    "splashRareChanceNotice": "(未実装: 値は記録のみ、演出ロジックは将来実装予定)",
     "maintenance": "メンテナンス",
     "openMaintenance": "メンテナンス画面を開く",
     "recoveryKit": "Recovery Kit",

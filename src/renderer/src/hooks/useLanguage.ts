@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { STORAGE_KEY } from '../i18n'
 
 type Language = 'en' | 'ja'
 
@@ -8,11 +7,15 @@ export function useLanguage(): { language: Language; toggleLanguage: () => void 
   const language = (i18n.language as Language) || 'en'
 
   const toggleLanguage = (): void => {
-    const next = language === 'en' ? 'ja' : 'en'
-    i18n.changeLanguage(next)
-    localStorage.setItem(STORAGE_KEY, next)
-    // main プロセス側 app-config.json にも言語を保存（deploy/health で参照される）
-    void window.api.configSet({ language: next })
+    const next: Language = language === 'en' ? 'ja' : 'en'
+    void (async () => {
+      await i18n.changeLanguage(next)
+      try {
+        await window.api.configSet({ language: next })
+      } catch (err) {
+        console.warn('[useLanguage] Failed to persist language to app-config.json', err)
+      }
+    })()
   }
 
   return { language, toggleLanguage }
