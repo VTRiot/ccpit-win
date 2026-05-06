@@ -15,8 +15,42 @@ function getCommonLangDir(): string {
 
 export interface HealthCheckItem {
   name: string
-  status: 'ok' | 'warn' | 'error'
+  status: 'ok' | 'warn' | 'error' | 'info'
   detail: string
+}
+
+/**
+ * .pit ベースライン (rules/skills 名前リスト) との方向別差分判定。
+ * - 完全一致: ok
+ * - 追加のみ (host が superset): info（ユーザー追加は正常運用）
+ * - 削除のみ / 削除＋追加混在: warn（.pit 由来機能が壊れる可能性）
+ */
+function diffAgainstPit(
+  expected: string[],
+  actual: string[],
+  label: 'rules' | 'skills'
+): { status: 'ok' | 'warn' | 'info'; detail: string } {
+  const expectedSet = new Set(expected)
+  const actualSet = new Set(actual)
+  const added = actual.filter((x) => !expectedSet.has(x))
+  const removed = expected.filter((x) => !actualSet.has(x))
+
+  if (added.length === 0 && removed.length === 0) {
+    return { status: 'ok', detail: `${actual.length} ${label}` }
+  }
+  if (removed.length === 0) {
+    return { status: 'info', detail: `+${added.length} ${label} added since import` }
+  }
+  if (added.length === 0) {
+    return {
+      status: 'warn',
+      detail: `-${removed.length} ${label} removed (could break .pit-based features)`,
+    }
+  }
+  return {
+    status: 'warn',
+    detail: `${added.length} added, ${removed.length} removed`,
+  }
 }
 
 /** ファイルの SHA-256 ハッシュを計算 */
@@ -77,15 +111,6 @@ async function listSkillNames(dirPath: string): Promise<string[]> {
   return out.sort()
 }
 
-/** ソート済み文字列配列の同値判定 */
-function sameSortedList(a: string[], b: string[]): boolean {
-  if (a.length !== b.length) return false
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) return false
-  }
-  return true
-}
-
 /** ヘルスチェック実行 */
 export async function runHealthCheck(): Promise<HealthCheckItem[]> {
   const userHome = app.getPath('home')
@@ -135,7 +160,12 @@ export async function runHealthCheck(): Promise<HealthCheckItem[]> {
     if (currentHash === cfg.pitReference!.claudeMdHash) {
       results.push({ name: 'CLAUDE.md', status: 'ok', detail: 'Matches imported .pit' })
     } else {
-      results.push({ name: 'CLAUDE.md', status: 'warn', detail: 'Modified from imported .pit' })
+      // ユーザー追記は正常運用 (CCPIT は設定 GUI、CLAUDE.md カスタマイズが目的)
+      results.push({
+        name: 'CLAUDE.md',
+        status: 'info',
+        detail: 'Modified from imported .pit (user-edited)',
+      })
     }
   } else {
     const info = await stat(claudeMdPath)
@@ -161,15 +191,8 @@ export async function runHealthCheck(): Promise<HealthCheckItem[]> {
     const actualRules = await listMdFiles(rulesDir)
     if (usePitReference) {
       const expected = cfg.pitReference!.rulesList
-      if (sameSortedList(expected, actualRules)) {
-        results.push({ name: 'rules/', status: 'ok', detail: `${actualRules.length} rules` })
-      } else {
-        results.push({
-          name: 'rules/',
-          status: 'warn',
-          detail: `Rules differ from imported .pit (${actualRules.length} present, ${expected.length} expected)`,
-        })
-      }
+      const diff = diffAgainstPit(expected, actualRules, 'rules')
+      results.push({ name: 'rules/', status: diff.status, detail: diff.detail })
     } else {
       results.push({ name: 'rules/', status: 'ok', detail: `${actualRules.length} rules` })
     }
@@ -184,15 +207,8 @@ export async function runHealthCheck(): Promise<HealthCheckItem[]> {
     const actualSkills = await listSkillNames(skillsDir)
     if (usePitReference) {
       const expected = cfg.pitReference!.skillsList
-      if (sameSortedList(expected, actualSkills)) {
-        results.push({ name: 'skills/', status: 'ok', detail: `${actualSkills.length} skills` })
-      } else {
-        results.push({
-          name: 'skills/',
-          status: 'warn',
-          detail: `Skills differ from imported .pit (${actualSkills.length} present, ${expected.length} expected)`,
-        })
-      }
+      const diff = diffAgainstPit(expected, actualSkills, 'skills')
+      results.push({ name: 'skills/', status: diff.status, detail: diff.detail })
     } else if (existsSync(goldenSkillsDir)) {
       const goldenCount = (await listSkillNames(goldenSkillsDir)).length
       if (actualSkills.length >= goldenCount) {

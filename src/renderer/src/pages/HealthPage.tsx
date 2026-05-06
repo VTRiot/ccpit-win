@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { RefreshCw, Loader2, CheckCircle, AlertTriangle, XCircle, ShieldCheck, ShieldAlert, Terminal } from 'lucide-react'
+import { RefreshCw, Loader2, CheckCircle, AlertTriangle, XCircle, Info, ShieldCheck, ShieldAlert, Terminal } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
 import { cn } from '../lib/utils'
@@ -15,6 +15,7 @@ const STATUS_ICON: Record<string, { icon: React.ElementType; color: string }> = 
   ok: { icon: CheckCircle, color: 'text-green-500' },
   warn: { icon: AlertTriangle, color: 'text-yellow-500' },
   error: { icon: XCircle, color: 'text-destructive' },
+  info: { icon: Info, color: 'text-blue-500' },
 }
 
 const DENY_TEST_COMMANDS = [

@@ -30,6 +30,7 @@
     "splashDurationDescription": "How long the splash screen is shown on startup (ms). Takes effect on next launch.",
     "splashRareChance": "Rare animation chance",
     "splashRareChanceDescription": "Probability of rare splash animation (0-1)",
+    "splashRareChanceNotice": "(Not yet implemented: value stored only, animation logic pending)",
     "maintenance": "Maintenance",
     "openMaintenance": "Open Maintenance",
     "recoveryKit": "Recovery Kit",
