@@ -6,7 +6,7 @@ import { app } from 'electron'
 import AdmZip from 'adm-zip'
 import { getConfig, setConfig, type Language, type PitReference } from './appConfig'
 import { createBackupZip, hasAnyBackup, getBackupDir } from './backup'
-import { CCPIT_VERSION, GITHUB_URL, CLAUDE_CODE_DOCS, AI_GUIDES } from './constants'
+import { GITHUB_URL, CLAUDE_CODE_DOCS, AI_GUIDES } from './constants'
 
 interface ScannedFile {
   path: string
@@ -483,10 +483,11 @@ export async function generateConversionPack(
   const claudeMdFile = scannedFiles.find(f => f.name === 'CLAUDE.md')
   const sourceLines = claudeMdFile ? claudeMdFile.lines : 0
 
+  const version = app.getVersion()
   if (lang === 'ja') {
-    return cpTemplateJa(CCPIT_VERSION, GITHUB_URL, CLAUDE_CODE_DOCS, scannedFilesSection, generatedAt, sourceLines)
+    return cpTemplateJa(version, GITHUB_URL, CLAUDE_CODE_DOCS, scannedFilesSection, generatedAt, sourceLines)
   }
-  return cpTemplateEn(CCPIT_VERSION, GITHUB_URL, CLAUDE_CODE_DOCS, scannedFilesSection, generatedAt, sourceLines)
+  return cpTemplateEn(version, GITHUB_URL, CLAUDE_CODE_DOCS, scannedFilesSection, generatedAt, sourceLines)
 }
 
 interface ParsedBlock {

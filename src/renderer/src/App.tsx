@@ -43,14 +43,21 @@ function App(): React.JSX.Element {
   const handleToggleShowSetupNav = async (next: boolean): Promise<void> => {
     await window.api.configSet({ showSetupNav: next })
     setShowSetupNav(next)
+    if (!next && activePage === 'setup') {
+      setActivePage('projects')
+    }
   }
 
   useEffect(() => {
     const runStartupChecks = async (): Promise<void> => {
       try {
         const config = await window.api.configGet()
+        // 永続化値を絶対尊重 (強制矯正なし)。
+        // activePage 起動時遷移条件: setupCompleted=true、または showSetupNav=false (ユーザー意図的に Setup ナビ非表示で運用中)。
+        // 残り (setupCompleted=false かつ showSetupNav=true) は初期値 'setup' のまま = 新規ユーザー Setup 画面。
+        // showSetupNav=false で起動した場合の Setup 復活経路: Settings → Maintenance → Recovery Kit タブのトグル ON。
         setShowSetupNav(config.showSetupNav)
-        if (config.setupCompleted) {
+        if (config.setupCompleted || !config.showSetupNav) {
           setActivePage('projects')
         }
 

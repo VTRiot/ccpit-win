@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { X, ExternalLink } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from './ui/button'
@@ -10,6 +11,13 @@ interface AboutDialogProps {
 
 export function AboutDialog({ open, onClose }: AboutDialogProps): React.JSX.Element | null {
   const { t } = useTranslation()
+  const [version, setVersion] = useState('')
+
+  useEffect(() => {
+    if (open) {
+      window.api.getAppVersion().then(setVersion)
+    }
+  }, [open])
 
   if (!open) return null
 
@@ -38,7 +46,7 @@ export function AboutDialog({ open, onClose }: AboutDialogProps): React.JSX.Elem
         {/* Info area */}
         <div className="p-6 flex flex-col items-center gap-3 text-center">
           <div className="text-xs text-muted-foreground space-y-1">
-            <p className="font-medium text-foreground text-sm">{t('about.version')}</p>
+            <p className="font-medium text-foreground text-sm">{version ? `v${version}` : ''}</p>
             <p>{t('about.license')}</p>
             <p>{t('about.builtWith')}</p>
           </div>

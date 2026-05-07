@@ -339,6 +339,9 @@ const api = {
   devToggleDevTools: (): Promise<void> => ipcRenderer.invoke('dev:toggleDevTools'),
   devRelaunchApp: (): Promise<void> => ipcRenderer.invoke('dev:relaunchApp'),
 
+  // App
+  getAppVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion'),
+
   // System
   selectFolder: (): Promise<string | null> => ipcRenderer.invoke('dialog:selectFolder'),
   selectFile: (): Promise<string | null> => ipcRenderer.invoke('dialog:selectFile'),
