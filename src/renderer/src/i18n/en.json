@@ -137,7 +137,9 @@
     "deselectAll": "Deselect All",
     "selectedCount": "{{selected}}/{{total}} selected",
     "noItems": "No items",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete"
   },
   "setup": {
     "welcome": "Welcome to CCPIT",
@@ -377,6 +379,66 @@
       "packPreview": "Pack Preview",
       "outputTo": "Output to: {{path}}",
       "saved": "Saved to {{path}}"
+    },
+    "mcp": {
+      "title": "MCP",
+      "refresh": "Reload",
+      "cliMissing": "Claude Code CLI not found. Installing Claude Code is required to add or remove MCP servers.",
+      "subtab": {
+        "global": "Global (~/.claude.json)",
+        "project": "Project (.mcp.json)"
+      },
+      "selectProject": "Project:",
+      "notSelected": "(none selected)",
+      "selectProjectHint": "Select a project to edit its .mcp.json.",
+      "noServers": "No MCP servers configured yet.",
+      "addServer": "Add MCP server",
+      "confirmRemove": "Remove MCP server \"{{name}}\"?",
+      "envCount": "env: {{count}}",
+      "disabledToolsCount": "disabled tools: {{count}}",
+      "risk": {
+        "safe": {
+          "label": "Safe",
+          "tooltip": "Read-only, no auth, local-only"
+        },
+        "caution": {
+          "label": "Caution",
+          "tooltip": "Has env vars without auth indicators, presumed read-only"
+        },
+        "strict": {
+          "label": "Strict",
+          "tooltip": "Carries auth/credentials or write-capable tools. disabledTools recommended."
+        }
+      },
+      "edit": {
+        "titleAdd": "Add MCP Server",
+        "titleEdit": "Edit MCP Server",
+        "description": "Mode A uses presets + form; Mode C edits raw JSON directly.",
+        "mode": "Mode:",
+        "modeA": "Guided (Mode A)",
+        "modeC": "Raw JSON (Mode C)",
+        "modeCHelp": "Edit the full JSON object. Schema: { command, args, env, disabledTools }",
+        "preset": "Preset",
+        "presetCustom": "Custom",
+        "name": "Name",
+        "command": "Command",
+        "args": "Args",
+        "argsHelp": "Space-separated. Use quotes to keep whitespace inside an argument.",
+        "env": "Environment",
+        "addEnv": "Add",
+        "envHelp": "Use ${VAR_NAME} format. Plain secret values are blocked at save.",
+        "disabledTools": "disabledTools (block write tools)",
+        "disabledToolsCount": "{{count}} disabled",
+        "enableAll": "Enable all (accept risk)",
+        "enableAllWarning": "All tools, including write-capable ones, will be enabled. This removes CCPIT's safety guard. Continue?",
+        "enableAllConfirm": "I understand — enable all",
+        "save": "Save (run CLI)",
+        "saving": "Saving...",
+        "invalidJson": "JSON parse failed: {{msg}}",
+        "nameRequired": "Please enter a name.",
+        "commandRequired": "Please enter a command.",
+        "plainSecret": "env \"{{key}}\" looks like a plain secret. Use ${VAR_NAME} reference instead."
+      }
     }
   },
   "requestInbox": {

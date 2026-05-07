@@ -303,6 +303,50 @@ interface ParcFermeAPI {
       }
     | { ok: false; error: string }
   >
+
+  // MCP (Model Context Protocol) — Phase A
+  mcpListServers(args: { scope: 'global' | 'project'; projectPath?: string }): Promise<
+    | {
+        ok: true
+        servers: {
+          name: string
+          command?: string
+          args?: string[]
+          env?: Record<string, string>
+          type?: 'stdio' | 'sse' | 'http'
+          url?: string
+          headers?: Record<string, string>
+          disabledTools?: string[]
+        }[]
+      }
+    | { ok: false; error: string }
+  >
+  mcpAddServer(args: {
+    scope: 'global' | 'project'
+    server: {
+      name: string
+      command?: string
+      args?: string[]
+      env?: Record<string, string>
+      type?: 'stdio' | 'sse' | 'http'
+      url?: string
+      headers?: Record<string, string>
+      disabledTools?: string[]
+    }
+    projectPath?: string
+  }): Promise<{ ok: boolean; error?: string; cliStdout?: string; cliStderr?: string }>
+  mcpRemoveServer(args: {
+    scope: 'global' | 'project'
+    name: string
+    projectPath?: string
+  }): Promise<{ ok: boolean; error?: string; cliStdout?: string; cliStderr?: string }>
+  mcpUpdateDisabledTools(args: {
+    scope: 'global' | 'project'
+    name: string
+    disabledTools: string[]
+    projectPath?: string
+  }): Promise<{ ok: boolean; error?: string }>
+  mcpCheckCli(): Promise<boolean>
 }
 
 declare global {

@@ -1,10 +1,13 @@
 ﻿{
   "name": "ccpit-win",
   "version": "1.0.0",
-  "description": "CCPIT — Claude Code Configuration Manager",
+  "description": "CCPIT — Claude Code Protocol Interlock Tower",
   "main": "./out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": {
+    "name": "VTRiot",
+    "url": "https://github.com/VTRiot"
+  },
+  "homepage": "https://github.com/VTRiot/ccpit-win",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",
@@ -20,9 +23,11 @@
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "electron-vite build && electron-builder --mac",
-    "build:linux": "electron-vite build && electron-builder --linux"
+    "build:linux": "electron-vite build && electron-builder --linux",
+    "dist": "npm run build:win"
   },
   "dependencies": {
+    "@codemirror/lang-json": "^6.0.2",
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "@radix-ui/react-checkbox": "^1.3.3",
@@ -31,6 +36,7 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tailwindcss/vite": "^4.2.2",
+    "@uiw/react-codemirror": "^4.25.9",
     "adm-zip": "^0.5.17",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
