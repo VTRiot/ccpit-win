@@ -137,7 +137,9 @@
     "deselectAll": "全解除",
     "selectedCount": "{{selected}}/{{total}} 件選択中",
     "noItems": "項目がありません",
-    "cancel": "キャンセル"
+    "cancel": "キャンセル",
+    "edit": "編集",
+    "delete": "削除"
   },
   "setup": {
     "welcome": "CCPIT へようこそ",
@@ -377,6 +379,66 @@
       "packPreview": "Pack プレビュー",
       "outputTo": "出力先: {{path}}",
       "saved": "{{path}} に保存しました"
+    },
+    "mcp": {
+      "title": "MCP",
+      "refresh": "再読込",
+      "cliMissing": "Claude Code CLI が見つかりません。MCP サーバの追加・削除には Claude Code のインストールが必要です。",
+      "subtab": {
+        "global": "グローバル (~/.claude.json)",
+        "project": "プロジェクト (.mcp.json)"
+      },
+      "selectProject": "対象 PJ:",
+      "notSelected": "（未選択）",
+      "selectProjectHint": "プロジェクトを選択すると、その .mcp.json を編集できます。",
+      "noServers": "MCP サーバは登録されていません。",
+      "addServer": "MCP サーバを追加",
+      "confirmRemove": "MCP サーバ \"{{name}}\" を削除しますか？",
+      "envCount": "env: {{count}} 件",
+      "disabledToolsCount": "disabled tools: {{count}} 件",
+      "risk": {
+        "safe": {
+          "label": "Safe",
+          "tooltip": "read-only / 認証不要 / ローカル参照のみ"
+        },
+        "caution": {
+          "label": "Caution",
+          "tooltip": "認証情報なしの環境変数あり、または read-only と推定"
+        },
+        "strict": {
+          "label": "Strict",
+          "tooltip": "認証情報あり、または書込系 tool を保有。disabledTools で物理遮断推奨"
+        }
+      },
+      "edit": {
+        "titleAdd": "MCP サーバを追加",
+        "titleEdit": "MCP サーバを編集",
+        "description": "Mode A (おまかせ) はプリセット + フォーム、Mode C (raw) は JSON 直接編集。",
+        "mode": "編集方式:",
+        "modeA": "おまかせ (Mode A)",
+        "modeC": "Json 生 (Mode C)",
+        "modeCHelp": "JSON 全体を直接編集できます。書式: { command, args, env, disabledTools }",
+        "preset": "プリセット",
+        "presetCustom": "カスタム",
+        "name": "名前",
+        "command": "コマンド",
+        "args": "引数",
+        "argsHelp": "スペース区切り。引用符で空白を含む引数を保持できます。",
+        "env": "環境変数",
+        "addEnv": "追加",
+        "envHelp": "値は ${VAR_NAME} 形式を推奨。生のシークレット直書きはブロックされます。",
+        "disabledTools": "disabledTools (write 系の物理遮断)",
+        "disabledToolsCount": "{{count}} 件 disable",
+        "enableAll": "全機能有効化（リスク承認）",
+        "enableAllWarning": "write 系を含む全 tool を有効化します。CCPIT 越しの安全弁が外れる動作です。本当に続行しますか？",
+        "enableAllConfirm": "理解した上で有効化",
+        "save": "保存（CLI 実行）",
+        "saving": "保存中...",
+        "invalidJson": "JSON 解析失敗: {{msg}}",
+        "nameRequired": "name を入力してください。",
+        "commandRequired": "command を入力してください。",
+        "plainSecret": "env \"{{key}}\" に生のシークレットらしき値があります。${VAR_NAME} 形式で参照してください。"
+      }
     }
   },
   "requestInbox": {

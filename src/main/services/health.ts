@@ -4,6 +4,7 @@ import { existsSync } from 'fs'
 import { createHash } from 'crypto'
 import { app } from 'electron'
 import { getConfig } from './appConfig'
+import { resolveClaudeBin } from './cliResolver'
 
 const GOLDEN_DIR = app.isPackaged
   ? join(process.resourcesPath, 'golden')
@@ -266,9 +267,10 @@ export async function getDenyList(): Promise<string[]> {
 
 /** CC CLI の存在確認 */
 export async function checkCcCli(): Promise<boolean> {
+  const { command, useShell } = resolveClaudeBin()
   const { execFile } = await import('child_process')
   return new Promise((resolve) => {
-    execFile('claude', ['--version'], (err) => {
+    execFile(command, ['--version'], { shell: useShell }, (err) => {
       resolve(!err)
     })
   })

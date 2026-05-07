@@ -356,7 +356,56 @@ const api = {
         summary: { metadata: { projectName: string } } & Record<string, unknown>
       }
     | { ok: false; error: string }
-  > => ipcRenderer.invoke('cces:generate', args)
+  > => ipcRenderer.invoke('cces:generate', args),
+
+  // MCP (Model Context Protocol) — Phase A
+  mcpListServers: (
+    args: { scope: 'global' | 'project'; projectPath?: string }
+  ): Promise<
+    | {
+        ok: true
+        servers: {
+          name: string
+          command?: string
+          args?: string[]
+          env?: Record<string, string>
+          type?: 'stdio' | 'sse' | 'http'
+          url?: string
+          headers?: Record<string, string>
+          disabledTools?: string[]
+        }[]
+      }
+    | { ok: false; error: string }
+  > => ipcRenderer.invoke('mcp:listServers', args),
+  mcpAddServer: (args: {
+    scope: 'global' | 'project'
+    server: {
+      name: string
+      command?: string
+      args?: string[]
+      env?: Record<string, string>
+      type?: 'stdio' | 'sse' | 'http'
+      url?: string
+      headers?: Record<string, string>
+      disabledTools?: string[]
+    }
+    projectPath?: string
+  }): Promise<{ ok: boolean; error?: string; cliStdout?: string; cliStderr?: string }> =>
+    ipcRenderer.invoke('mcp:addServer', args),
+  mcpRemoveServer: (args: {
+    scope: 'global' | 'project'
+    name: string
+    projectPath?: string
+  }): Promise<{ ok: boolean; error?: string; cliStdout?: string; cliStderr?: string }> =>
+    ipcRenderer.invoke('mcp:removeServer', args),
+  mcpUpdateDisabledTools: (args: {
+    scope: 'global' | 'project'
+    name: string
+    disabledTools: string[]
+    projectPath?: string
+  }): Promise<{ ok: boolean; error?: string }> =>
+    ipcRenderer.invoke('mcp:updateDisabledTools', args),
+  mcpCheckCli: (): Promise<boolean> => ipcRenderer.invoke('mcp:checkCli')
 }
 
 if (process.contextIsolated) {

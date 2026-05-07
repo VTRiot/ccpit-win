@@ -1,24 +1,46 @@
-appId: com.parcferme.app
-productName: Parc Fermé
+appId: com.vtriot.ccpit
+productName: CCPIT
+copyright: Copyright © 2026 VTRiot
 directories:
   buildResources: build
 files:
   - '!**/.vscode/*'
   - '!src/*'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
-  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md,CONTRIBUTING.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - '!dev.bat'
+  - '!*.lnk'
 asarUnpack:
   - resources/**
+extraResources:
+  - from: resources/splash.html
+    to: splash.html
+  - from: resources/Logo.png
+    to: Logo.png
+  - from: golden
+    to: golden
 win:
-  executableName: parc-ferme
-  icon: build/icon.png
+  executableName: CCPIT
+  icon: build/icon.ico
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
+  artifactName: CCPIT-Setup-${version}.${ext}
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
-  createDesktopShortcut: always
+  installerLanguages:
+    - en_US
+    - ja_JP
+  displayLanguageSelector: true
+  deleteAppDataOnUninstall: false
+  runAfterFinish: true
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
@@ -39,6 +61,3 @@ linux:
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
-publish:
-  provider: generic
-  url: https://example.com/auto-updates

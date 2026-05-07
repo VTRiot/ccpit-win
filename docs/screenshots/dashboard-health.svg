@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" width="1280" height="800" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f0f10"/>
+      <stop offset="100%" stop-color="#0a0a0a"/>
+    </linearGradient>
+    <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- App background -->
+  <rect width="1280" height="800" fill="url(#bgGrad)"/>
+
+  <!-- Title bar -->
+  <rect x="0" y="0" width="1280" height="36" fill="#161617"/>
+  <text x="640" y="23" fill="#a1a1aa" font-size="13" text-anchor="middle">CCPIT — Protocol Interlock Tower</text>
+  <!-- Win11 caption buttons (right-aligned) -->
+  <g transform="translate(1142,0)">
+    <rect width="46" height="36" fill="transparent"/>
+    <text x="23" y="22" fill="#a1a1aa" font-size="14" text-anchor="middle">−</text>
+  </g>
+  <g transform="translate(1188,0)">
+    <rect width="46" height="36" fill="transparent"/>
+    <text x="23" y="22" fill="#a1a1aa" font-size="12" text-anchor="middle">□</text>
+  </g>
+  <g transform="translate(1234,0)">
+    <rect width="46" height="36" fill="transparent"/>
+    <text x="23" y="23" fill="#a1a1aa" font-size="16" text-anchor="middle">×</text>
+  </g>
+
+  <!-- Sidebar -->
+  <rect x="0" y="36" width="220" height="764" fill="#171718"/>
+  <text x="24" y="80" fill="#fafafa" font-size="18" font-weight="700">CCPIT</text>
+  <text x="24" y="100" fill="#71717a" font-size="11">Protocol Interlock Tower</text>
+
+  <!-- Sidebar items -->
+  <g font-size="14" fill="#d4d4d8">
+    <g transform="translate(0,140)">
+      <rect x="12" y="0" width="196" height="36" rx="6" fill="transparent"/>
+      <text x="48" y="23">⚡ Setup</text>
+    </g>
+    <g transform="translate(0,184)">
+      <rect x="12" y="0" width="196" height="36" rx="6" fill="transparent"/>
+      <text x="48" y="23">📁 Projects</text>
+    </g>
+    <g transform="translate(0,228)">
+      <rect x="12" y="0" width="196" height="36" rx="6" fill="#27272a"/>
+      <text x="48" y="23" fill="#fafafa" font-weight="600">🩺 Health</text>
+      <rect x="12" y="0" width="3" height="36" rx="2" fill="#3b82f6"/>
+    </g>
+    <g transform="translate(0,272)">
+      <rect x="12" y="0" width="196" height="36" rx="6" fill="transparent"/>
+      <text x="48" y="23">🛟 Recovery Kit</text>
+    </g>
+    <g transform="translate(0,316)">
+      <rect x="12" y="0" width="196" height="36" rx="6" fill="transparent"/>
+      <text x="48" y="23">🔬 Doctor Analysis</text>
+    </g>
+    <g transform="translate(0,360)">
+      <rect x="12" y="0" width="196" height="36" rx="6" fill="transparent"/>
+      <text x="48" y="23">⚙ Settings</text>
+    </g>
+  </g>
+
+  <!-- Bottom badge in sidebar -->
+  <g transform="translate(20,720)">
+    <rect width="180" height="48" rx="8" fill="#27272a"/>
+    <text x="14" y="20" fill="#a1a1aa" font-size="11">Active project</text>
+    <text x="14" y="38" fill="#fafafa" font-size="13" font-weight="600">acme-monorepo</text>
+    <rect x="130" y="14" width="36" height="20" rx="10" fill="#3b82f6"/>
+    <text x="148" y="28" fill="#fff" font-size="10" font-weight="700" text-anchor="middle">MANX</text>
+  </g>
+
+  <!-- Main content header -->
+  <text x="252" y="92" fill="#fafafa" font-size="24" font-weight="700">Health</text>
+  <text x="252" y="116" fill="#71717a" font-size="13">Inspect your Claude Code configuration for drift, gaps, and risks.</text>
+
+  <!-- Re-run button -->
+  <g transform="translate(1124,80)">
+    <rect width="116" height="36" rx="6" fill="#3b82f6"/>
+    <text x="58" y="23" fill="#fff" font-size="13" font-weight="600" text-anchor="middle">↻ Re-run check</text>
+  </g>
+
+  <!-- KPI cards -->
+  <g transform="translate(252,148)" filter="url(#cardShadow)">
+    <rect width="300" height="118" rx="10" fill="#1c1c1f" stroke="#27272a"/>
+    <text x="22" y="34" fill="#a1a1aa" font-size="12" font-weight="600">PASS</text>
+    <text x="22" y="78" fill="#22c55e" font-size="38" font-weight="800">14</text>
+    <text x="22" y="102" fill="#71717a" font-size="11">checks succeeded</text>
+    <circle cx="270" cy="32" r="14" fill="#052e16"/>
+    <text x="270" y="37" fill="#22c55e" font-size="14" text-anchor="middle">✓</text>
+  </g>
+
+  <g transform="translate(572,148)" filter="url(#cardShadow)">
+    <rect width="300" height="118" rx="10" fill="#1c1c1f" stroke="#27272a"/>
+    <text x="22" y="34" fill="#a1a1aa" font-size="12" font-weight="600">WARN</text>
+    <text x="22" y="78" fill="#eab308" font-size="38" font-weight="800">3</text>
+    <text x="22" y="102" fill="#71717a" font-size="11">advisories worth a look</text>
+    <circle cx="270" cy="32" r="14" fill="#3a2e0a"/>
+    <text x="270" y="37" fill="#eab308" font-size="14" text-anchor="middle">!</text>
+  </g>
+
+  <g transform="translate(892,148)" filter="url(#cardShadow)">
+    <rect width="300" height="118" rx="10" fill="#1c1c1f" stroke="#27272a"/>
+    <text x="22" y="34" fill="#a1a1aa" font-size="12" font-weight="600">FAIL</text>
+    <text x="22" y="78" fill="#ef4444" font-size="38" font-weight="800">0</text>
+    <text x="22" y="102" fill="#71717a" font-size="11">blocking issues</text>
+    <circle cx="270" cy="32" r="14" fill="#3a0a0a"/>
+    <text x="270" y="37" fill="#ef4444" font-size="14" text-anchor="middle">×</text>
+  </g>
+
+  <!-- Findings table card -->
+  <g transform="translate(252,294)" filter="url(#cardShadow)">
+    <rect width="940" height="386" rx="10" fill="#1c1c1f" stroke="#27272a"/>
+    <text x="22" y="34" fill="#fafafa" font-size="15" font-weight="700">Findings</text>
+    <text x="22" y="54" fill="#71717a" font-size="11">17 checks across settings.json, CLAUDE.md, rules, skills, and hooks</text>
+
+    <!-- table header -->
+    <line x1="22" y1="78" x2="918" y2="78" stroke="#27272a"/>
+    <text x="44" y="98" fill="#a1a1aa" font-size="11" font-weight="600">SEVERITY</text>
+    <text x="160" y="98" fill="#a1a1aa" font-size="11" font-weight="600">CHECK</text>
+    <text x="500" y="98" fill="#a1a1aa" font-size="11" font-weight="600">SOURCE</text>
+    <text x="700" y="98" fill="#a1a1aa" font-size="11" font-weight="600">DETAIL</text>
+    <line x1="22" y1="110" x2="918" y2="110" stroke="#27272a"/>
+
+    <!-- row 1: PASS -->
+    <g transform="translate(22,124)">
+      <rect width="60" height="22" rx="11" fill="#052e16"/>
+      <text x="30" y="15" fill="#22c55e" font-size="11" font-weight="700" text-anchor="middle">PASS</text>
+      <text x="138" y="16" fill="#fafafa" font-size="13">deny rules count</text>
+      <text x="478" y="16" fill="#a1a1aa" font-size="12">settings.json</text>
+      <text x="678" y="16" fill="#71717a" font-size="12">42 deny entries — within healthy range</text>
+    </g>
+
+    <!-- row 2: PASS -->
+    <g transform="translate(22,158)">
+      <rect width="60" height="22" rx="11" fill="#052e16"/>
+      <text x="30" y="15" fill="#22c55e" font-size="11" font-weight="700" text-anchor="middle">PASS</text>
+      <text x="138" y="16" fill="#fafafa" font-size="13">CLAUDE.md presence</text>
+      <text x="478" y="16" fill="#a1a1aa" font-size="12">~/.claude</text>
+      <text x="678" y="16" fill="#71717a" font-size="12">global instructions detected</text>
+    </g>
+
+    <!-- row 3: WARN -->
+    <g transform="translate(22,192)">
+      <rect width="60" height="22" rx="11" fill="#3a2e0a"/>
+      <text x="30" y="15" fill="#eab308" font-size="11" font-weight="700" text-anchor="middle">WARN</text>
+      <text x="138" y="16" fill="#fafafa" font-size="13">orphan rule file</text>
+      <text x="478" y="16" fill="#a1a1aa" font-size="12">rules/legacy.md</text>
+      <text x="678" y="16" fill="#71717a" font-size="12">not referenced from any CLAUDE.md</text>
+    </g>
+
+    <!-- row 4: WARN -->
+    <g transform="translate(22,226)">
+      <rect width="60" height="22" rx="11" fill="#3a2e0a"/>
+      <text x="30" y="15" fill="#eab308" font-size="11" font-weight="700" text-anchor="middle">WARN</text>
+      <text x="138" y="16" fill="#fafafa" font-size="13">skill SKILL.md missing frontmatter</text>
+      <text x="478" y="16" fill="#a1a1aa" font-size="12">skills/old-toolkit</text>
+      <text x="678" y="16" fill="#71717a" font-size="12">trigger conditions cannot be parsed</text>
+    </g>
+
+    <!-- row 5: PASS -->
+    <g transform="translate(22,260)">
+      <rect width="60" height="22" rx="11" fill="#052e16"/>
+      <text x="30" y="15" fill="#22c55e" font-size="11" font-weight="700" text-anchor="middle">PASS</text>
+      <text x="138" y="16" fill="#fafafa" font-size="13">hooks executable</text>
+      <text x="478" y="16" fill="#a1a1aa" font-size="12">settings.json</text>
+      <text x="678" y="16" fill="#71717a" font-size="12">3 hooks — all paths resolve</text>
+    </g>
+
+    <!-- row 6: WARN -->
+    <g transform="translate(22,294)">
+      <rect width="60" height="22" rx="11" fill="#3a2e0a"/>
+      <text x="30" y="15" fill="#eab308" font-size="11" font-weight="700" text-anchor="middle">WARN</text>
+      <text x="138" y="16" fill="#fafafa" font-size="13">unused permission entry</text>
+      <text x="478" y="16" fill="#a1a1aa" font-size="12">settings.json</text>
+      <text x="678" y="16" fill="#71717a" font-size="12">Bash(legacy.sh) — referenced 0 times</text>
+    </g>
+
+    <!-- row 7: PASS -->
+    <g transform="translate(22,328)">
+      <rect width="60" height="22" rx="11" fill="#052e16"/>
+      <text x="30" y="15" fill="#22c55e" font-size="11" font-weight="700" text-anchor="middle">PASS</text>
+      <text x="138" y="16" fill="#fafafa" font-size="13">CLI on PATH</text>
+      <text x="478" y="16" fill="#a1a1aa" font-size="12">claude</text>
+      <text x="678" y="16" fill="#71717a" font-size="12">v1.0.124 detected</text>
+    </g>
+  </g>
+
+  <!-- Status bar -->
+  <rect x="220" y="760" width="1060" height="40" fill="#161617"/>
+  <text x="252" y="785" fill="#a1a1aa" font-size="11">Last check: 14:32 • 17 checks • Snapshot saved to Recovery Kit</text>
+  <circle cx="1248" cy="780" r="5" fill="#22c55e"/>
+  <text x="1240" y="785" fill="#a1a1aa" font-size="11" text-anchor="end">Healthy</text>
+</svg>

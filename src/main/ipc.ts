@@ -61,6 +61,15 @@ import {
   type CcesGenerateResult,
   OVERSIZED_THRESHOLD_BYTES
 } from './services/cces/types'
+import {
+  listMcpServers,
+  addMcpServer,
+  removeMcpServer,
+  updateDisabledTools,
+  checkClaudeCodeAvailable,
+  type McpScope,
+  type McpServer
+} from './services/mcpService'
 
 const GOLDEN_DIR = app.isPackaged
   ? join(process.resourcesPath, 'golden')
@@ -324,6 +333,70 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('settings:listLogs', () => listChangeLogs())
   ipcMain.handle('settings:listBackups', () => listSettingsBackups())
   ipcMain.handle('settings:rollback', (_e, backupId: string) => rollbackToBackup(backupId))
+
+  // --- MCP (Model Context Protocol) servers ---
+  ipcMain.handle(
+    'mcp:listServers',
+    async (_e, args: { scope: McpScope; projectPath?: string }) => {
+      try {
+        const servers = await listMcpServers(args.scope, args.projectPath)
+        return { ok: true, servers }
+      } catch (e) {
+        const reason = e instanceof Error ? e.message : String(e)
+        return { ok: false, error: reason }
+      }
+    }
+  )
+  ipcMain.handle(
+    'mcp:addServer',
+    async (
+      _e,
+      args: { scope: McpScope; server: McpServer; projectPath?: string }
+    ) => {
+      try {
+        return await addMcpServer(args.scope, args.server, args.projectPath)
+      } catch (e) {
+        const reason = e instanceof Error ? e.message : String(e)
+        return { ok: false, error: reason }
+      }
+    }
+  )
+  ipcMain.handle(
+    'mcp:removeServer',
+    async (_e, args: { scope: McpScope; name: string; projectPath?: string }) => {
+      try {
+        return await removeMcpServer(args.scope, args.name, args.projectPath)
+      } catch (e) {
+        const reason = e instanceof Error ? e.message : String(e)
+        return { ok: false, error: reason }
+      }
+    }
+  )
+  ipcMain.handle(
+    'mcp:updateDisabledTools',
+    async (
+      _e,
+      args: {
+        scope: McpScope
+        name: string
+        disabledTools: string[]
+        projectPath?: string
+      }
+    ) => {
+      try {
+        return await updateDisabledTools(
+          args.scope,
+          args.name,
+          args.disabledTools,
+          args.projectPath
+        )
+      } catch (e) {
+        const reason = e instanceof Error ? e.message : String(e)
+        return { ok: false, error: reason }
+      }
+    }
+  )
+  ipcMain.handle('mcp:checkCli', () => checkClaudeCodeAvailable())
 
   // --- Developer Tools (Tier S) ---
   ipcMain.handle('dev:getCcpitDir', () => getParcFermeDir())
