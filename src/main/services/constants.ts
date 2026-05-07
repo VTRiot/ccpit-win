@@ -1,8 +1,5 @@
 /** CCPIT 共通定数 */
 
-/** CCPIT バージョン */
-export const CCPIT_VERSION = '0.1.0'
-
 /** GitHub リポジトリ URL */
 export const GITHUB_URL = 'https://github.com/(placeholder)'
 

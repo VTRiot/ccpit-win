@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { HealthStatus } from '../App'
 
@@ -7,6 +8,11 @@ interface StatusBarProps {
 
 export function StatusBar({ healthStatus }: StatusBarProps): React.JSX.Element {
   const { t } = useTranslation()
+  const [version, setVersion] = useState('')
+
+  useEffect(() => {
+    window.api.getAppVersion().then(setVersion)
+  }, [])
 
   const goldenText = !healthStatus.configured
     ? t('statusbar.notConfigured')
@@ -18,7 +24,7 @@ export function StatusBar({ healthStatus }: StatusBarProps): React.JSX.Element {
     <footer className="h-7 bg-statusbar border-t border-border flex items-center px-4 text-xs text-statusbar-foreground gap-6">
       <span>{goldenText}</span>
       <span>{t('statusbar.projects', { count: healthStatus.projectCount })}</span>
-      <span>v0.1.0</span>
+      <span>{version ? `v${version}` : ''}</span>
     </footer>
   )
 }

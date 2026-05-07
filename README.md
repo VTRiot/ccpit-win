@@ -6,7 +6,7 @@
 
 > 🇯🇵 **[日本語版 README はこちら / Japanese README](./README.ja.md)**
 
-[![Version](https://img.shields.io/badge/version-0.1.0-3b82f6)](./package.json)
+[![Version](https://img.shields.io/badge/version-1.0.1-3b82f6)](./package.json)
 [![License](https://img.shields.io/badge/license-MIT-22c55e)](./LICENSE)
 [![Electron](https://img.shields.io/badge/Electron-39-47848F)](https://www.electronjs.org/)
 [![Platform](https://img.shields.io/badge/platform-Windows-0078d4)](#quick-start)
@@ -42,7 +42,7 @@ If you have just heard about CCPIT and want to give it a try, this section walks
 
 ### Three steps from zero to a working setup
 
-1. **Install and launch.** Follow [Quick start](#quick-start) below to clone the repo and run `npm install && npm run dev`. The app opens straight into the Setup screen.
+1. **Install and launch.** Download the latest `CCPIT-Setup-x.y.z.exe` from [Releases](https://github.com/VTRiot/ccpit-win/releases), run the installer, then double-click the **CCPIT** desktop shortcut (or launch from the Start menu). The app opens straight into the Setup screen. Prefer running from source? See [Quick start](#quick-start) below.
 2. **Pick your starting point.** The Setup welcome screen asks one question — *do you already have Claude Code config files (CLAUDE.md, rules/, etc.)?*
    - **No / I just installed Claude Code** → choose **Fresh Start**. CCPIT lays down a curated `CLAUDE.md`, sensible deny rules, recommended skills, and an initial Recovery Kit snapshot.
    - **Yes / I already configured Claude Code by hand** → choose **Migration**. CCPIT does a *read-only* scan first, shows you a side-by-side diff, and writes nothing until you confirm.
@@ -121,13 +121,19 @@ The newest addition, designed for teams who are starting to wire up MCP servers 
 | **PAT guard** | The env field validates `${VAR_NAME}` form and blocks raw token strings before you save. |
 | **CLI absence handling** | If the `claude` CLI is missing, write operations are disabled across the whole UI with a banner explaining why. |
 
-![MCP tab — Global / Project subtabs, three server cards tagged SAFE / CAUTION / STRICT, with auto-disabled write tools highlighted](./docs/screenshots/mcp-tab.svg)
+![MCP server edit dialog — Mode A (managed) selected, with Preset / Name / Command / Args / Env Vars fields and a Save (CLI execute) button](./docs/screenshots/mcp.png)
 
 ---
 
 ## Quick start
 
-> CCPIT does not yet ship a packaged installer. Today the primary way to run it is from source. A signed Windows installer is on the roadmap.
+### Install from a packaged installer (recommended)
+
+1. Download `CCPIT-Setup-x.y.z.exe` from [Releases](https://github.com/VTRiot/ccpit-win/releases).
+2. Run the installer (the wizard supports per-user install and lets you pick the install directory).
+3. Launch via the **CCPIT** desktop shortcut or Start menu entry.
+
+The installer is a signed Windows binary (NSIS) and creates desktop / Start menu shortcuts by default.
 
 ### Run from source
 
@@ -200,10 +206,10 @@ What is in the box today:
 - CC Request Inbox
 - MCP server management (Modes A and C, two scopes, risk badges)
 - English / Japanese UI
+- Packaged Windows installer (signed NSIS, available from Releases)
 
 Areas under active design (not yet shipped, intentionally not promised by date):
 
-- Packaged Windows installer
 - macOS / Linux builds
 - Additional MCP authoring modes
 - Audit log for configuration changes

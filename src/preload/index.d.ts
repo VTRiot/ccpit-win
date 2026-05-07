@@ -289,6 +289,8 @@ interface ParcFermeAPI {
   devToggleDevTools(): Promise<void>
   devRelaunchApp(): Promise<void>
 
+  getAppVersion(): Promise<string>
+
   selectFolder(): Promise<string | null>
   selectFile(): Promise<string | null>
   selectPitFile(): Promise<string | null>

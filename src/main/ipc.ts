@@ -162,6 +162,9 @@ export function registerIpcHandlers(): void {
     return result.canceled ? null : result.filePaths[0]
   })
 
+  // App version (package.json を単一真実源とするため app.getVersion() を IPC 公開)
+  ipcMain.handle('app:getVersion', () => app.getVersion())
+
   ipcMain.handle('shell:openExternal', (_e, url: string) => shell.openExternal(url))
 
   ipcMain.handle('shell:openPath', (_e, folderPath: string) => shell.openPath(folderPath))
