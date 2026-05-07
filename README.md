@@ -15,7 +15,7 @@
 **A desktop control panel for your Claude Code configuration.**
 Inspect, repair, share, and govern everything under `~/.claude/` — without ever opening JSON by hand.
 
-![CCPIT Health dashboard — sidebar with Setup, Projects, Health, Recovery Kit, Doctor Analysis, Settings; main pane shows PASS/WARN/FAIL summary cards and a findings table](./docs/screenshots/dashboard-health.svg)
+![CCPIT Maintenance dialog showing the Health tab — Health Check summary for settings.json (17 deny rules), CLAUDE.md, rules/ (12 rules), skills/, hooks/ (3 scripts), with a Deny Test section below](./docs/screenshots/health.png)
 
 ---
 
@@ -36,11 +36,47 @@ CCPIT is not a wrapper around Claude Code — it sits next to it and manages the
 
 ---
 
+## Getting started — for first-time users
+
+If you have just heard about CCPIT and want to give it a try, this section walks you through the very first run. You do not need to understand `~/.claude/`, hooks, or skills upfront — CCPIT surfaces them as you go, and every write is preceded by a Recovery Kit snapshot you can roll back to.
+
+### Three steps from zero to a working setup
+
+1. **Install and launch.** Follow [Quick start](#quick-start) below to clone the repo and run `npm install && npm run dev`. The app opens straight into the Setup screen.
+2. **Pick your starting point.** The Setup welcome screen asks one question — *do you already have Claude Code config files (CLAUDE.md, rules/, etc.)?*
+   - **No / I just installed Claude Code** → choose **Fresh Start**. CCPIT lays down a curated `CLAUDE.md`, sensible deny rules, recommended skills, and an initial Recovery Kit snapshot.
+   - **Yes / I already configured Claude Code by hand** → choose **Migration**. CCPIT does a *read-only* scan first, shows you a side-by-side diff, and writes nothing until you confirm.
+3. **Verify with Health.** Once Setup finishes, open the Health tab inside the Maintenance dialog. You want a row of green checks across `settings.json`, `CLAUDE.md`, `rules/`, `skills/`, and `hooks/`. Anything that is not green has an inline explanation and, where applicable, a one-click fix.
+
+```mermaid
+flowchart TD
+    A[Launch CCPIT for the first time] --> B{Existing ~/.claude/<br/>files?}
+    B -->|No / Just installed| C[Fresh Start<br/>curated CLAUDE.md +<br/>deny rules + skills]
+    B -->|Yes — already configured| D[Migration<br/>read-only scan]
+    D --> E[Review diff]
+    E --> F[Approve write]
+    C --> G[Open Health tab<br/>verify PASS / WARN / FAIL]
+    F --> G
+    G --> H[You are set up.]
+```
+
+### Stuck? Turn this repo into a Claude.ai chatbot
+
+You can spin up a personal CCPIT help assistant in a few minutes:
+
+1. Open <https://claude.ai> and create a new Project (name it whatever — *CCPIT Help* works).
+2. Add this repository to the Project's knowledge. The simplest path is the GitHub integration pointed at <https://github.com/VTRiot/ccpit-win>; otherwise upload `README.md`, `README.ja.md`, `docs/help-prompt.md`, and the contents of `docs/ai-guides/`.
+3. Open the Project's **Custom Instructions** and paste the system prompt from [`docs/help-prompt.md`](./docs/help-prompt.md).
+
+After that, you can ask the Project things like *"What does Recovery Kit do?"* or *"Should I pick Fresh Start or Migration?"* in plain English or Japanese, and it will answer using only this repository's documentation.
+
+---
+
 ## Features
 
 ### Setup & onboarding
 
-![Setup wizard — Fresh Start vs Migrate Existing two-card layout](./docs/screenshots/setup-wizard.svg)
+![CCPIT Welcome screen — CCPIT logo, greeting, and two stacked cards: Fresh Start (no existing config) and Migration (existing CLAUDE.md / rules)](./docs/screenshots/setup-welcome.png)
 
 A first-run wizard with two paths:
 
@@ -56,6 +92,8 @@ Re-runnable from Settings any time.
 - **CLI presence detection** — verifies that `claude` is on `PATH` and reports the version.
 
 ### Project management
+
+![CCPIT Projects screen — sidebar with Setup / Projects, main list of detected Claude Code projects with MANX / Legacy protocol badges and per-project Launch and CCES Generate actions](./docs/screenshots/projects.png)
 
 - **DetectLink** — scans your disk for Claude Code projects and lists them with protocol badges (MANX / ASAMA / Macau / Legacy).
 - **Favorites** — pin the projects you actually work on.

@@ -16,7 +16,7 @@ export interface HealthStatus {
 
 function App(): React.JSX.Element {
   const [activePage, setActivePage] = useState<PageId>('setup')
-  const [setupCompleted, setSetupCompleted] = useState(false)
+  const [showSetupNav, setShowSetupNav] = useState(false)
   const { theme, toggleTheme } = useTheme()
   const { language, toggleLanguage } = useLanguage()
   const [healthStatus, setHealthStatus] = useState<HealthStatus>({
@@ -26,22 +26,31 @@ function App(): React.JSX.Element {
   })
 
   const resetSetup = async (): Promise<void> => {
-    await window.api.configSet({ setupCompleted: false })
-    setSetupCompleted(false)
+    // 再 Setup 時は Setup ナビを強制表示にして「ナビ非表示で Setup 不能」を防ぐ
+    await window.api.configSet({ setupCompleted: false, showSetupNav: true })
+    setShowSetupNav(true)
     setActivePage('setup')
   }
 
-  const handleSetupCompleted = (): void => {
-    setSetupCompleted(true)
+  const handleSetupCompleted = async (): Promise<void> => {
+    // Setup 完了時に Setup ナビを自動非表示。完了済ユーザーは Maintenance > RK のトグルで再表示可能。
+    // setupCompleted=true は Wizard 側で既に configSet 済 (FreshStartWizard.tsx:54 / MigrationWizard.tsx:161)
+    await window.api.configSet({ showSetupNav: false })
+    setShowSetupNav(false)
     setActivePage('projects')
+  }
+
+  const handleToggleShowSetupNav = async (next: boolean): Promise<void> => {
+    await window.api.configSet({ showSetupNav: next })
+    setShowSetupNav(next)
   }
 
   useEffect(() => {
     const runStartupChecks = async (): Promise<void> => {
       try {
         const config = await window.api.configGet()
+        setShowSetupNav(config.showSetupNav)
         if (config.setupCompleted) {
-          setSetupCompleted(true)
           setActivePage('projects')
         }
 
@@ -101,7 +110,8 @@ function App(): React.JSX.Element {
           onToggleTheme={toggleTheme}
           language={language}
           onToggleLanguage={toggleLanguage}
-          setupCompleted={setupCompleted}
+          showSetupNav={showSetupNav}
+          onToggleShowSetupNav={handleToggleShowSetupNav}
           onResetSetup={resetSetup}
         />
         <main className="flex-1 overflow-auto p-6">

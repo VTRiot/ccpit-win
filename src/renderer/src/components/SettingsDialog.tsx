@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, Settings, Wrench, Info, RotateCcw, Clipboard, RefreshCcw } from 'lucide-react'
+import { X, Settings, Wrench, Info, Clipboard, RefreshCcw } from 'lucide-react'
 import { Button } from './ui/button'
 import { Label } from './ui/label'
 import { cn } from '../lib/utils'
@@ -12,6 +12,8 @@ interface SettingsDialogProps {
   onToggleTheme: () => void
   language: 'en' | 'ja'
   onToggleLanguage: () => void
+  showSetupNav: boolean
+  onToggleShowSetupNav: (next: boolean) => Promise<void>
   onResetSetup: () => Promise<void>
 }
 
@@ -72,7 +74,13 @@ export function SettingsDialogTrigger(props: SettingsDialogProps): React.JSX.Ele
         {t('sidebar.settings')}
       </button>
 
-      <MaintenanceDialog open={maintenanceOpen} onClose={() => setMaintenanceOpen(false)} />
+      <MaintenanceDialog
+        open={maintenanceOpen}
+        onClose={() => setMaintenanceOpen(false)}
+        onResetSetup={props.onResetSetup}
+        showSetupNav={props.showSetupNav}
+        onToggleShowSetupNav={props.onToggleShowSetupNav}
+      />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
 
       {open && (
@@ -198,16 +206,6 @@ export function SettingsDialogTrigger(props: SettingsDialogProps): React.JSX.Ele
               <Button variant="outline" className="w-full gap-2" onClick={handleOpenMaintenance}>
                 <Wrench size={16} />
                 {t('settings.openMaintenance')}
-              </Button>
-
-              {/* Re-run setup */}
-              <Button
-                variant="ghost"
-                className="w-full gap-2 text-muted-foreground"
-                onClick={async () => { setOpen(false); await props.onResetSetup() }}
-              >
-                <RotateCcw size={16} />
-                {t('settings.resetSetup')}
               </Button>
 
               {/* About button */}

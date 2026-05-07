@@ -11,7 +11,8 @@ interface SidebarProps {
   onToggleTheme: () => void
   language: 'en' | 'ja'
   onToggleLanguage: () => void
-  setupCompleted: boolean
+  showSetupNav: boolean
+  onToggleShowSetupNav: (next: boolean) => Promise<void>
   onResetSetup: () => Promise<void>
 }
 
@@ -20,11 +21,12 @@ const ALL_NAV_ITEMS: { id: PageId; labelKey: string; icon: React.ElementType }[]
   { id: 'projects', labelKey: 'sidebar.projects', icon: FolderOpen },
 ]
 
-export function Sidebar({ activePage, onNavigate, theme, onToggleTheme, language, onToggleLanguage, setupCompleted, onResetSetup }: SidebarProps): React.JSX.Element {
+export function Sidebar({ activePage, onNavigate, theme, onToggleTheme, language, onToggleLanguage, showSetupNav, onToggleShowSetupNav, onResetSetup }: SidebarProps): React.JSX.Element {
   const { t } = useTranslation()
-  const NAV_ITEMS = setupCompleted
-    ? ALL_NAV_ITEMS.filter((it) => it.id !== 'setup')
-    : ALL_NAV_ITEMS
+  // Setup ナビ表示判定: 絶対スイッチ。defaults true (新規) / handleSetupCompleted で false 自動切替 / resetSetup で true 自動切替
+  const NAV_ITEMS = showSetupNav
+    ? ALL_NAV_ITEMS
+    : ALL_NAV_ITEMS.filter((it) => it.id !== 'setup')
 
   return (
     <nav className="w-52 bg-sidebar border-r border-sidebar-border flex flex-col py-3">
@@ -54,6 +56,8 @@ export function Sidebar({ activePage, onNavigate, theme, onToggleTheme, language
           onToggleTheme={onToggleTheme}
           language={language}
           onToggleLanguage={onToggleLanguage}
+          showSetupNav={showSetupNav}
+          onToggleShowSetupNav={onToggleShowSetupNav}
           onResetSetup={onResetSetup}
         />
       </div>

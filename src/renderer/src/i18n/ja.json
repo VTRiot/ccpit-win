@@ -40,7 +40,6 @@
     "doctorPackOutput": "Doctor Pack 出力先",
     "desktop": "デスクトップ",
     "customPath": "カスタムパス",
-    "resetSetup": "セットアップを再実行",
     "cces": {
       "title": "CCES（装備サマリ）",
       "openingLabel": "冒頭文",
@@ -359,7 +358,15 @@
       "noDiff": "差分なし",
       "risk": { "high": "高", "medium": "中", "low": "低" },
       "fileStatus": { "added": "追加", "removed": "削除", "modified": "変更" },
-      "files": "{{count}} ファイル"
+      "files": "{{count}} ファイル",
+      "resetSetup": {
+        "title": "セットアップ再実行",
+        "description": "Setup 画面に戻り、再度 Fresh Start / Migration から実行できます。既存の ~/.claude/ ファイルは Setup 実行時に再展開されます。",
+        "button": "セットアップ再実行",
+        "confirm": "Setup 画面に戻ります。よろしいですか？"
+      },
+      "showSetupNav": "Setup ナビを常に表示",
+      "showSetupNavDescription": "OFF の場合、Setup 完了後に Setup ナビが自動的に隠れます。スクショ撮影時など、完了済みでも表示したいときに ON にしてください。"
     },
     "da": {
       "title": "Doctor Analysis",

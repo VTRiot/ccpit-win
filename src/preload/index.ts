@@ -154,6 +154,7 @@ const api = {
     splashRareChance: number
     debugMode: boolean
     setupCompleted: boolean
+    showSetupNav: boolean
     language: 'ja' | 'en'
     currentProfile: 'manx' | 'legacy'
     features: Record<
@@ -175,6 +176,7 @@ const api = {
       splashRareChance: number
       debugMode: boolean
       setupCompleted: boolean
+      showSetupNav: boolean
       language: 'ja' | 'en'
       currentProfile: 'manx' | 'legacy'
       features: Partial<
@@ -197,6 +199,7 @@ const api = {
     splashRareChance: number
     debugMode: boolean
     setupCompleted: boolean
+    showSetupNav: boolean
     language: 'ja' | 'en'
     currentProfile: 'manx' | 'legacy'
     features: Record<

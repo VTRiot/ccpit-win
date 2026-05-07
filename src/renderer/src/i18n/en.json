@@ -40,7 +40,6 @@
     "doctorPackOutput": "Doctor Pack output",
     "desktop": "Desktop",
     "customPath": "Custom path",
-    "resetSetup": "Re-run setup",
     "cces": {
       "title": "CCES (Extensions Summary)",
       "openingLabel": "Opening text",
@@ -359,7 +358,15 @@
       "noDiff": "No differences found",
       "risk": { "high": "High", "medium": "Medium", "low": "Low" },
       "fileStatus": { "added": "Added", "removed": "Removed", "modified": "Modified" },
-      "files": "{{count}} files"
+      "files": "{{count}} files",
+      "resetSetup": {
+        "title": "Re-run Setup",
+        "description": "Return to the Setup screen and re-run Fresh Start or Migration. Existing ~/.claude/ files are redeployed when Setup completes.",
+        "button": "Re-run Setup",
+        "confirm": "This will return you to the Setup screen. Continue?"
+      },
+      "showSetupNav": "Always show Setup nav",
+      "showSetupNavDescription": "When OFF, the Setup nav item is hidden automatically after setup is complete. Turn ON to keep it visible (e.g. for screenshots)."
     },
     "da": {
       "title": "Doctor Analysis",
