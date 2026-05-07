@@ -16,11 +16,17 @@ type Tab = 'health' | 'rk' | 'da' | 'inbox' | 'ccesAdvanced' | 'mcp' | 'devTools
 interface MaintenanceDialogProps {
   open: boolean
   onClose: () => void
+  onResetSetup: () => Promise<void>
+  showSetupNav: boolean
+  onToggleShowSetupNav: (next: boolean) => Promise<void>
 }
 
 export function MaintenanceDialog({
   open,
-  onClose
+  onClose,
+  onResetSetup,
+  showSetupNav,
+  onToggleShowSetupNav
 }: MaintenanceDialogProps): React.JSX.Element | null {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<Tab>('health')
@@ -81,7 +87,13 @@ export function MaintenanceDialog({
         {/* Content */}
         <div className="flex-1 overflow-auto p-6">
           {activeTab === 'health' && <HealthPage />}
-          {activeTab === 'rk' && <RKPage />}
+          {activeTab === 'rk' && (
+            <RKPage
+              onResetSetup={async () => { onClose(); await onResetSetup() }}
+              showSetupNav={showSetupNav}
+              onToggleShowSetupNav={onToggleShowSetupNav}
+            />
+          )}
           {activeTab === 'da' && <DAPage />}
           {activeTab === 'inbox' && <CCRequestInboxPage />}
           {activeTab === 'ccesAdvanced' && <CcesAdvancedPage />}

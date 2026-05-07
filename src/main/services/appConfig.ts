@@ -78,6 +78,7 @@ export interface AppConfig {
   splashRareChance: number
   debugMode: boolean
   setupCompleted: boolean
+  showSetupNav: boolean
   language: Language
   currentProfile: Profile
   features: FeatureFlags
@@ -94,6 +95,10 @@ function getDefaults(): AppConfig {
     splashRareChance: DEFAULT_SPLASH_RARE_CHANCE,
     debugMode: false,
     setupCompleted: false,
+    // 初回起動時 ON: setupCompleted=false かつ config 未生成のユーザーで Setup ナビを表示。
+    // 既存ユーザーは readConfigSync の {...defaults, ...parsed} マージで保存値が優先される。
+    // Setup 完了時に App.tsx の handleSetupCompleted が false へ自動切替する。
+    showSetupNav: true,
     language: 'en',
     currentProfile: 'manx',
     features: { ...DEFAULT_FEATURES },

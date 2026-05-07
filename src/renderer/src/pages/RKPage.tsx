@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Camera, Loader2, Star, GitCompare, RotateCcw, Check } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { Checkbox } from '../components/ui/checkbox'
+import { Label } from '../components/ui/label'
 import { cn, toNativePath } from '../lib/utils'
 import ReactDiffViewer from 'react-diff-viewer-continued'
 
@@ -86,7 +88,13 @@ const STATUS_COLORS: Record<string, string> = {
   modified: 'text-yellow-500',
 }
 
-export function RKPage(): React.JSX.Element {
+interface RKPageProps {
+  onResetSetup?: () => Promise<void>
+  showSetupNav?: boolean
+  onToggleShowSetupNav?: (next: boolean) => Promise<void>
+}
+
+export function RKPage({ onResetSetup, showSetupNav, onToggleShowSetupNav }: RKPageProps = {}): React.JSX.Element {
   const { t } = useTranslation()
   const [snapshots, setSnapshots] = useState<SnapshotInfo[]>([])
   const [loading, setLoading] = useState(false)
@@ -286,6 +294,51 @@ export function RKPage(): React.JSX.Element {
                     )}
                   </div>
                 ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Re-run Setup + Setup nav visibility (relocated from Settings) */}
+      {onResetSetup && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('pages.rk.resetSetup.title')}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">{t('pages.rk.resetSetup.description')}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (confirm(t('pages.rk.resetSetup.confirm'))) {
+                  void onResetSetup()
+                }
+              }}
+            >
+              <RotateCcw size={14} />
+              {t('pages.rk.resetSetup.button')}
+            </Button>
+
+            {onToggleShowSetupNav && (
+              <div className="flex items-start gap-2 pt-3 border-t border-border/60">
+                <Checkbox
+                  id="show-setup-nav"
+                  checked={showSetupNav ?? false}
+                  onCheckedChange={(checked) => {
+                    void onToggleShowSetupNav(checked === true)
+                  }}
+                  className="mt-0.5"
+                />
+                <div className="space-y-1 leading-tight">
+                  <Label htmlFor="show-setup-nav" className="cursor-pointer">
+                    {t('pages.rk.showSetupNav')}
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {t('pages.rk.showSetupNavDescription')}
+                  </p>
+                </div>
               </div>
             )}
           </CardContent>

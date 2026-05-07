@@ -124,6 +124,7 @@ interface ParcFermeAPI {
     splashRareChance: number
     debugMode: boolean
     setupCompleted: boolean
+    showSetupNav: boolean
     language: 'ja' | 'en'
     currentProfile: 'manx' | 'legacy'
     features: Record<
@@ -145,6 +146,7 @@ interface ParcFermeAPI {
       splashRareChance: number
       debugMode: boolean
       setupCompleted: boolean
+      showSetupNav: boolean
       language: 'ja' | 'en'
       currentProfile: 'manx' | 'legacy'
       features: Partial<
@@ -167,6 +169,7 @@ interface ParcFermeAPI {
     splashRareChance: number
     debugMode: boolean
     setupCompleted: boolean
+    showSetupNav: boolean
     language: 'ja' | 'en'
     currentProfile: 'manx' | 'legacy'
     features: Record<
