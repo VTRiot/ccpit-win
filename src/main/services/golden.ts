@@ -8,6 +8,10 @@ const GOLDEN_DIR = app.isPackaged
   ? join(process.resourcesPath, 'golden')
   : join(__dirname, '../../golden')
 
+// PIKES r1 §4-3 + 提案 3 (CCPIT v1.1 Phase E-4): deny マージ用 SSoT ファイル名
+const DENY_BASE_FILENAME = 'settings.deny-base.json'
+const DENY_EXTRA_FILENAME = 'settings.deny-extra.json'
+
 /** common/ 配下の言語依存ディレクトリを返す（app-config.language に従う） */
 function getCommonLangDir(): string {
   const lang = getConfig().language
@@ -17,6 +21,45 @@ function getCommonLangDir(): string {
 /** common/hooks（言語非依存） */
 function getCommonHooksDir(): string {
   return join(GOLDEN_DIR, 'common', 'hooks')
+}
+
+/**
+ * PIKES r1 §4-3 + 提案 3 (CCPIT v1.1 Phase E-4):
+ * common/settings.deny-base.json (PIKES 共通 21 件) + {template}/settings.deny-extra.json (OS 固有) を読込し、
+ * union (重複除去 + 順序保持) で 1 つの deny 配列を返す。
+ * ファイル不在時は空配列にフォールバック (壊さない設計)。
+ */
+async function readMergedDenyList(templateDir: string): Promise<string[]> {
+  const denySet = new Set<string>()
+  const baseDenyPath = join(GOLDEN_DIR, 'common', DENY_BASE_FILENAME)
+  if (existsSync(baseDenyPath)) {
+    try {
+      const base = JSON.parse(await readFile(baseDenyPath, 'utf-8')) as string[]
+      for (const item of base) denySet.add(item)
+    } catch {
+      // パース失敗時は基底スキップ (起動信頼性優先、警告は呼び出し側で記録)
+    }
+  }
+  const extraDenyPath = join(templateDir, DENY_EXTRA_FILENAME)
+  if (existsSync(extraDenyPath)) {
+    try {
+      const extra = JSON.parse(await readFile(extraDenyPath, 'utf-8')) as string[]
+      for (const item of extra) denySet.add(item)
+    } catch {
+      // 同上
+    }
+  }
+  return [...denySet]
+}
+
+/**
+ * PIKES r1 (Phase E-4): settings.deny-base.json / settings.deny-extra.json は
+ * deploy 時に deny 配列にマージされる「素材ファイル」であり、~/.claude/ 直配置は不要。
+ * mergedFiles / previewDeploy の対象から除外する。
+ */
+function isDenySourceFile(relPath: string): boolean {
+  const basename = relPath.split(/[\\/]/).pop() ?? ''
+  return basename === DENY_BASE_FILENAME || basename === DENY_EXTRA_FILENAME
 }
 
 /** 再帰的にディレクトリ内の全ファイルパスを取得 */
@@ -74,6 +117,7 @@ export async function previewDeploy(
     for (const f of files) {
       const rel = relative(templateDir, f)
       if (rel.endsWith('.gitkeep')) continue
+      if (isDenySourceFile(rel)) continue // Phase E-4: deny マージ素材は配置対象外
       seen.add(rel)
       result.push({ relativePath: rel, source: templateName })
     }
@@ -85,6 +129,7 @@ export async function previewDeploy(
     for (const f of files) {
       const rel = relative(commonLangDir, f)
       if (rel.endsWith('.gitkeep')) continue
+      if (isDenySourceFile(rel)) continue // Phase E-4
       if (seen.has(rel)) continue
       seen.add(rel)
       result.push({ relativePath: rel, source: 'common' })
@@ -152,6 +197,7 @@ export async function deploy(
     for (const f of await walkDir(commonLangDir)) {
       const rel = relative(commonLangDir, f)
       if (rel.endsWith('.gitkeep')) continue
+      if (isDenySourceFile(rel)) continue // Phase E-4: deny マージ素材は配置対象外
       mergedFiles.set(rel, f)
     }
   }
@@ -168,6 +214,7 @@ export async function deploy(
     for (const f of await walkDir(templateDir)) {
       const rel = relative(templateDir, f)
       if (rel.endsWith('.gitkeep')) continue
+      if (isDenySourceFile(rel)) continue // Phase E-4
       mergedFiles.set(rel, f)
     }
   }
@@ -187,13 +234,20 @@ export async function deploy(
         result.backedUp.push(bakPath)
       }
 
-      // settings.json は password を更新してから書き込む
+      // settings.json は password 注入 + PIKES r1 §4-3 deny マージ (CCPIT v1.1 Phase E-4)
       if (rel === 'settings.json') {
         const content = await readFile(srcPath, 'utf-8')
         const json = JSON.parse(content)
         if (json.auth) {
           json.auth.password = password
         }
+        // PIKES 共通 21 件 + {template} 固有 extra を deny にマージ (union)
+        const mergedDeny = await readMergedDenyList(templateDir)
+        const existingDeny = Array.isArray(json.permissions?.deny)
+          ? (json.permissions.deny as string[])
+          : []
+        const denyUnion = new Set<string>([...mergedDeny, ...existingDeny])
+        json.permissions = { ...(json.permissions ?? {}), deny: [...denyUnion] }
         await writeFile(destPath, JSON.stringify(json, null, 2), 'utf-8')
       } else {
         await copyFile(srcPath, destPath)

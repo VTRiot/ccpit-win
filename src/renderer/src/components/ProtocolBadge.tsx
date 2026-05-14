@@ -59,6 +59,13 @@ export function ProtocolBadge({
         <span className="text-muted-foreground">revision: </span>
         {marker.revision}
       </div>
+      {marker.pikesVersion && (
+        <div>
+          <span className="text-muted-foreground">pikes_version: </span>
+          {marker.pikesVersion}
+          {marker.os && ` (${marker.os})`}
+        </div>
+      )}
       <div>
         <span className="text-muted-foreground">stage: </span>
         {marker.stage}

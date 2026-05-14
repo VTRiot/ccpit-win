@@ -5,7 +5,8 @@
 # ※ exit 2 は stdout JSON を無視するため使用しない（公式仕様）
 #
 # 判定ロジック:
-#   1. プロジェクト配下の _Prompt/_DebugReports/ または _Prompt/01_FromBuilderAi/_DebugReports/ を探す
+#   1. プロジェクト配下の _Prompt/_DebugReports/ または _Prompt/{01_FromBuilderAi,02_buildai}/_DebugReports/ を探す
+#      (find -type f で深い階層も探索するため、新命名 02_buildai/ も追加コード変更なしで対応)
 #   2. 該当ディレクトリ配下に debug-report-*.md があるか確認
 #   3. なければ → exit 0（debug-toolkit が発火していない、または既に完了済み）
 #   4. あれば、各ファイルのフロントマターで status をチェック

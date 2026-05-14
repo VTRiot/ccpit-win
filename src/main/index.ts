@@ -6,10 +6,21 @@ import { registerIpcHandlers } from './ipc'
 import { readConfigSync } from './services/appConfig'
 
 function getSplashHtmlPath(): string {
-  if (is.dev) {
-    return join(__dirname, '../../resources/splash.html')
+  // Pending #6: splashRareChance に基づく rare 演出抽選 (config 確率で rare splash 表示)
+  // readConfigSync が初回起動時に config 不在で例外を投げる可能性に備え try/catch で通常 splash にフォールバック
+  let filename = 'splash.html'
+  try {
+    const config = readConfigSync()
+    if (config.splashRareChance > 0 && Math.random() < config.splashRareChance) {
+      filename = 'splash-rare.html'
+    }
+  } catch {
+    // config 不在等のエッジケース: 通常 splash にフォールバック
   }
-  return join(process.resourcesPath, 'splash.html')
+  if (is.dev) {
+    return join(__dirname, `../../resources/${filename}`)
+  }
+  return join(process.resourcesPath, filename)
 }
 
 function createSplashWindow(): BrowserWindow {

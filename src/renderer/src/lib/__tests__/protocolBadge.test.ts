@@ -407,4 +407,69 @@ describe('FSA r7 §6: manx-host (violet 中間色) NEW r7', () => {
     expect(hostView!.className).not.toContain('emerald')
     expect(hostView!.className).not.toContain('amber')
   })
+
+  // ────────────────────────────────────────────────────────────────────
+  // CCPIT v1.1 Phase E-3: PIKES r1 §9-5 階層化バッジ表示 (案 b 並列)
+  // ────────────────────────────────────────────────────────────────────
+
+  describe('Phase E-3: pikes_version + os 階層化 (案 b 並列表示)', () => {
+    it('Pikes UI 1: manx + pikes_version → text="PIKES r1 + MANX"', () => {
+      const view = formatBadgeView(
+        makeMarker({
+          protocol: 'manx',
+          detection_confidence: 'low',
+          pikesVersion: 'r1',
+          os: 'manx',
+        })
+      )
+      expect(view).not.toBeNull()
+      expect(view!.text).toBe('PIKES r1 + MANX')
+    })
+
+    it('Pikes UI 2: manx-host + pikes_version → text="PIKES r1 + MANX-Host"', () => {
+      const view = formatBadgeView(
+        makeMarker({
+          protocol: 'manx-host',
+          revision: '?',
+          detection_confidence: 'low',
+          pikesVersion: 'r1',
+          os: 'manx',
+        })
+      )
+      expect(view).not.toBeNull()
+      expect(view!.text).toBe('PIKES r1 + MANX-Host')
+    })
+
+    it('Pikes UI 3: manx pikes_version なし → 従来表示 "MANX" 維持', () => {
+      const view = formatBadgeView(
+        makeMarker({ protocol: 'manx', detection_confidence: 'low' })
+      )
+      expect(view!.text).toBe('MANX')
+    })
+
+    it('Pikes UI 4: legacy + pikes_version → "Legacy" 維持 (併記しない、想定外組合せ)', () => {
+      const view = formatBadgeView(
+        makeMarker({
+          protocol: 'legacy',
+          detection_confidence: 'high',
+          pikesVersion: 'r1',
+        })
+      )
+      // Legacy は MANX 系ではないため pikes 併記しない (現状仕様)
+      expect(view!.text).toBe('Legacy')
+    })
+
+    it('Pikes UI 5: explicit + pikes_version → "PIKES r1 + MANX r5"', () => {
+      const view = formatBadgeView(
+        makeMarker({
+          protocol: 'manx',
+          revision: 'r5',
+          detection_confidence: 'explicit',
+          pikesVersion: 'r1',
+        })
+      )
+      // explicit 経路で "MANX r5" が組み上がった後、pikes 併記で "PIKES r1 + MANX r5"
+      expect(view!.text).toBe('PIKES r1 + MANX r5')
+    })
+  })
 })
