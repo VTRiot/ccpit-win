@@ -1,0 +1,6 @@
+[
+  "Read(~/Library/Keychains/**)",
+  "Bash(security dump-keychain)",
+  "Bash(security find-generic-password)",
+  "Bash(security find-internet-password)"
+]

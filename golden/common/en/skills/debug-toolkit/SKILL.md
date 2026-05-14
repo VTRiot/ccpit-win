@@ -39,7 +39,7 @@ When you observe a defect, bug, or unexpected behavior and start debugging:
 
 1. **Articulate the symptom**: describe what is happening as objective fact (no speculation)
 2. **Copy the template**: copy `templates/debug-report-template.md` to a task-specific path
-   - Example destination: `_Prompt/01_FromBuilderAi/_DebugReports/<task-id>/debug-report.md`
+   - Example destination: `_Prompt/02_buildai/_DebugReports/<task-id>/debug-report.md` (legacy `_Prompt/01_FromBuilderAi/_DebugReports/` also accepted)
    - Decide the destination path based on the project's conventions
 3. **Consult the §2 Pattern Catalog**: look up which Pattern applies to the symptom. If one applies, use its three-layer structure to form a hypothesis
 4. **If no Pattern applies**: invoke the meta-thinking pattern in §3 ("Pattern for Extracting Patterns"). Treat the case as a candidate for a new Pattern

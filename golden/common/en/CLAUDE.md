@@ -34,6 +34,7 @@ If it has not, stop the action, manually load the skill, and then resume.
 | Report "fix completed" | testable-impl + completion-interlock | Three-tier Before/After (code / actual UX / user FB) recorded + user FB received |
 | Edit 2+ files and request review from user / design AI | testable-impl multi-file ZIP submission | A ZIP file is placed in the same folder as the report + `お品書き.md` (manifest) at ZIP root lists each file's origin path and review points |
 | Report a confirmed root cause | investigation | Counter-evidence checklist is recorded |
-| Output a report | report | An MD file exists under `_Prompt\01_FromBuilderAi\` |
+| Output a report | report | An MD file exists under `_Prompt\02_buildai\` (legacy `_Prompt\01_FromBuilderAi\` also accepted) + **"Readers and Purpose" section at the top of the report** (PIKES r1.2 §9-1-1) |
+| Output a report / dev log | report | **Two-tier structure (PIKES r1.2 §11-3-1)**: judgment-centric content goes to the upstream doc repo (e.g. PIKES Family) as a canonical report; fact-centric diffs/commit-unit content goes to the working repo (e.g. CCDG2) as a dev log. When in doubt, write both |
 | Complete a task involving code changes | completion-interlock | Report MD contains three-tier Before/After + no prohibited phrases used |
 | Complete a task involving code changes | hooks/report-gate | The Stop hook did not block |

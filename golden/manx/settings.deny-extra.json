@@ -1,0 +1,5 @@
+[
+  "Bash(rm -rf C:\\\\)",
+  "Bash(rm -rf C:\\\\*)",
+  "Bash(rmdir /s /q C:\\\\)"
+]

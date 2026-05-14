@@ -1,0 +1,23 @@
+[
+  "Bash(rm -rf /)",
+  "Bash(rm -rf /*)",
+  "Read(**/*.env)",
+  "Read(**/*secrets*)",
+  "Read(**/credentials/**/*)",
+  "Bash(cat **/*.env)",
+  "Bash(cat **/*secrets*)",
+  "Bash(cat **/credentials/**/*)",
+  "Edit(~/.claude/settings.json)",
+  "Edit(~/.claude/settings.local.json)",
+  "Write(~/.claude/settings.json)",
+  "Write(~/.claude/settings.local.json)",
+  "Bash(cat ~/.claude/settings.json)",
+  "Bash(cat ~/.claude/settings.local.json)",
+  "Read(~/.ssh/**)",
+  "Read(~/.aws/**)",
+  "Read(~/.gnupg/**)",
+  "Bash(env)",
+  "Read(~/.config/gh/hosts.yml)",
+  "Read(~/.kube/config)",
+  "Read(~/.docker/config.json)"
+]

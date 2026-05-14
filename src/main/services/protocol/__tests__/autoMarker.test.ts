@@ -731,6 +731,125 @@ describe('autoMarker — parseManxFrontmatter (FSA r7 §5)', () => {
     const result = await parseManxFrontmatter(path)
     expect(result).toEqual({ manxVersion: 'r8', manxRole: 'managed' })
   })
+
+  // ────────────────────────────────────────────────────────────────────
+  // CCPIT v1.1 Phase E-2: PIKES r1 §9-5 階層化対応 (提案 2 案 1)
+  // pikes_version + os フィールドのパース動作検証
+  // ────────────────────────────────────────────────────────────────────
+
+  it('Pikes 1: parses pikes_version + os alongside manx_version (新仕様 hierarchical)', async () => {
+    const path = join(workdir, 'CLAUDE.md')
+    await writeFile(
+      path,
+      '---\nmanx_version: r10\nmanx_role: managed\npikes_version: r1\nos: manx\n---\n',
+      'utf-8'
+    )
+    const result = await parseManxFrontmatter(path)
+    expect(result).toEqual({
+      manxVersion: 'r10',
+      manxRole: 'managed',
+      pikesVersion: 'r1',
+      os: 'manx',
+    })
+  })
+
+  it('Pikes 2: pikes_version alone (manx_version omitted) returns with empty manxVersion', async () => {
+    const path = join(workdir, 'CLAUDE.md')
+    await writeFile(path, '---\npikes_version: r1\nos: manx\n---\n', 'utf-8')
+    const result = await parseManxFrontmatter(path)
+    expect(result).toEqual({
+      manxVersion: '',
+      manxRole: 'managed',
+      pikesVersion: 'r1',
+      os: 'manx',
+    })
+  })
+
+  it('Pikes 3: returns null when both manx_version AND pikes_version missing', async () => {
+    const path = join(workdir, 'CLAUDE.md')
+    await writeFile(path, '---\nmanx_role: host\nos: manx\n---\n', 'utf-8')
+    const result = await parseManxFrontmatter(path)
+    expect(result).toBeNull()
+  })
+
+  it('Pikes 4: invalid os value is silently dropped (undefined)', async () => {
+    const path = join(workdir, 'CLAUDE.md')
+    await writeFile(
+      path,
+      '---\nmanx_version: r10\npikes_version: r1\nos: bogus\n---\n',
+      'utf-8'
+    )
+    const result = await parseManxFrontmatter(path)
+    expect(result).toEqual({
+      manxVersion: 'r10',
+      manxRole: 'managed',
+      pikesVersion: 'r1',
+    })
+    expect(result?.os).toBeUndefined()
+  })
+
+  it('Pikes 5: macau / asama os values accepted', async () => {
+    const path = join(workdir, 'CLAUDE.md')
+    await writeFile(path, '---\npikes_version: r1\nos: macau\n---\n', 'utf-8')
+    const result = await parseManxFrontmatter(path)
+    expect(result?.os).toBe('macau')
+
+    const path2 = join(workdir, 'CLAUDE2.md')
+    await writeFile(path2, '---\npikes_version: r1\nos: asama\n---\n', 'utf-8')
+    const result2 = await parseManxFrontmatter(path2)
+    expect(result2?.os).toBe('asama')
+  })
+
+  it('Pikes 6: pikes_version + manx_role=host triggers R7 (manx-host) via deriveMarker', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 30,
+      claudeMdNlink: 1,
+      manxFrontmatter: {
+        manxVersion: '',
+        manxRole: 'host',
+        pikesVersion: 'r1',
+        os: 'manx',
+      },
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('manx-host')
+    expect(result.detection_confidence).toBe('low')
+    expect(result.pikesVersion).toBe('r1')
+    expect(result.os).toBe('manx')
+  })
+
+  it('Pikes 7: pikes_version alone (default managed) triggers R6 (manx) via deriveMarker', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 30,
+      claudeMdNlink: 1,
+      manxFrontmatter: {
+        manxVersion: '',
+        manxRole: 'managed',
+        pikesVersion: 'r1',
+        os: 'manx',
+      },
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('manx')
+    expect(result.detection_confidence).toBe('low')
+    expect(result.pikesVersion).toBe('r1')
+    expect(result.os).toBe('manx')
+  })
+
+  it('Pikes 8: marker without pikes_version (legacy MANX) does not include pikesVersion/os fields', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 30,
+      claudeMdNlink: 1,
+      manxFrontmatter: { manxVersion: 'r10', manxRole: 'managed' },
+    })
+    const result = deriveMarker(inputs)
+    expect(result.protocol).toBe('manx')
+    expect(result.pikesVersion).toBeUndefined()
+    expect(result.os).toBeUndefined()
+  })
 })
 
 // ────────────────────────────────────────────────────────────────────

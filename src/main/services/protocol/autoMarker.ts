@@ -68,14 +68,18 @@ export function isCCDGV1Hardlink(nlink: number): boolean {
 }
 
 /**
- * FSA r7 §5 / MANX_Protocol r8 §9-5: CLAUDE.md 冒頭 YAML フロントマターを解析。
- * 仕様:
+ * FSA r7 §5 / MANX_Protocol r8 §9-5 / PIKES r1 §9-5: CLAUDE.md 冒頭 YAML フロントマターを解析。
+ * 仕様 (PIKES r1 §9-5 階層化対応、提案 2 案 1):
  *   ---
- *   manx_version: r8        # 必須
- *   manx_role: managed      # オプション (default: managed)
+ *   manx_version: r10        # 後方互換 (manxVersion OR pikesVersion のどちらかが必須)
+ *   manx_role: managed       # オプション (default: managed)
+ *   pikes_version: r1        # 新規 (PIKES Protocol revision)
+ *   os: manx                 # 新規 (manx=Win / macau=macOS / asama=Linux)
  *   ---
- * - manx_version 必須。なければ null を返す
+ * - manx_version OR pikes_version のどちらかが必須。両方無ければ null を返す
+ *   (R6/R7 不発火、R3b/R4 経路に落ちる)
  * - manx_role 不正値はデフォルト 'managed'
+ * - os 不正値は undefined (R6/R7 判定には影響しない、UI 階層化表示の素材)
  * - js-yaml 等の外部依存なし (autoMarker の依存最小方針と整合)
  */
 export async function parseManxFrontmatter(
@@ -93,6 +97,8 @@ export async function parseManxFrontmatter(
     const yamlBlock = content.slice(startSkip, endIdx)
     let manxVersion: string | null = null
     let manxRole: 'managed' | 'host' | 'local' = 'managed'
+    let pikesVersion: string | undefined = undefined
+    let os: 'manx' | 'macau' | 'asama' | undefined = undefined
     for (const line of yamlBlock.split(/\r?\n/)) {
       // key: value (# コメント許容)
       const m = line.match(/^(\w+):\s*([^\s#]+)/)
@@ -104,9 +110,23 @@ export async function parseManxFrontmatter(
         }
         // 不正値はデフォルト 'managed' のまま
       }
+      else if (m[1] === 'pikes_version') pikesVersion = m[2]
+      else if (m[1] === 'os') {
+        if (m[2] === 'manx' || m[2] === 'macau' || m[2] === 'asama') {
+          os = m[2]
+        }
+        // 不正値は undefined のまま
+      }
     }
-    if (!manxVersion) return null
-    return { manxVersion, manxRole }
+    // PIKES r1 §9-5: manxVersion OR pikesVersion のどちらかが必須
+    if (!manxVersion && !pikesVersion) return null
+    // manxVersion 不在で pikesVersion のみの場合は空文字で代入 (interface 互換)
+    return {
+      manxVersion: manxVersion ?? '',
+      manxRole,
+      ...(pikesVersion !== undefined ? { pikesVersion } : {}),
+      ...(os !== undefined ? { os } : {}),
+    }
   } catch {
     return null
   }
@@ -241,8 +261,11 @@ export async function gatherInputs(
 }
 
 function buildEvidence(inputs: DetectInputs): string {
-  const yamlPart = inputs.manxFrontmatter
-    ? `manx_yaml: version=${inputs.manxFrontmatter.manxVersion}, role=${inputs.manxFrontmatter.manxRole}`
+  const fm = inputs.manxFrontmatter
+  const yamlPart = fm
+    ? `manx_yaml: version=${fm.manxVersion}, role=${fm.manxRole}${
+        fm.pikesVersion ? `, pikes=${fm.pikesVersion}` : ''
+      }${fm.os ? `, os=${fm.os}` : ''}`
     : 'manx_yaml: (none)'
   const nlinkPart = inputs.claudeMdNlink > 1
     ? `nlink=${inputs.claudeMdNlink} (CCDG-V1 hardlink distribution detected)`
@@ -367,6 +390,11 @@ export function deriveMarker(inputs: DetectInputs): ProtocolMarker {
     applied_by: APP_VERSION,
     detection_evidence: buildEvidence(inputs),
     detection_confidence: confidence,
+    // PIKES r1 §9-5: frontmatter の pikes_version / os を marker に転写 (UI 階層化表示用)
+    ...(manxFrontmatter?.pikesVersion !== undefined
+      ? { pikesVersion: manxFrontmatter.pikesVersion }
+      : {}),
+    ...(manxFrontmatter?.os !== undefined ? { os: manxFrontmatter.os } : {}),
   }
 }
 

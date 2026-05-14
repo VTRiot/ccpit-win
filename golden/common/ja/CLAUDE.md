@@ -34,6 +34,7 @@
 | 「修正完了」を報告する | testable-impl + completion-interlock | 3 階層 Before/After（コード / 実機 UX / らいお FB）記載済み + らいお FB 受領済み |
 | 複数ファイル（2 件以上）編集して らいお / 設計 AI に視認依頼する | testable-impl 多ファイル提出 ZIP 化 | ZIP ファイルが報告書と同じフォルダに配置済み + ZIP 直下の お品書き.md に各ファイル産地と確認ポイント記載済み |
 | 原因を特定したと報告する | investigation | 反証チェックリストを記載済み |
-| 報告書を出力する | report | `_Prompt\01_FromBuilderAi\` に MD ファイルが存在する |
+| 報告書を出力する | report | `_Prompt\02_buildai\` (旧 `_Prompt\01_FromBuilderAi\` も互換) に MD ファイルが存在 + **冒頭に「本報告書の読者と目的」セクション** (PIKES r1.2 §9-1-1) |
+| 報告書/dev log を出力する | report | **二段構成 (PIKES r1.2 §11-3-1)**: 設計判断は上位文書リポ (例: PIKES Family) の正報告書、差分・commit 単位は作業リポ (例: CCDG2) の dev log。判定迷うなら両方記載 |
 | コード変更を伴う作業を完了する | completion-interlock | 報告書 MD に 3 階層 Before/After 記載済み + 禁止フレーズ未使用 |
 | コード変更を伴う作業を完了する | hooks/report-gate | Stop hook がブロックしなかった |

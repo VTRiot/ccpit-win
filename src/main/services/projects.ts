@@ -92,12 +92,17 @@ async function saveProjects(projects: ProjectEntry[]): Promise<void> {
   await writeFile(PROJECTS_FILE, JSON.stringify(projects, null, 2), 'utf-8')
 }
 
-const P4_TEMPLATE = `# CLAUDE.md — {{PROJECT_NAME}}
+const P4_TEMPLATE = `---
+manx_version: r10
+manx_role: managed
+---
+
+# CLAUDE.md — {{PROJECT_NAME}}
 
 > CCPIT managed. グローバル構成: ~/.claude/
 
 ## プロジェクト定義
-\`_Prompt\\_Prj\\\` 配下の最新 rev を参照すること。
+\`_Prompt\\03_prj\\\` 配下の最新 rev を参照すること。
 
 ## 環境
 | 項目 | 値 |
@@ -129,9 +134,9 @@ export async function createProject(
 
   const dirsToCreate = [
     join(projectPath, '.claude', 'rules'),
-    join(projectPath, '_Prompt', '_Prj'),
-    join(projectPath, '_Prompt', '_fromdesignai'),
-    join(projectPath, '_Prompt', '_frombuilderai')
+    join(projectPath, '_Prompt', '03_prj'),
+    join(projectPath, '_Prompt', '01_designai'),
+    join(projectPath, '_Prompt', '02_buildai')
   ]
 
   // ディレクトリ作成

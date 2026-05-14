@@ -9,6 +9,10 @@ export interface ProtocolMarkerView {
   applied_by: string
   detection_evidence: string | null
   detection_confidence: 'explicit' | 'high' | 'low' | 'unknown'
+  // PIKES r1 §9-5 階層化対応 (CCPIT v1.1 Phase E-3、提案 2 案 1)
+  // pikesVersion あり → バッジ表示を「PIKES r1 + MANX r10」併記 (案 b 並列)
+  pikesVersion?: string
+  os?: 'manx' | 'macau' | 'asama'
 }
 
 /**
@@ -156,6 +160,14 @@ export function formatBadgeView(m: ProtocolMarkerView | null): BadgeView | null 
   } else {
     // 自動判定 (high or low): シンプルな名詞 "MANX"
     text = m.protocol.toUpperCase()
+  }
+
+  // PIKES r1 §9-5 階層化 (CCPIT v1.1 Phase E-3、案 b 並列): pikes_version あり時の併記
+  // 例: "MANX" + pikes_version=r1 → "PIKES r1 + MANX"
+  // 例: "MANX-Host" + pikes_version=r1 → "PIKES r1 + MANX-Host"
+  // 既存の Legacy / Untagged 経路 (pikes_version 持たない想定) には影響しない
+  if (m.pikesVersion && (protocolKey === 'manx' || protocolKey === 'manx-host')) {
+    text = `PIKES ${m.pikesVersion} + ${text}`
   }
 
   return {
