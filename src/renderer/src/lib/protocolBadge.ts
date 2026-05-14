@@ -9,10 +9,13 @@ export interface ProtocolMarkerView {
   applied_by: string
   detection_evidence: string | null
   detection_confidence: 'explicit' | 'high' | 'low' | 'unknown'
-  // PIKES r1 §9-5 階層化対応 (CCPIT v1.1 Phase E-3、提案 2 案 1)
-  // pikesVersion あり → バッジ表示を「PIKES r1 + MANX r10」併記 (案 b 並列)
+  // PIKES r1.3 §9-5 階層化必須化 (CCPIT v1.3、提案 2 案 1 確定)
+  // pikesVersion + osProtocolType あり → バッジ表示を「PIKES r1.3 + MANX r10」並列表記
+  // pikesVersion 単独 (osProtocolType なし) → 「PIKES r1.3 + MANX」 (osProtocolType 不在時のフォールバック)
   pikesVersion?: string
   os?: 'manx' | 'macau' | 'asama'
+  // PIKES r1.3 §9-6-2: 派生属性 (os + {os}_version から autoMarker で導出、IPC 経由で renderer に伝達)
+  osProtocolType?: { type: 'manx' | 'macau' | 'asama'; version: string }
 }
 
 /**
@@ -162,11 +165,14 @@ export function formatBadgeView(m: ProtocolMarkerView | null): BadgeView | null 
     text = m.protocol.toUpperCase()
   }
 
-  // PIKES r1 §9-5 階層化 (CCPIT v1.1 Phase E-3、案 b 並列): pikes_version あり時の併記
-  // 例: "MANX" + pikes_version=r1 → "PIKES r1 + MANX"
-  // 例: "MANX-Host" + pikes_version=r1 → "PIKES r1 + MANX-Host"
-  // 既存の Legacy / Untagged 経路 (pikes_version 持たない想定) には影響しない
-  if (m.pikesVersion && (protocolKey === 'manx' || protocolKey === 'manx-host')) {
+  // PIKES r1.3 §9-5/§9-6-2 階層表記 (CCPIT v1.3、案 b 並列):
+  // 1. pikesVersion + osProtocolType 揃った場合: "PIKES r1.3 + MANX r10" (フル階層表記)
+  // 2. pikesVersion のみ (osProtocolType 不在): "PIKES r1.3 + MANX" (フォールバック、既存 v1.2 互換)
+  // 既存の Legacy / Untagged 経路 (pikesVersion 持たない想定) には影響しない
+  if (m.osProtocolType && m.pikesVersion && (protocolKey === 'manx' || protocolKey === 'manx-host')) {
+    const osLabel = m.osProtocolType.type.toUpperCase()
+    text = `PIKES ${m.pikesVersion} + ${osLabel} ${m.osProtocolType.version}`
+  } else if (m.pikesVersion && (protocolKey === 'manx' || protocolKey === 'manx-host')) {
     text = `PIKES ${m.pikesVersion} + ${text}`
   }
 
