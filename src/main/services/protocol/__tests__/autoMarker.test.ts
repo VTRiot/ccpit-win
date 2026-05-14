@@ -850,6 +850,81 @@ describe('autoMarker — parseManxFrontmatter (FSA r7 §5)', () => {
     expect(result.pikesVersion).toBeUndefined()
     expect(result.os).toBeUndefined()
   })
+
+  // ──────────────────────────────────────────────────────────────────
+  // CCPIT v1.3 / PIKES r1.3 §9-5/§9-6-2: pikes_version 必須化 + os_protocol_type 派生
+  // ──────────────────────────────────────────────────────────────────
+
+  it('Pikes 9: pikes_version 欠落 + strictPikesValidation=false → manxVersion 単独で marker 生成 (既存 21 PJ 互換、warning fallback)', async () => {
+    const path = join(workdir, 'CLAUDE.md')
+    await writeFile(path, '---\nmanx_version: r10\nmanx_role: managed\n---\n', 'utf-8')
+    const result = await parseManxFrontmatter(path, { strictPikesValidation: false })
+    expect(result).toEqual({
+      manxVersion: 'r10',
+      manxRole: 'managed',
+    })
+    expect(result?.pikesVersion).toBeUndefined()
+  })
+
+  it('Pikes 10: pikes_version 欠落 + strictPikesValidation=true → null (新規 PJ 経路、marker 不発火)', async () => {
+    const path = join(workdir, 'CLAUDE.md')
+    await writeFile(path, '---\nmanx_version: r10\nmanx_role: managed\n---\n', 'utf-8')
+    const result = await parseManxFrontmatter(path, { strictPikesValidation: true })
+    expect(result).toBeNull()
+  })
+
+  it('Pikes 11: os=manx + manx_version=r10 → osProtocolType={type:manx, version:r10} 派生 (PIKES r1.3 §9-6-2)', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 30,
+      claudeMdNlink: 1,
+      manxFrontmatter: {
+        manxVersion: 'r10',
+        manxRole: 'managed',
+        pikesVersion: 'r1.3',
+        os: 'manx',
+      },
+    })
+    const result = deriveMarker(inputs)
+    expect(result.osProtocolType).toEqual({ type: 'manx', version: 'r10' })
+    expect(result.pikesVersion).toBe('r1.3')
+    expect(result.os).toBe('manx')
+  })
+
+  it('Pikes 12: os=manx + manx_version 空 → osProtocolType undefined (部分欠落 silent drop)', () => {
+    const inputs = withMerged({
+      hasClaudeMd: true,
+      claudeMdLines: 30,
+      claudeMdNlink: 1,
+      manxFrontmatter: {
+        manxVersion: '',
+        manxRole: 'managed',
+        pikesVersion: 'r1.3',
+        os: 'manx',
+      },
+    })
+    const result = deriveMarker(inputs)
+    expect(result.osProtocolType).toBeUndefined()
+    expect(result.pikesVersion).toBe('r1.3')
+    expect(result.os).toBe('manx')
+  })
+
+  it('Pikes 14: 新 P4_TEMPLATE 相当 frontmatter (pikes_version + os + manx_version + manx_role) → 4 フィールド全パース', async () => {
+    const path = join(workdir, 'CLAUDE.md')
+    // CCPIT v1.3 projects.ts P4_TEMPLATE と同じ frontmatter
+    await writeFile(
+      path,
+      '---\npikes_version: r1.3\nos: manx\nmanx_version: r10\nmanx_role: managed\n---\n',
+      'utf-8'
+    )
+    const result = await parseManxFrontmatter(path, { strictPikesValidation: true })
+    expect(result).toEqual({
+      manxVersion: 'r10',
+      manxRole: 'managed',
+      pikesVersion: 'r1.3',
+      os: 'manx',
+    })
+  })
 })
 
 // ────────────────────────────────────────────────────────────────────

@@ -471,5 +471,50 @@ describe('FSA r7 §6: manx-host (violet 中間色) NEW r7', () => {
       // explicit 経路で "MANX r5" が組み上がった後、pikes 併記で "PIKES r1 + MANX r5"
       expect(view!.text).toBe('PIKES r1 + MANX r5')
     })
+
+    // ──────────────────────────────────────────────────────────────────
+    // CCPIT v1.3 / PIKES r1.3 §9-6-2: os_protocol_type 派生でフル階層表記
+    // ──────────────────────────────────────────────────────────────────
+
+    it('Pikes UI 6: pikes_version + osProtocolType → "PIKES r1.3 + MANX r10" フル階層表記', () => {
+      const view = formatBadgeView(
+        makeMarker({
+          protocol: 'manx',
+          detection_confidence: 'low',
+          pikesVersion: 'r1.3',
+          os: 'manx',
+          osProtocolType: { type: 'manx', version: 'r10' },
+        })
+      )
+      expect(view).not.toBeNull()
+      expect(view!.text).toBe('PIKES r1.3 + MANX r10')
+    })
+
+    it('Pikes UI 7: pikesVersion + osProtocolType + manx-host → "PIKES r1.3 + MANX r10" (host も同形式)', () => {
+      const view = formatBadgeView(
+        makeMarker({
+          protocol: 'manx-host',
+          detection_confidence: 'low',
+          pikesVersion: 'r1.3',
+          os: 'manx',
+          osProtocolType: { type: 'manx', version: 'r10' },
+        })
+      )
+      expect(view).not.toBeNull()
+      expect(view!.text).toBe('PIKES r1.3 + MANX r10')
+    })
+
+    it('Pikes UI 8: pikesVersion あり / osProtocolType なし → 既存フォールバック "PIKES r1.3 + MANX"', () => {
+      const view = formatBadgeView(
+        makeMarker({
+          protocol: 'manx',
+          detection_confidence: 'low',
+          pikesVersion: 'r1.3',
+        })
+      )
+      expect(view).not.toBeNull()
+      // osProtocolType なしの場合は v1.2 互換のフォールバック表記
+      expect(view!.text).toBe('PIKES r1.3 + MANX')
+    })
   })
 })

@@ -3,10 +3,14 @@ import { homedir } from 'os'
 import { join } from 'path'
 import { readProtocol } from './protocolReader'
 import type { ProtocolMarker, DetectionConfidence, ManxFrontmatter } from './types'
+import packageJson from '../../../../package.json'
 
-export const APP_VERSION = 'ccpit-1.0.0'
+// CCPIT v1.3: package.json の version を動的取得。次回 version bump で本定数を手動更新する不要 (マジックナンバー禁止 + DRY)
+export const APP_VERSION = `ccpit-${packageJson.version}`
 export const LEGACY_LINE_THRESHOLD = 200
 export const REVISION_UNKNOWN = '?'
+// PIKES r1.3 §9-5: pikes_version 必須化リビジョン (CCPIT v1.3 で実装)
+export const PIKES_VERSION_REQUIRED_SINCE = 'r1.3'
 
 /**
  * グローバル `~/.claude/` のパス（Windows: %USERPROFILE%\.claude\）。
@@ -67,23 +71,36 @@ export function isCCDGV1Hardlink(nlink: number): boolean {
   return nlink > 1
 }
 
+export interface ParseFrontmatterOptions {
+  /**
+   * PIKES r1.3 §9-5 で pikes_version 必須化 (CCPIT v1.3)。
+   * - false (default): 既存 PJ 互換。pikes_version 不在で console.warn 出力 + manx_version fallback
+   *   (manxVersion OR pikesVersion のいずれかが必須)。既存 21 PJ 影響なし。
+   * - true: 新規 PJ 経路 (projects.ts createProject)。pikes_version 不在で null 返却、marker 不発火
+   *   (R6/R7 不発火 → R3a/R3b/R4 経路、新規 PJ のテンプレ異常検知)。
+   */
+  strictPikesValidation?: boolean
+}
+
 /**
- * FSA r7 §5 / MANX_Protocol r8 §9-5 / PIKES r1 §9-5: CLAUDE.md 冒頭 YAML フロントマターを解析。
- * 仕様 (PIKES r1 §9-5 階層化対応、提案 2 案 1):
+ * FSA r7 §5 / MANX_Protocol r8 §9-5 / PIKES r1.3 §9-5: CLAUDE.md 冒頭 YAML フロントマターを解析。
+ * 仕様 (PIKES r1.3 §9-5 必須化、提案 2 案 1 確定、CCPIT v1.3):
  *   ---
- *   manx_version: r10        # 後方互換 (manxVersion OR pikesVersion のどちらかが必須)
- *   manx_role: managed       # オプション (default: managed)
- *   pikes_version: r1        # 新規 (PIKES Protocol revision)
- *   os: manx                 # 新規 (manx=Win / macau=macOS / asama=Linux)
+ *   pikes_version: r1.3      # 必須 (PIKES r1.3 §9-5、CCPIT v1.3 で必須化)
+ *   os: manx                 # 必須 (manx=Win / macau=macOS / asama=Linux)
+ *   manx_version: r10        # 必須 ({os}_version パターン、osProtocolType 派生の構成要素)
+ *   manx_role: managed       # オプション (default: managed、pikes_role 命名移行は v1.4 へ繰越)
  *   ---
- * - manx_version OR pikes_version のどちらかが必須。両方無ければ null を返す
- *   (R6/R7 不発火、R3b/R4 経路に落ちる)
+ * - PIKES r1.3 §9-5 で pikes_version + os + {os}_version 必須化。`strictPikesValidation` で適用切替
+ * - `strictPikesValidation: false` (default): 既存 PJ 互換、pikes_version 不在で console.warn + manxVersion fallback
+ * - `strictPikesValidation: true`: 新規 PJ 経路、pikes_version 不在で null (marker 不発火)
  * - manx_role 不正値はデフォルト 'managed'
  * - os 不正値は undefined (R6/R7 判定には影響しない、UI 階層化表示の素材)
  * - js-yaml 等の外部依存なし (autoMarker の依存最小方針と整合)
  */
 export async function parseManxFrontmatter(
-  claudeMdPath: string
+  claudeMdPath: string,
+  opts: ParseFrontmatterOptions = {}
 ): Promise<ManxFrontmatter | null> {
   try {
     const content = await readFile(claudeMdPath, 'utf-8')
@@ -118,7 +135,19 @@ export async function parseManxFrontmatter(
         // 不正値は undefined のまま
       }
     }
-    // PIKES r1 §9-5: manxVersion OR pikesVersion のどちらかが必須
+    // PIKES r1.3 §9-5: pikes_version 必須化 (CCPIT v1.3)
+    if (opts.strictPikesValidation && !pikesVersion) {
+      // 新規 PJ 経路、pikes_version 不在で null (R6/R7 不発火、テンプレ異常検知)
+      return null
+    }
+    if (!pikesVersion && manxVersion) {
+      // 既存 PJ 互換、warning fallback (CLAUDE.md には触らない = §4-3 自動置換禁止と整合)
+      console.warn(
+        `[parseManxFrontmatter] pikes_version missing in ${claudeMdPath} ` +
+        `(required since PIKES ${PIKES_VERSION_REQUIRED_SINCE}, falling back to manx_version='${manxVersion}')`
+      )
+    }
+    // 既存挙動: manxVersion OR pikesVersion のどちらかが必須 (両方無ければ null = R6/R7 不発火)
     if (!manxVersion && !pikesVersion) return null
     // manxVersion 不在で pikesVersion のみの場合は空文字で代入 (interface 互換)
     return {
@@ -187,6 +216,8 @@ export interface DetectInputs {
 export interface GatherOptions {
   /** グローバル `~/.claude/` を上書きしたい場合に指定（テスト用途）。 */
   globalClaudeDir?: string
+  /** PIKES r1.3 §9-5 pikes_version 必須化適用 (新規 PJ 経路、CCPIT v1.3)。 */
+  strictPikesValidation?: boolean
 }
 
 /**
@@ -229,8 +260,12 @@ export async function gatherInputs(
 
   // FSA r7 §3 R0a: ハードリンク数 (CCDG-V1 検出)
   const claudeMdNlink = hasClaudeMd ? await getClaudeMdNlink(claudeMdPath) : 0
-  // FSA r7 §5 R6/R7: YAML 自己宣言
-  const manxFrontmatter = hasClaudeMd ? await parseManxFrontmatter(claudeMdPath) : null
+  // FSA r7 §5 R6/R7 + PIKES r1.3 §9-5: YAML 自己宣言 (新規 PJ は strictPikesValidation 適用)
+  const manxFrontmatter = hasClaudeMd
+    ? await parseManxFrontmatter(claudeMdPath, {
+        strictPikesValidation: opts.strictPikesValidation,
+      })
+    : null
 
   // 統合判定（PJ 直下 + PJ 内 .claude/ のみ。グローバルは除外）
   const mergedHasHooks = hasHooksLocal || hasHooksDotClaudeLocal
@@ -395,6 +430,16 @@ export function deriveMarker(inputs: DetectInputs): ProtocolMarker {
       ? { pikesVersion: manxFrontmatter.pikesVersion }
       : {}),
     ...(manxFrontmatter?.os !== undefined ? { os: manxFrontmatter.os } : {}),
+    // PIKES r1.3 §9-6-2: os_protocol_type 派生属性 (os + {os}_version から導出)。
+    // 現状 os=manx + manx_version の組合せのみサポート。macau/asama は v1.4 以降。
+    ...(manxFrontmatter?.os === 'manx' && manxFrontmatter?.manxVersion
+      ? {
+          osProtocolType: {
+            type: 'manx' as const,
+            version: manxFrontmatter.manxVersion,
+          },
+        }
+      : {}),
   }
 }
 
@@ -403,6 +448,8 @@ export interface DetectOptions {
   force?: boolean
   /** グローバル `~/.claude/` を上書きしたい場合に指定（テスト用途）。 */
   globalClaudeDir?: string
+  /** PIKES r1.3 §9-5 pikes_version 必須化適用 (新規 PJ 経路、CCPIT v1.3)。 */
+  strictPikesValidation?: boolean
 }
 
 export interface EditMarkerInput {
@@ -463,6 +510,7 @@ export async function detectProtocol(
   }
   const inputs = await gatherInputs(projectPath, {
     globalClaudeDir: opts.globalClaudeDir,
+    strictPikesValidation: opts.strictPikesValidation,
   })
   return deriveMarker(inputs)
 }

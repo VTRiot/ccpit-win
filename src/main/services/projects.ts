@@ -92,7 +92,10 @@ async function saveProjects(projects: ProjectEntry[]): Promise<void> {
   await writeFile(PROJECTS_FILE, JSON.stringify(projects, null, 2), 'utf-8')
 }
 
+// PIKES r1.3 §9-5 + CCPIT v1.3: pikes_version + os + {os}_version 必須化、manx_role 据置 (pikes_role 移行は v1.4)
 const P4_TEMPLATE = `---
+pikes_version: r1.3
+os: manx
 manx_version: r10
 manx_role: managed
 ---

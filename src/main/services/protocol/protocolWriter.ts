@@ -2,6 +2,7 @@ import { writeFile, readFile, mkdir, stat } from 'fs/promises'
 import { existsSync } from 'fs'
 import { dirname } from 'path'
 import { getProtocolFilePath } from './protocolReader'
+import { APP_VERSION } from './autoMarker'
 import type {
   ProtocolMarker,
   ProtocolHistoryFile,
@@ -57,7 +58,7 @@ export async function appendProtocolEntry(
   marker: ProtocolMarker,
   now: Date = new Date()
 ): Promise<void> {
-  const APP_VERSION = 'ccpit-1.0.0'
+  // CCPIT v1.3: APP_VERSION は autoMarker.ts (package.json 由来) から import で取得 (DRY 解消)
   const file = getProtocolFilePath(projectPath)
   await mkdir(dirname(file), { recursive: true })
 

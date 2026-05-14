@@ -66,6 +66,12 @@ export function ProtocolBadge({
           {marker.os && ` (${marker.os})`}
         </div>
       )}
+      {marker.osProtocolType && (
+        <div>
+          <span className="text-muted-foreground">os_protocol_type: </span>
+          {marker.osProtocolType.type.toUpperCase()} {marker.osProtocolType.version}
+        </div>
+      )}
       <div>
         <span className="text-muted-foreground">stage: </span>
         {marker.stage}
