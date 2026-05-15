@@ -136,6 +136,7 @@
     "selectedCount": "{{selected}}/{{total}} 件選択中",
     "noItems": "項目がありません",
     "cancel": "キャンセル",
+    "ok": "OK",
     "edit": "編集",
     "delete": "削除"
   },
