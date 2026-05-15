@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { X, HeartPulse, Shield, Stethoscope, Wrench, Inbox, Clipboard, Plug } from 'lucide-react'
 import { Button } from './ui/button'
@@ -89,7 +90,15 @@ export function MaintenanceDialog({
           {activeTab === 'health' && <HealthPage />}
           {activeTab === 'rk' && (
             <RKPage
-              onResetSetup={async () => { onClose(); await onResetSetup() }}
+              onResetSetup={async () => {
+                // flushSync で MaintenanceDialog の close を同期的に DOM 反映してから
+                // resetSetup (Setup 画面遷移) を呼ぶ。これをしないと React 19 で
+                // overlay backdrop が pending 状態のまま画面遷移が走り、Setup 画面の
+                // input にマウスクリック focus が届かなくなる (Tab フォーカスは届く、
+                // クリック only 不能の症状)。
+                flushSync(() => { onClose() })
+                await onResetSetup()
+              }}
               showSetupNav={showSetupNav}
               onToggleShowSetupNav={onToggleShowSetupNav}
             />

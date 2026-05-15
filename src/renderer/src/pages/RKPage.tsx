@@ -5,6 +5,7 @@ import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Checkbox } from '../components/ui/checkbox'
 import { Label } from '../components/ui/label'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import { cn, toNativePath } from '../lib/utils'
 import ReactDiffViewer from 'react-diff-viewer-continued'
 
@@ -105,6 +106,9 @@ export function RKPage({ onResetSetup, showSetupNav, onToggleShowSetupNav }: RKP
   const [expandedDiff, setExpandedDiff] = useState<string | null>(null)
   const [restoreResult, setRestoreResult] = useState<RestoreResult | null>(null)
   const [restoring, setRestoring] = useState(false)
+  // CCPIT v1.3 hotfix: window.confirm() で Electron WebView focus 機構が壊れる (RecoveryKit→Setup
+  // 遷移で再現率 100%、input マウスクリック focus 不能の症状)。React 製 ConfirmDialog で代替。
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
 
   const loadSnapshots = async (): Promise<void> => {
     const list = await window.api.rkList()
@@ -311,15 +315,21 @@ export function RKPage({ onResetSetup, showSetupNav, onToggleShowSetupNav }: RKP
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                if (confirm(t('pages.rk.resetSetup.confirm'))) {
-                  void onResetSetup()
-                }
-              }}
+              onClick={() => setResetConfirmOpen(true)}
             >
               <RotateCcw size={14} />
               {t('pages.rk.resetSetup.button')}
             </Button>
+            <ConfirmDialog
+              open={resetConfirmOpen}
+              title={t('pages.rk.resetSetup.title')}
+              message={t('pages.rk.resetSetup.confirm')}
+              onConfirm={() => {
+                setResetConfirmOpen(false)
+                void onResetSetup()
+              }}
+              onCancel={() => setResetConfirmOpen(false)}
+            />
 
             {onToggleShowSetupNav && (
               <div className="flex items-start gap-2 pt-3 border-t border-border/60">

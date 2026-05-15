@@ -136,6 +136,7 @@
     "selectedCount": "{{selected}}/{{total}} selected",
     "noItems": "No items",
     "cancel": "Cancel",
+    "ok": "OK",
     "edit": "Edit",
     "delete": "Delete"
   },
