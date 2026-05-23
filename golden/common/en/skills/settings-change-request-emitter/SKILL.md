@@ -45,9 +45,9 @@ If the directory does not exist, create it with `mkdir -p`.
 
 ```markdown
 ---
-request_id: <unique id, must match the <request-id> in the filename>
-created_at: <ISO 8601 datetime, e.g., 2026-05-01T19:30:00Z>
-purpose: <one-line description, e.g., add debug-report-gate.sh to the Stop hook>
+request_id: <FILL: unique id (must match the request-id in the filename)>
+created_at: <FILL: ISO 8601 datetime, e.g. 2026-05-01T19:30:00Z>
+purpose: <FILL: one-line description, e.g. add debug-report-gate.sh to the Stop hook>
 target: ~/.claude/settings.json
 status: pending
 ---

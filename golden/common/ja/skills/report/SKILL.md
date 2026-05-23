@@ -12,12 +12,12 @@ description: 報告書・完了報告を出力する際に発火する。イン�
 設計 AI 向け報告書を MD ファイルで出力する。
 会話内テキストでの報告は「報告書の出力」に該当しない。
 
-**dev log + 正報告書 二段構成** (PIKES r1.2 §11-3-1 正典化):
-- 上位文書リポ (例: PIKES Family) 配下: **正報告書** (judgment 中心、設計判断・反芻・提案)。読者は設計 AI / らいお
-- 作業リポ (例: CCDG2) 配下: **dev log** (fact 中心、差分・commit 単位)。読者は次セッション CC / 保守者
+**dev log + 正報告書 二段構成**:
+- 上位文書リポ配下: **正報告書** (judgment 中心、設計判断・反芻・提案)。読者は設計 AI / ユーザー
+- 作業リポ配下: **dev log** (fact 中心、差分・commit 単位)。読者は次セッション CC / 保守者
 - 判定迷う場合は両方記載で良い (相互ナビゲーションで整合維持)
 
-## 本報告書の読者と目的 (PIKES r1.2 §9-1-1 必須セクション)
+## 本報告書の読者と目的
 
 報告書冒頭 (frontmatter 直後) に以下のセクションを **必ず明示** する:
 
@@ -29,11 +29,11 @@ description: 報告書・完了報告を出力する際に発火する。イン�
 - **次のアクション**: <読者に期待する次のアクション、読み終わったら何をすべきか>
 ```
 
-加えて frontmatter に以下を試行記載 (機械可読、PIKES r1.2 §9-1 オプション):
+加えて frontmatter に以下を試行記載 (機械可読、オプション):
 ```yaml
-audience: [raio | juiz | cc-next | cc-self | raiko | public]
-purpose: <1 文で要約>
-expected_action: <1 文で要約>
+audience: [<FILL: 主読者ロールを指定>]  # 例: design-ai, human-user, cc-next, cc-self, public
+purpose: <FILL: 1 文で要約>
+expected_action: <FILL: 1 文で要約>
 ```
 
 「該当なし」で省略禁止。読者が不明確なら設計を見直せ。

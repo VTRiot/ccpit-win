@@ -1,9 +1,9 @@
 ---
 status: in_progress
-report_id: <task-id-here>
-parent_task_id: <parent-task-id or "standalone">
+report_id: <FILL: task-id>
+parent_task_id: <FILL: parent-task-id or "standalone">
 report_type: debug-report
-created_at: <YYYY-MM-DD HH:MM>
+created_at: <FILL: YYYY-MM-DD HH:MM>
 ---
 
 # Debug Report — <task-id>

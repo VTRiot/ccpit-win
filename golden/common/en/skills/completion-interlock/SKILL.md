@@ -17,11 +17,11 @@ If even one is missing, do NOT declare completion.
 | Artifact | Verification |
 |----------|--------------|
 | Report MD file | File exists directly under `_Prompt\02_buildai\` (legacy `_Prompt\01_FromBuilderAi\` also accepted) |
-| **"Readers and Purpose of This Report" section** | Explicitly stated at the top of the report MD, right after the frontmatter (PIKES r1.2 §9-1-1) |
-| **frontmatter `audience` / `purpose` / `expected_action`** | Provisionally written in the report MD frontmatter (PIKES r1.2 §9-1, optional) |
+| **"Readers and Purpose of This Report" section** | Explicitly stated at the top of the report MD, right after the frontmatter |
+| **frontmatter `audience` / `purpose` / `expected_action`** | Provisionally written in the report MD frontmatter (optional) |
 | Before / After measured values | Written inside the report MD (not in-conversation text) |
 | Every concrete completion criterion | Verified inside the report MD with measured values |
-| **Two-tier structure: dev log + canonical report** | Where applicable: both the dev log in the working repo and the canonical report in the upstream doc repo are placed (PIKES r1.2 §11-3-1) |
+| **Two-tier structure: dev log + canonical report** | Where applicable: both the dev log in the working repo and the canonical report in the upstream doc repo are placed |
 
 ## Failure Conditions
 

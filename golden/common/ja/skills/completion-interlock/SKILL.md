@@ -17,11 +17,11 @@ testable-impl Step E を終えた直後の最終ゲートとして機能する�
 | 出力物 | 確認方法 |
 |--------|---------|
 | 報告書 MD ファイル | `_Prompt\02_buildai\` (旧 `_Prompt\01_FromBuilderAi\` も互換) 直下にファイルが存在する |
-| **「本報告書の読者と目的」セクション** | 報告書 MD の冒頭 (frontmatter 直後) に明示されている (PIKES r1.2 §9-1-1) |
-| **frontmatter `audience` / `purpose` / `expected_action`** | 報告書 MD の frontmatter に試行記載されている (PIKES r1.2 §9-1 オプション) |
+| **「本報告書の読者と目的」セクション** | 報告書 MD の冒頭 (frontmatter 直後) に明示されている |
+| **frontmatter `audience` / `purpose` / `expected_action`** | 報告書 MD の frontmatter に試行記載されている (オプション) |
 | Before / After 実測値 | 報告書 MD 内に記載されている（会話内テキストではない） |
 | 完了条件（具体）の全項目 | 報告書 MD 内で実測値付きで確認されている |
-| **dev log と正報告書の二段構成** | 適用対象タスクなら、作業リポ配下 dev log + 上位文書リポ配下正報告書の両方が配置済 (PIKES r1.2 §11-3-1) |
+| **dev log と正報告書の二段構成** | 適用対象タスクなら、作業リポ配下 dev log + 上位文書リポ配下正報告書の両方が配置済 |
 
 ## 不合格条件
 

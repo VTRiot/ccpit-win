@@ -346,10 +346,10 @@ Step 2: Design AI reviews
 Step 3: After adoption, an instruction document is issued for CC to add the new Pattern
   - Add the new Pattern to SKILL.md §2
   - Sync with Golden distribution (ja/en)
-  - Ship via sync-to-public.ps1 to OSS
+  - Ship to OSS via the sync script
 
 Step 4: Diffusion to OSS
-  - The new Pattern is shared with all CC users via ccpit-win
+  - The new Pattern is shared with all CC users via the distribution channel
   - This is the essence of "growing toolbox"
 ```
 

@@ -20,6 +20,7 @@ import { cn } from '../lib/utils'
 import ReactDiffViewer from 'react-diff-viewer-continued'
 
 type RequestStatus = 'pending' | 'applied' | 'rolled_back' | 'rejected'
+type RequestKind = 'settings' | 'skill'
 
 interface ChangeRequestFrontmatter {
   request_id: string
@@ -27,22 +28,49 @@ interface ChangeRequestFrontmatter {
   purpose: string
   target: string
   status: RequestStatus
+  kind: RequestKind
 }
 
-interface ChangeRequest {
+interface ChangeRequestBase {
   filePath: string
   frontmatter: ChangeRequestFrontmatter
   rawMarkdown: string
-  proposedSettingsJson: string
-  proposedSettingsParsed: unknown | null
   parseError: string | null
 }
+
+interface SettingsChangeRequest extends ChangeRequestBase {
+  kind: 'settings'
+  proposedSettingsJson: string
+  proposedSettingsParsed: unknown | null
+}
+
+interface SkillChangeRequest extends ChangeRequestBase {
+  kind: 'skill'
+  proposedSkillBody: string
+}
+
+type ChangeRequest = SettingsChangeRequest | SkillChangeRequest
+
+/** PIKES r1.4 §7-3-A: 3 種エラー区別 + その他失敗事由 */
+type ApplyResultReason =
+  | 'authentication-failed'
+  | 'auth-missing-for-skill'
+  | 'json-syntax-error'
+  | 'allowlist-violation'
+  | 'kind-target-mismatch'
+  | 'glob-not-allowed'
+  | 'unc-not-allowed'
+  | 'parent-not-found'
+  | 'realpath-failed'
+  | 'write-failed'
+  | 'post-verify-failed'
 
 interface ApplyResult {
   success: boolean
   backupPath?: string
   appliedAt?: string
   error?: string
+  reason?: ApplyResultReason
   rolledBack?: boolean
 }
 
@@ -184,9 +212,11 @@ export function CCRequestInboxPage(): React.JSX.Element {
     setCurrentSettings(s)
   }
 
-  // Apply guard: request loaded, JSON valid, password (if required) provided, not in flight.
+  // Apply guard: request loaded, content valid (kind 別), password (if required) provided, not in flight.
   const passwordOk = !hasPassword || password.length > 0
-  const proposedJsonInvalid = request !== null && request.parseError !== null
+  // kind:settings の JSON syntax error のみ apply 禁止。kind:skill は raw text のため常に valid。
+  const proposedJsonInvalid =
+    request !== null && request.kind === 'settings' && request.parseError !== null
   const canApply = request !== null && !proposedJsonInvalid && passwordOk && !applying
 
   return (
@@ -246,13 +276,14 @@ export function CCRequestInboxPage(): React.JSX.Element {
                 value={formatTimestamp(request.frontmatter.created_at)}
               />
               <KV label={t('requestInbox.detail.target')} value={request.frontmatter.target} />
+              <KV label="kind" value={request.frontmatter.kind} />
               <KV label={t('requestInbox.detail.status')} value={request.frontmatter.status} />
               <KV label={t('requestInbox.detail.filePath')} value={request.filePath} mono />
             </CardContent>
           </Card>
 
-          {/* Parse error */}
-          {proposedJsonInvalid && (
+          {/* Parse error (kind:settings の JSON syntax error のみ) */}
+          {proposedJsonInvalid && request.kind === 'settings' && (
             <Card className="border-destructive/40">
               <CardContent className="pt-4 flex items-start gap-2 text-sm text-destructive">
                 <AlertTriangle size={16} className="mt-0.5 shrink-0" />
@@ -264,23 +295,35 @@ export function CCRequestInboxPage(): React.JSX.Element {
             </Card>
           )}
 
-          {/* Diff */}
+          {/* Diff — kind で表示内容切替 */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">{t('requestInbox.diff.title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="border border-border rounded-md overflow-auto max-h-[28rem] text-xs">
-                <ReactDiffViewer
-                  oldValue={currentSettings}
-                  newValue={
-                    request.proposedSettingsParsed !== null
-                      ? JSON.stringify(request.proposedSettingsParsed, null, 2)
-                      : request.proposedSettingsJson
-                  }
-                  splitView={false}
-                  useDarkTheme
-                />
+                {request.kind === 'settings' ? (
+                  <ReactDiffViewer
+                    oldValue={currentSettings}
+                    newValue={
+                      request.proposedSettingsParsed !== null
+                        ? JSON.stringify(request.proposedSettingsParsed, null, 2)
+                        : request.proposedSettingsJson
+                    }
+                    splitView={false}
+                    useDarkTheme
+                  />
+                ) : (
+                  // kind:skill — 対象 SKILL.md の現在内容と提案 raw body を text diff として表示。
+                  // 現在内容の取得は将来拡張枠（Phase 2 で target 別 read API 追加予定）のため、
+                  // v1 では新規内容のみ提示 (oldValue 空文字)。Phase 2 でフルテキスト diff 化。
+                  <ReactDiffViewer
+                    oldValue=""
+                    newValue={request.proposedSkillBody}
+                    splitView={false}
+                    useDarkTheme
+                  />
+                )}
               </div>
             </CardContent>
           </Card>
@@ -367,6 +410,29 @@ export function CCRequestInboxPage(): React.JSX.Element {
                   {result.backupPath && (
                     <div className="text-xs mt-1 font-mono break-all">
                       {t('requestInbox.result.backup')}: {result.backupPath}
+                    </div>
+                  )}
+                  {result.reason && (
+                    <div className="text-xs mt-1">
+                      reason: <span className="font-mono">{result.reason}</span>
+                      {/* PIKES r1.4 §7-3-A: 3 種エラー区別ヒント */}
+                      {result.reason === 'allowlist-violation' && (
+                        <span className="ml-2 text-muted-foreground">
+                          (target は allowlist 外。kind と target を確認してください)
+                        </span>
+                      )}
+                      {result.reason === 'kind-target-mismatch' && (
+                        <span className="ml-2 text-muted-foreground">
+                          (kind と target が不整合。kind:settings なら settings.json 系、kind:skill
+                          なら ~/.claude/skills/&lt;name&gt;/SKILL.md を指定)
+                        </span>
+                      )}
+                      {result.reason === 'auth-missing-for-skill' && (
+                        <span className="ml-2 text-muted-foreground">
+                          (auth.password 未設定環境では skill apply は許可されません。先に
+                          settings 経路でパスワードを登録してください)
+                        </span>
+                      )}
                     </div>
                   )}
                   {result.error && (

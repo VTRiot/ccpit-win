@@ -45,9 +45,9 @@ ${cwd}/_Prompt/_SettingsChangeRequests/<timestamp>_<request-id>.md
 
 ```markdown
 ---
-request_id: <unique id, ファイル名の <request-id> と一致>
-created_at: <ISO 8601 datetime, 例: 2026-05-01T19:30:00Z>
-purpose: <1 行説明、例: debug-report-gate.sh を Stop hook に追加>
+request_id: <FILL: 一意な ID（ファイル名の request-id と一致）>
+created_at: <FILL: ISO 8601 datetime, 例: 2026-05-01T19:30:00Z>
+purpose: <FILL: 1 行説明、例: debug-report-gate.sh を Stop hook に追加>
 target: ~/.claude/settings.json
 status: pending
 ---

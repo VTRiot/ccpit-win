@@ -17,16 +17,16 @@ description: コード変更を伴う実装を行う際に発火する。テス�
 実装に着手する前に、報告書 MD ファイルを空テンプレートで作成する。
 このファイルが存在しない状態で Step C に進むことを禁止する。
 
-テンプレート (PIKES r1.2 §9-1-1 準拠、frontmatter + 「読者と目的」セクション必須):
+テンプレート (frontmatter + 「読者と目的」セクション必須):
 ```
 ---
-report_id: <YYMMDD_HHMM_要約>
+report_id: <FILL: YYMMDD_HHMM_要約>
 report_type: implementation
-parent_task_id: <親指示書ファイル名 or none>
+parent_task_id: <FILL: 親指示書ファイル名 or none>
 status: in_progress
-audience: [<主読者、例: juiz, raio>]
-purpose: <1 文で、読者が本文書から得るべき情報>
-expected_action: <1 文で、読者に期待する次のアクション>
+audience: [<FILL: 主読者ロールを指定>]  # 例: design-ai, human-user, cc-next, cc-self, public
+purpose: <FILL: 1 文で、読者が本文書から得るべき情報>
+expected_action: <FILL: 1 文で、読者に期待する次のアクション>
 ---
 
 # {内容の要約}

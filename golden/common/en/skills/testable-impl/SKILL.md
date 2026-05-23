@@ -17,16 +17,16 @@ Derive measurable completion criteria (concrete) from the abstract completion cr
 Before touching any code, create the report MD file as an empty template.
 Advancing to Step C without this file existing is prohibited.
 
-Template (compliant with PIKES r1.2 §9-1-1, frontmatter + "Readers and Purpose" section required):
+Template (frontmatter + "Readers and Purpose" section required):
 ```
 ---
-report_id: <YYMMDD_HHMM_summary>
+report_id: <FILL: YYMMDD_HHMM_summary>
 report_type: implementation
-parent_task_id: <parent instruction filename or none>
+parent_task_id: <FILL: parent instruction filename or none>
 status: in_progress
-audience: [<primary reader, e.g. juiz, raio>]
-purpose: <one line: information the reader should obtain>
-expected_action: <one line: action expected from the reader>
+audience: [<FILL: specify the primary reader role>]  # e.g. design-ai, human-user, cc-next, cc-self, public
+purpose: <FILL: one line: information the reader should obtain>
+expected_action: <FILL: one line: action expected from the reader>
 ---
 
 # {Summary of content}

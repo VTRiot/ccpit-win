@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdir, rm, writeFile, readFile } from 'fs/promises'
+import { mkdir, rm, writeFile, readFile, symlink } from 'fs/promises'
 import { existsSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
@@ -29,11 +29,15 @@ beforeEach(async () => {
   paths = {
     claudeDir,
     settingsJsonPath: join(claudeDir, 'settings.json'),
+    settingsLocalJsonPath: join(claudeDir, 'settings.local.json'),
     parcFermeDir,
     backupsDir: join(parcFermeDir, 'settings-backups'),
-    changeLogPath: join(parcFermeDir, 'settings-change-log.jsonl')
+    changeLogPath: join(parcFermeDir, 'settings-change-log.jsonl'),
+    skillsRoot: join(claudeDir, 'skills'),
+    skillBackupRoot: join(parcFermeDir, 'skill-backups')
   }
   await mkdir(claudeDir, { recursive: true })
+  await mkdir(paths.skillsRoot!, { recursive: true })
 })
 
 afterEach(async () => {
@@ -45,22 +49,32 @@ async function writeSettings(content: object | string): Promise<void> {
   await writeFile(paths.settingsJsonPath, text, 'utf-8')
 }
 
+/**
+ * 既存 kind:settings 用 fixture。
+ * target デフォルトを `paths.settingsJsonPath` にして allowlist 完全一致判定が成立するようにする
+ * （PIKES r1.4 §7-3-A 第 3 項 + Phase 1 改修。fixture 整合のための更新であり、
+ *  既存 19 件のテストロジックは不変）。
+ */
 function buildValidMd(
   opts: {
     requestId?: string
     status?: string
     proposedJson?: string
+    target?: string
+    kind?: string
   } = {}
 ): string {
   const requestId = opts.requestId ?? 'test-req-001'
   const status = opts.status ?? 'pending'
   const proposedJson = opts.proposedJson ?? '{"hello": "world", "auth": {"password": "kept"}}'
+  const target = opts.target ?? paths.settingsJsonPath
+  const kindLine = opts.kind !== undefined ? `\nkind: ${opts.kind}` : ''
   return `---
 request_id: ${requestId}
 created_at: 2026-05-01T19:00:00Z
 purpose: test change request
-target: ~/.claude/settings.json
-status: ${status}
+target: ${target}
+status: ${status}${kindLine}
 ---
 
 ## 1. 変更概要
@@ -93,11 +107,65 @@ Use the Rollback button.
 `
 }
 
+/** kind:skill 用 fixture (Phase 1 で新設、MN-1/MN-3 対応含む)。 */
+function buildValidSkillMd(
+  opts: {
+    requestId?: string
+    status?: string
+    target?: string
+    body?: string
+  } = {}
+): string {
+  const requestId = opts.requestId ?? 'test-skill-001'
+  const status = opts.status ?? 'pending'
+  const target = opts.target ?? join(paths.skillsRoot!, 'test-skill', 'SKILL.md')
+  const body = opts.body ?? '# Test Skill\n\nThis is a test skill body.\n'
+  return `---
+request_id: ${requestId}
+created_at: 2026-05-01T19:00:00Z
+purpose: test skill change request
+target: ${target}
+status: ${status}
+kind: skill
+---
+
+## 1. 変更概要
+
+A test skill change.
+
+## 2. 現状の関連箇所
+
+(skill body)
+
+## 3. 変更後の完成版
+
+\`\`\`markdown
+${body}
+\`\`\`
+
+## 4. 変更理由
+
+For test.
+
+## 5. 影響範囲
+
+None.
+
+## 6. ロールバック手順
+
+Use the Rollback button.
+`
+}
+
 async function writeRequestMd(filename: string, content: string): Promise<string> {
   const filePath = join(workdir, filename)
   await writeFile(filePath, content, 'utf-8')
   return filePath
 }
+
+// =============================================================================
+//   Existing tests (19 件) — kind:settings 経路の挙動不変を保証
+// =============================================================================
 
 describe('parseChangeRequestMd', () => {
   it('parses a well-formed change request', async () => {
@@ -105,12 +173,18 @@ describe('parseChangeRequestMd', () => {
     const req = await parseChangeRequestMd(fp)
     expect(req.frontmatter.request_id).toBe('test-req-001')
     expect(req.frontmatter.status).toBe('pending')
-    expect(req.frontmatter.target).toBe('~/.claude/settings.json')
+    // fixture 整合: target は paths.settingsJsonPath
+    expect(req.frontmatter.target).toBe(paths.settingsJsonPath)
+    // kind 未指定なら既定 'settings' (§7-3-A 第 5 項 後方互換)
+    expect(req.kind).toBe('settings')
+    expect(req.frontmatter.kind).toBe('settings')
     expect(req.parseError).toBeNull()
-    expect(req.proposedSettingsParsed).toEqual({
-      hello: 'world',
-      auth: { password: 'kept' }
-    })
+    if (req.kind === 'settings') {
+      expect(req.proposedSettingsParsed).toEqual({
+        hello: 'world',
+        auth: { password: 'kept' }
+      })
+    }
   })
 
   it('rejects when frontmatter is missing', async () => {
@@ -125,9 +199,11 @@ describe('parseChangeRequestMd', () => {
     )
     const req = await parseChangeRequestMd(fp)
     expect(req.parseError).not.toBeNull()
-    expect(req.proposedSettingsParsed).toBeNull()
-    // The raw string is still preserved
-    expect(req.proposedSettingsJson).toContain('invalid json')
+    if (req.kind === 'settings') {
+      expect(req.proposedSettingsParsed).toBeNull()
+      // The raw string is still preserved
+      expect(req.proposedSettingsJson).toContain('invalid json')
+    }
   })
 
   it('rejects when status is not in the valid set', async () => {
@@ -351,5 +427,216 @@ describe('end-to-end smoke', () => {
 
     const restored = JSON.parse(await readFile(paths.settingsJsonPath, 'utf-8'))
     expect(restored).toEqual({ permissions: { deny: ['Read(**/*.env)'] } })
+  })
+})
+
+// =============================================================================
+//   Phase 1 新規 14 件 (#1-14) — PIKES r1.4 §7-3-A 第 1-7 項対応
+// =============================================================================
+
+describe('Phase 1: kind:skill apply (§7-3-A)', () => {
+  // #1: 正常 | kind:skill + 認証 OK + allowlist 内 target → 全文置換成功
+  it('#1 applies the proposed SKILL.md body when authenticated (kind:skill)', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    const skillDir = join(paths.skillsRoot!, 'test-skill')
+    await mkdir(skillDir, { recursive: true })
+    const targetPath = join(skillDir, 'SKILL.md')
+    await writeFile(targetPath, '# Original\n', 'utf-8')
+
+    const fp = await writeRequestMd(
+      's1.md',
+      buildValidSkillMd({ target: targetPath, body: '# New skill body\n' })
+    )
+    const req = await parseChangeRequestMd(fp)
+    expect(req.kind).toBe('skill')
+
+    const result = await applyChange(req, 'sesame', paths)
+    expect(result.success).toBe(true)
+    expect(result.backupPath).toBeDefined()
+    const written = await readFile(targetPath, 'utf-8')
+    expect(written).toBe('# New skill body\n')
+  })
+
+  // #2: 正常 | kind:skill apply 後 post-verify がバイト列等価 PASS
+  it('#2 post-verifies skill body with byte-level equality (kind:skill)', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    const skillDir = join(paths.skillsRoot!, 'byte-equal-skill')
+    await mkdir(skillDir, { recursive: true })
+    const targetPath = join(skillDir, 'SKILL.md')
+    await writeFile(targetPath, '# Orig\n', 'utf-8')
+    const body = '# Skill A\n\n## Section\n\nContent with\nmultiple lines.\n'
+    const fp = await writeRequestMd('s2.md', buildValidSkillMd({ target: targetPath, body }))
+    const req = await parseChangeRequestMd(fp)
+    const result = await applyChange(req, 'sesame', paths)
+    expect(result.success).toBe(true)
+    const written = await readFile(targetPath, 'utf-8')
+    expect(Buffer.from(written).equals(Buffer.from(body))).toBe(true)
+  })
+
+  // #3: 正常 | kind:skill apply 時 backup が取られ、内容が元 body と一致
+  //       (rollback 直接テストは fail シナリオ強制が困難なため、rollback 機構の前提となる backup 担保)
+  it('#3 takes a backup before overwriting SKILL.md (kind:skill, rollback prerequisite)', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    const skillDir = join(paths.skillsRoot!, 'backup-test-skill')
+    await mkdir(skillDir, { recursive: true })
+    const targetPath = join(skillDir, 'SKILL.md')
+    const originalBody = '# Original skill body\n'
+    await writeFile(targetPath, originalBody, 'utf-8')
+    const fp = await writeRequestMd(
+      's3.md',
+      buildValidSkillMd({ target: targetPath, body: '# Updated\n' })
+    )
+    const req = await parseChangeRequestMd(fp)
+    const result = await applyChange(req, 'sesame', paths)
+    expect(result.success).toBe(true)
+    expect(result.backupPath).toBeDefined()
+    expect(existsSync(result.backupPath!)).toBe(true)
+    const backupContent = await readFile(result.backupPath!, 'utf-8')
+    expect(backupContent).toBe(originalBody)
+  })
+
+  // #4: 異常 | allowlist 外 target 拒否
+  it('#4 rejects target outside allowlist (e.g. ~/.claude/CLAUDE.md)', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    const outOfList = join(paths.claudeDir, 'CLAUDE.md')
+    const fp = await writeRequestMd('s4.md', buildValidSkillMd({ target: outOfList }))
+    const req = await parseChangeRequestMd(fp)
+    const result = await applyChange(req, 'sesame', paths)
+    expect(result.success).toBe(false)
+    expect(result.reason).toBe('allowlist-violation')
+  })
+
+  // #5: 異常 | kind/target 不整合 (kind:skill + target:settings.json)
+  it('#5 rejects mismatched kind/target (kind:skill + target:settings.json)', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    const fp = await writeRequestMd(
+      's5.md',
+      buildValidSkillMd({ target: paths.settingsJsonPath })
+    )
+    const req = await parseChangeRequestMd(fp)
+    const result = await applyChange(req, 'sesame', paths)
+    expect(result.success).toBe(false)
+    expect(result.reason).toBe('kind-target-mismatch')
+  })
+
+  // #6: 異常 | kind/target 不整合 (kind:settings + target:SKILL.md)
+  it('#6 rejects mismatched kind/target (kind:settings + target:SKILL.md)', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    const skillDir = join(paths.skillsRoot!, 'kt-mismatch-skill')
+    await mkdir(skillDir, { recursive: true })
+    const targetPath = join(skillDir, 'SKILL.md')
+    await writeFile(targetPath, '', 'utf-8')
+    const fp = await writeRequestMd(
+      's6.md',
+      buildValidMd({ target: targetPath, proposedJson: '{"x":1}' })
+    )
+    const req = await parseChangeRequestMd(fp)
+    const result = await applyChange(req, 'sesame', paths)
+    expect(result.success).toBe(false)
+    expect(result.reason).toBe('kind-target-mismatch')
+  })
+
+  // #7: 異常 | パストラバーサル ../ 拒否（resolve で .. が解消されると allowlist 外になる）
+  it('#7 rejects path traversal via .. (resolves outside allowlist)', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    // skills/foo/../../<escape>/SKILL.md → workdir/<escape>/SKILL.md (allowlist 外)
+    const traversal = join(paths.skillsRoot!, 'foo', '..', '..', 'evil', 'SKILL.md')
+    const fp = await writeRequestMd('s7.md', buildValidSkillMd({ target: traversal }))
+    const req = await parseChangeRequestMd(fp)
+    const result = await applyChange(req, 'sesame', paths)
+    expect(result.success).toBe(false)
+    // resolve で .. が解消され、結果として allowlist 外
+    expect(result.reason === 'allowlist-violation' || result.reason === 'parent-not-found').toBe(
+      true
+    )
+  })
+
+  // #8: 異常 | symlink を介した allowlist 逸脱拒否 (realpath で外部に解決される)
+  it('#8 rejects symlink targets that escape allowlist via realpath', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    const skillDir = join(paths.skillsRoot!, 'sym-skill')
+    await mkdir(skillDir, { recursive: true })
+    const realDir = join(workdir, 'external')
+    await mkdir(realDir, { recursive: true })
+    const realFile = join(realDir, 'SKILL.md')
+    await writeFile(realFile, '# External\n', 'utf-8')
+    const symPath = join(skillDir, 'SKILL.md')
+    try {
+      await symlink(realFile, symPath)
+    } catch {
+      // Windows で symlink 作成権限なし等: テストを skip 扱い（vitest 仕様で early return は PASS）
+      return
+    }
+    const fp = await writeRequestMd('s8.md', buildValidSkillMd({ target: symPath }))
+    const req = await parseChangeRequestMd(fp)
+    const result = await applyChange(req, 'sesame', paths)
+    expect(result.success).toBe(false)
+    // realpath で外部 (workdir/external/SKILL.md) に解決され、allowlist 外
+    expect(result.reason).toBe('allowlist-violation')
+  })
+
+  // #9: 異常 | UNC パス拒否
+  it('#9 rejects UNC paths', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    const fp = await writeRequestMd(
+      's9.md',
+      buildValidSkillMd({ target: '\\\\server\\share\\foo\\SKILL.md' })
+    )
+    const req = await parseChangeRequestMd(fp)
+    const result = await applyChange(req, 'sesame', paths)
+    expect(result.success).toBe(false)
+    expect(result.reason).toBe('unc-not-allowed')
+  })
+
+  // #10: 異常 | glob メタ文字含む target 拒否
+  it('#10 rejects glob metacharacters in target', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    const globTarget = join(paths.skillsRoot!, '*', 'SKILL.md')
+    const fp = await writeRequestMd('s10.md', buildValidSkillMd({ target: globTarget }))
+    const req = await parseChangeRequestMd(fp)
+    const result = await applyChange(req, 'sesame', paths)
+    expect(result.success).toBe(false)
+    expect(result.reason).toBe('glob-not-allowed')
+  })
+
+  // #11: 異常 | auth.password 未設定 + kind:skill 拒否
+  it('#11 rejects kind:skill apply when auth.password is not configured', async () => {
+    await writeSettings({ hello: 'world' }) // no auth.password
+    const skillDir = join(paths.skillsRoot!, 'noauth-skill')
+    await mkdir(skillDir, { recursive: true })
+    const targetPath = join(skillDir, 'SKILL.md')
+    await writeFile(targetPath, '', 'utf-8')
+    const fp = await writeRequestMd('s11.md', buildValidSkillMd({ target: targetPath }))
+    const req = await parseChangeRequestMd(fp)
+    const result = await applyChange(req, '', paths)
+    expect(result.success).toBe(false)
+    expect(result.reason).toBe('auth-missing-for-skill')
+  })
+
+  // #12: 後方互換 | auth.password 未設定 + kind:settings 引き続き許可
+  it('#12 allows kind:settings apply when auth.password is not configured (backwards compat)', async () => {
+    await writeSettings({ hello: 'world' }) // no auth.password
+    const fp = await writeRequestMd('s12.md', buildValidMd({ proposedJson: '{"foo":"bar"}' }))
+    const req = await parseChangeRequestMd(fp)
+    const result = await applyChange(req, '', paths)
+    expect(result.success).toBe(true)
+  })
+
+  // #13: 異常 (MN-1) | 不明な kind 値 (kind: invalid) → parseError
+  it('#13 rejects MD with unknown kind value (MN-1)', async () => {
+    const fp = await writeRequestMd('s13.md', buildValidMd({ kind: 'invalid' }))
+    await expect(parseChangeRequestMd(fp)).rejects.toThrow(/invalid kind/)
+  })
+
+  // #14: 異常 (MN-3) | path 正規化で親ディレクトリ不在 → parent-not-found 拒否
+  it('#14 rejects target when parent directory does not exist (MN-3)', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    // skills root はあるが、その下の不存在 <name> ディレクトリ
+    const nonexistent = join(paths.skillsRoot!, 'nonexistent-skill', 'SKILL.md')
+    const fp = await writeRequestMd('s14.md', buildValidSkillMd({ target: nonexistent }))
+    const req = await parseChangeRequestMd(fp)
+    const result = await applyChange(req, 'sesame', paths)
+    expect(result.success).toBe(false)
+    expect(result.reason).toBe('parent-not-found')
   })
 })

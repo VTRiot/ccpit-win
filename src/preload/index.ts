@@ -294,20 +294,39 @@ const api = {
   settingsHasPassword: (): Promise<boolean> => ipcRenderer.invoke('settings:hasPassword'),
   settingsReadRequest: (
     filePath: string
-  ): Promise<{
-    filePath: string
-    frontmatter: {
-      request_id: string
-      created_at: string
-      purpose: string
-      target: string
-      status: 'pending' | 'applied' | 'rolled_back' | 'rejected'
-    }
-    rawMarkdown: string
-    proposedSettingsJson: string
-    proposedSettingsParsed: unknown | null
-    parseError: string | null
-  }> => ipcRenderer.invoke('settings:readRequest', filePath),
+  ): Promise<
+    | {
+        filePath: string
+        kind: 'settings'
+        frontmatter: {
+          request_id: string
+          created_at: string
+          purpose: string
+          target: string
+          status: 'pending' | 'applied' | 'rolled_back' | 'rejected'
+          kind: 'settings'
+        }
+        rawMarkdown: string
+        proposedSettingsJson: string
+        proposedSettingsParsed: unknown | null
+        parseError: string | null
+      }
+    | {
+        filePath: string
+        kind: 'skill'
+        frontmatter: {
+          request_id: string
+          created_at: string
+          purpose: string
+          target: string
+          status: 'pending' | 'applied' | 'rolled_back' | 'rejected'
+          kind: 'skill'
+        }
+        rawMarkdown: string
+        proposedSkillBody: string
+        parseError: string | null
+      }
+  > => ipcRenderer.invoke('settings:readRequest', filePath),
   settingsApplyChange: (
     request: unknown,
     password: string
@@ -316,6 +335,19 @@ const api = {
     backupPath?: string
     appliedAt?: string
     error?: string
+    /** PIKES r1.4 §7-3-A: UI で 3 種エラー区別表示するための reason code */
+    reason?:
+      | 'authentication-failed'
+      | 'auth-missing-for-skill'
+      | 'json-syntax-error'
+      | 'allowlist-violation'
+      | 'kind-target-mismatch'
+      | 'glob-not-allowed'
+      | 'unc-not-allowed'
+      | 'parent-not-found'
+      | 'realpath-failed'
+      | 'write-failed'
+      | 'post-verify-failed'
     rolledBack?: boolean
   }> => ipcRenderer.invoke('settings:applyChange', request, password),
   settingsListLogs: (): Promise<
