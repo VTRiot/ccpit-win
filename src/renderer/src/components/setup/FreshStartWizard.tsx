@@ -6,6 +6,7 @@ import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card'
 import { cn } from '../../lib/utils'
+import { platformToTemplate } from '../../lib/platformTemplate'
 
 interface FreshStartWizardProps {
   onBack: () => void
@@ -22,10 +23,10 @@ interface DeployResult {
   errors: string[]
 }
 
-/** OS に応じたテンプレートを自動選択 */
+/** OS に応じたテンプレートを自動選択（Marshal F6: darwin→macau を含む正しいマッピング、純関数に委譲） */
 function detectTemplate(): string {
   const platform = window.electron?.process?.platform ?? 'win32'
-  return platform === 'linux' ? 'asama' : 'manx'
+  return platformToTemplate(platform)
 }
 
 export function FreshStartWizard({ onBack, onSetupCompleted }: FreshStartWizardProps): React.JSX.Element {

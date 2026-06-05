@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdir, rm, writeFile, readFile, symlink } from 'fs/promises'
+import { mkdir, rm, writeFile, readFile, readdir, symlink } from 'fs/promises'
 import { existsSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
@@ -14,6 +14,17 @@ import {
   type SettingsPaths,
   type ChangeRequest
 } from '../settingsChange'
+import {
+  readAdoptedRegistry,
+  upsertAdoptedSkill,
+  createEmergencyOverride,
+  removeEmergencyOverride,
+  listObsoleteOverrides,
+  isEmergencyOverrideValid,
+  readEmergencyOverrides,
+  type ProvenancePaths,
+  type EmergencyOverride
+} from '../skillProvenance'
 
 let workdir: string
 let paths: SettingsPaths
@@ -431,6 +442,141 @@ describe('end-to-end smoke', () => {
 })
 
 // =============================================================================
+//   Part B Phase 1: kind:skill 可変長フェンス + 見出し堅牢性
+//   (SKILL.md 本文が内側 ``` / `## N.` を含んでも section3 抽出が切れない)
+// =============================================================================
+
+describe('Part B Phase 1: kind:skill fence/heading robustness (parseChangeRequestMd)', () => {
+  it('extracts skill body containing inner triple-backtick fences (outer 4-backtick)', async () => {
+    const target = join(paths.skillsRoot!, 'inner-fence-skill', 'SKILL.md')
+    const skillBody =
+      '---\nname: inner-fence-skill\ndescription: has inner fences\n---\n\n# Example\n\n```bash\necho hi\n```\n\nDone.'
+    const md = `---
+request_id: pb-fence-001
+created_at: 2026-05-29T16:00:00+09:00
+purpose: inner fence test
+target: ${target}
+status: pending
+kind: skill
+---
+
+## 3. 変更後の完成版
+
+\`\`\`\`markdown
+${skillBody}
+\`\`\`\`
+
+## 4. 採用推奨
+recommend
+`
+    const fp = await writeRequestMd('pb-fence.md', md)
+    const req = await parseChangeRequestMd(fp)
+    expect(req.kind).toBe('skill')
+    if (req.kind === 'skill') {
+      // 内側の ```bash フェンスで切れず、末尾 'Done.' まで保持
+      expect(req.proposedSkillBody).toContain('```bash')
+      expect(req.proposedSkillBody).toContain('echo hi')
+      expect(req.proposedSkillBody.endsWith('Done.')).toBe(true)
+    }
+  })
+
+  it('extracts skill body with nested fences (outer 5-backtick / inner 4-backtick)', async () => {
+    const target = join(paths.skillsRoot!, 'nested-fence-skill', 'SKILL.md')
+    const skillBody =
+      '---\nname: nested-fence-skill\ndescription: nested\n---\n\n## 例\n````bash\necho deep\n````\n\nfin.'
+    const md = `---
+request_id: pb-nest-001
+created_at: 2026-05-29T16:00:00+09:00
+purpose: nested fence test
+target: ${target}
+status: pending
+kind: skill
+---
+
+## 3. 変更後の完成版
+
+\`\`\`\`\`markdown
+${skillBody}
+\`\`\`\`\`
+
+## 4. 採用推奨
+recommend
+`
+    const fp = await writeRequestMd('pb-nest.md', md)
+    const req = await parseChangeRequestMd(fp)
+    expect(req.kind).toBe('skill')
+    if (req.kind === 'skill') {
+      expect(req.proposedSkillBody).toContain('````bash') // 内側 4-backtick が保持
+      expect(req.proposedSkillBody).toContain('echo deep')
+      expect(req.proposedSkillBody.endsWith('fin.')).toBe(true)
+    }
+  })
+
+  it('does not truncate skill body at inner "## N." headings', async () => {
+    const target = join(paths.skillsRoot!, 'heading-skill', 'SKILL.md')
+    const skillBody =
+      '---\nname: heading-skill\ndescription: numbered headings\n---\n\n## 1. First\n\nalpha\n\n## 2. Second\n\nbeta'
+    const md = `---
+request_id: pb-head-001
+created_at: 2026-05-29T16:00:00+09:00
+purpose: inner heading test
+target: ${target}
+status: pending
+kind: skill
+---
+
+## 3. 変更後の完成版
+
+\`\`\`markdown
+${skillBody}
+\`\`\`
+
+## 4. 採用推奨
+recommend
+`
+    const fp = await writeRequestMd('pb-head.md', md)
+    const req = await parseChangeRequestMd(fp)
+    expect(req.kind).toBe('skill')
+    if (req.kind === 'skill') {
+      // 内側 "## 1." で section3 が早期終了せず "## 2. Second"/'beta' まで保持
+      expect(req.proposedSkillBody).toContain('## 2. Second')
+      expect(req.proposedSkillBody.endsWith('beta')).toBe(true)
+    }
+  })
+
+  it('round-trips apply of a skill body with inner fences (byte-equal post-verify)', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    const skillDir = join(paths.skillsRoot!, 'rt-fence-skill')
+    await mkdir(skillDir, { recursive: true })
+    const target = join(skillDir, 'SKILL.md')
+    await writeFile(target, '# orig\n', 'utf-8')
+    const skillBody = '---\nname: rt-fence-skill\ndescription: x\n---\n\n```js\nconst a = 1\n```\n\nend.'
+    const md = `---
+request_id: pb-rt-001
+created_at: 2026-05-29T16:00:00+09:00
+purpose: rt
+target: ${target}
+status: pending
+kind: skill
+---
+
+## 3. 変更後の完成版
+
+\`\`\`\`markdown
+${skillBody}
+\`\`\`\`
+`
+    const fp = await writeRequestMd('pb-rt.md', md)
+    const req = await parseChangeRequestMd(fp)
+    const result = await applyChange(req, 'sesame', paths)
+    expect(result.success).toBe(true)
+    const written = await readFile(target, 'utf-8')
+    expect(written).toBe(skillBody)
+    expect(written).toContain('```js')
+  })
+})
+
+// =============================================================================
 //   Phase 1 新規 14 件 (#1-14) — PIKES r1.4 §7-3-A 第 1-7 項対応
 // =============================================================================
 
@@ -628,15 +774,270 @@ describe('Phase 1: kind:skill apply (§7-3-A)', () => {
     await expect(parseChangeRequestMd(fp)).rejects.toThrow(/invalid kind/)
   })
 
-  // #14: 異常 (MN-3) | path 正規化で親ディレクトリ不在 → parent-not-found 拒否
-  it('#14 rejects target when parent directory does not exist (MN-3)', async () => {
+  // #14 (Part B FB で仕様反転): 新規 skill 採用で親 <name>/ が未作成でも、
+  //     skills/ が存在し allowlist 深さ1 に合致するなら親を自動作成して採用成功する。
+  it('#14 auto-creates the parent dir for a new skill adoption (parent absent → success)', async () => {
     await writeSettings({ auth: { password: 'sesame' } })
-    // skills root はあるが、その下の不存在 <name> ディレクトリ
-    const nonexistent = join(paths.skillsRoot!, 'nonexistent-skill', 'SKILL.md')
-    const fp = await writeRequestMd('s14.md', buildValidSkillMd({ target: nonexistent }))
+    // skills root はあるが、その下の <name> ディレクトリは未作成（新規採用の常態）
+    const newTarget = join(paths.skillsRoot!, 'brand-new-skill', 'SKILL.md')
+    expect(existsSync(join(paths.skillsRoot!, 'brand-new-skill'))).toBe(false)
+    const fp = await writeRequestMd(
+      's14.md',
+      buildValidSkillMd({ target: newTarget, body: '# brand new\n' })
+    )
+    const req = await parseChangeRequestMd(fp)
+    const result = await applyChange(req, 'sesame', paths)
+    expect(result.success).toBe(true)
+    expect(existsSync(newTarget)).toBe(true)
+    expect(await readFile(newTarget, 'utf-8')).toBe('# brand new\n')
+  })
+
+  // #14b: 深さ2 以降は allowlist (深さ1 glob) が拒否（自動作成は深さ1 の skill のみ）
+  it('#14b still rejects depth>1 targets under skills/ (allowlist-violation)', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    const deep = join(paths.skillsRoot!, 'a', 'b', 'SKILL.md')
+    const fp = await writeRequestMd('s14b.md', buildValidSkillMd({ target: deep }))
     const req = await parseChangeRequestMd(fp)
     const result = await applyChange(req, 'sesame', paths)
     expect(result.success).toBe(false)
-    expect(result.reason).toBe('parent-not-found')
+    expect(result.reason).toBe('allowlist-violation')
+  })
+})
+
+// =============================================================================
+//   Part B Phase 1 (B4前半): 同名採用基本禁止 + provenance 記録 + 緊急 override 判定 (判断H)
+// =============================================================================
+
+describe('Part B Phase 1: golden-name-collision guard + provenance (applyChange opts)', () => {
+  const provPaths = (): ProvenancePaths => ({
+    adoptedRegistryPath: join(paths.parcFermeDir, 'adopted-skills.json'),
+    emergencyOverridesPath: join(paths.parcFermeDir, 'emergency-overrides.json')
+  })
+
+  async function prepSkillDir(name: string): Promise<string> {
+    const skillDir = join(paths.skillsRoot!, name)
+    await mkdir(skillDir, { recursive: true })
+    return join(skillDir, 'SKILL.md')
+  }
+
+  it('rejects adopting a skill whose name collides with a golden skill', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    const target = await prepSkillDir('report') // golden skill name
+    const fp = await writeRequestMd('coll.md', buildValidSkillMd({ target, body: '# x\n' }))
+    const req = await parseChangeRequestMd(fp)
+    const result = await applyChange(req, 'sesame', paths, {
+      goldenSkillNames: ['report', 'investigation'],
+      provenancePaths: provPaths()
+    })
+    expect(result.success).toBe(false)
+    expect(result.reason).toBe('golden-name-collision')
+    expect(existsSync(target)).toBe(false) // backup/write 前に弾く
+  })
+
+  it('allows a non-colliding skill and records provenance (source=adopted)', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    const target = await prepSkillDir('my-new-flow')
+    const fp = await writeRequestMd('ok.md', buildValidSkillMd({ target, body: '# new\n' }))
+    const req = await parseChangeRequestMd(fp)
+    const pp = provPaths()
+    const result = await applyChange(req, 'sesame', paths, {
+      goldenSkillNames: ['report', 'investigation'],
+      provenancePaths: pp,
+      currentGoldenVersion: '1.4.0'
+    })
+    expect(result.success).toBe(true)
+    const reg = await readAdoptedRegistry(pp)
+    const entry = reg.find((e) => e.name === 'my-new-flow')
+    expect(entry).toBeDefined()
+    expect(entry!.source).toBe('adopted')
+    expect(entry!.goldenVersionAtAdoption).toBe('1.4.0')
+    expect(entry!.hash.length).toBeGreaterThan(0)
+  })
+
+  it('allows same-name adoption when a valid emergency override exists (source=emergency)', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    const target = await prepSkillDir('report')
+    const pp = provPaths()
+    await mkdir(paths.parcFermeDir, { recursive: true })
+    const override: EmergencyOverride = {
+      name: 'report',
+      goldenVersion: '1.4.0',
+      reason: 'golden report skill bug',
+      drDecisionId: 'dr-001',
+      createdAt: '2026-05-29T00:00:00Z'
+    }
+    await writeFile(pp.emergencyOverridesPath, JSON.stringify([override]), 'utf-8')
+    const fp = await writeRequestMd('emg.md', buildValidSkillMd({ target, body: '# patched\n' }))
+    const req = await parseChangeRequestMd(fp)
+    const result = await applyChange(req, 'sesame', paths, {
+      goldenSkillNames: ['report'],
+      provenancePaths: pp,
+      currentGoldenVersion: '1.4.0' // 未前進 → override 有効
+    })
+    expect(result.success).toBe(true)
+    const reg = await readAdoptedRegistry(pp)
+    expect(reg.find((e) => e.name === 'report')?.source).toBe('emergency')
+  })
+
+  it('rejects same-name when golden version advanced past the override (auto-expiry, Codex#4)', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    const target = await prepSkillDir('report')
+    const pp = provPaths()
+    await mkdir(paths.parcFermeDir, { recursive: true })
+    await writeFile(
+      pp.emergencyOverridesPath,
+      JSON.stringify([
+        {
+          name: 'report',
+          goldenVersion: '1.4.0',
+          reason: 'bug',
+          drDecisionId: 'dr-001',
+          createdAt: '2026-05-29T00:00:00Z'
+        }
+      ]),
+      'utf-8'
+    )
+    const fp = await writeRequestMd('exp.md', buildValidSkillMd({ target, body: '# x\n' }))
+    const req = await parseChangeRequestMd(fp)
+    const result = await applyChange(req, 'sesame', paths, {
+      goldenSkillNames: ['report'],
+      provenancePaths: pp,
+      currentGoldenVersion: '1.5.0' // 前進 → override 失効
+    })
+    expect(result.success).toBe(false)
+    expect(result.reason).toBe('golden-name-collision')
+  })
+
+  it('skips collision check entirely when goldenSkillNames is not provided (backwards compat)', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    const target = await prepSkillDir('report') // golden 名だが opts 未指定なので素通り
+    const fp = await writeRequestMd('compat.md', buildValidSkillMd({ target, body: '# x\n' }))
+    const req = await parseChangeRequestMd(fp)
+    const result = await applyChange(req, 'sesame', paths)
+    expect(result.success).toBe(true)
+  })
+})
+
+// =============================================================================
+//   Part B Phase 1 (B4後半): ケース2 先行衝突 / ロック / 緊急 override ライフサイクル
+// =============================================================================
+
+describe('Part B Phase 1 (B4後半): case-2 collision / lock / emergency lifecycle', () => {
+  const provPaths = (): ProvenancePaths => ({
+    adoptedRegistryPath: join(paths.parcFermeDir, 'adopted-skills.json'),
+    emergencyOverridesPath: join(paths.parcFermeDir, 'emergency-overrides.json')
+  })
+
+  it('case-2: adopts under a temp name when a non-golden pre-existing skill collides (no clobber)', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    const dir = join(paths.skillsRoot!, 'preexist')
+    await mkdir(dir, { recursive: true })
+    const target = join(dir, 'SKILL.md')
+    await writeFile(target, '# preexisting user skill\n', 'utf-8') // 先行（レジストリ未登録）
+
+    const fp = await writeRequestMd(
+      'c2.md',
+      buildValidSkillMd({
+        target,
+        body: '---\nname: preexist\ndescription: new\n---\n\n# new body\n'
+      })
+    )
+    const req = await parseChangeRequestMd(fp)
+    const pp = provPaths()
+    const result = await applyChange(req, 'sesame', paths, {
+      goldenSkillNames: ['report'], // 'preexist' は非 golden
+      provenancePaths: pp
+    })
+    expect(result.success).toBe(true)
+    expect(result.renamedTo).toMatch(/^preexist-adopted-/)
+    // 先行は無傷（clobber しない）
+    expect(await readFile(target, 'utf-8')).toBe('# preexisting user skill\n')
+    // 一時名で採用 + 警告ヘッダ
+    const tempTarget = join(paths.skillsRoot!, result.renamedTo!, 'SKILL.md')
+    expect(existsSync(tempTarget)).toBe(true)
+    const written = await readFile(tempTarget, 'utf-8')
+    expect(written).toContain('name: preexist')
+    expect(written).toContain('name-collision')
+    // ~/.ccpit/reports/ にレポート
+    const reportsDir = join(paths.parcFermeDir, 'reports')
+    const reports = existsSync(reportsDir) ? await readdir(reportsDir) : []
+    expect(reports.some((f) => f.includes('name-collision'))).toBe(true)
+  })
+
+  it('case-2: does NOT trigger for an own adopted skill update (in registry → overwrite)', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    const dir = join(paths.skillsRoot!, 'mine')
+    await mkdir(dir, { recursive: true })
+    const target = join(dir, 'SKILL.md')
+    await writeFile(target, '# v1\n', 'utf-8')
+    const pp = provPaths()
+    await upsertAdoptedSkill(
+      { name: 'mine', target, hash: 'h', adoptedAt: 't', source: 'adopted' },
+      pp
+    )
+    const fp = await writeRequestMd('mine.md', buildValidSkillMd({ target, body: '# v2\n' }))
+    const req = await parseChangeRequestMd(fp)
+    const result = await applyChange(req, 'sesame', paths, {
+      goldenSkillNames: ['report'],
+      provenancePaths: pp
+    })
+    expect(result.success).toBe(true)
+    expect(result.renamedTo).toBeUndefined()
+    expect(await readFile(target, 'utf-8')).toBe('# v2\n') // 更新上書き
+  })
+
+  it('lock: concurrent adoptions serialize without losing registry entries', async () => {
+    await writeSettings({ auth: { password: 'sesame' } })
+    const pp = provPaths()
+    const mk = async (name: string): Promise<ChangeRequest> => {
+      await mkdir(join(paths.skillsRoot!, name), { recursive: true })
+      const fp = await writeRequestMd(
+        `${name}.md`,
+        buildValidSkillMd({ target: join(paths.skillsRoot!, name, 'SKILL.md'), body: `# ${name}\n` })
+      )
+      return parseChangeRequestMd(fp)
+    }
+    const reqs = await Promise.all([mk('lk1'), mk('lk2'), mk('lk3')])
+    const results = await Promise.all(
+      reqs.map((r) =>
+        applyChange(r, 'sesame', paths, { goldenSkillNames: ['report'], provenancePaths: pp })
+      )
+    )
+    expect(results.every((r) => r.success)).toBe(true)
+    const reg = await readAdoptedRegistry(pp)
+    expect(reg.filter((e) => ['lk1', 'lk2', 'lk3'].includes(e.name))).toHaveLength(3)
+  })
+
+  it('emergency override: create → valid → remove; version-advance marks obsolete', async () => {
+    const pp = provPaths()
+    await createEmergencyOverride(
+      {
+        name: 'report',
+        goldenVersion: '1.4.0',
+        reason: 'golden report skill bug',
+        drDecisionId: 'dr-100',
+        createdAt: '2026-05-30T00:00:00Z'
+      },
+      pp
+    )
+    const overrides = await readEmergencyOverrides(pp)
+    expect(isEmergencyOverrideValid('report', overrides, { currentGoldenVersion: '1.4.0' })).toBe(true)
+    // 版前進 → 陳腐化リストに乗る（自動失効）
+    const obsolete = await listObsoleteOverrides({ currentGoldenVersion: '1.5.0' }, pp)
+    expect(obsolete.some((o) => o.name === 'report')).toBe(true)
+    // Dr 削除導線
+    await removeEmergencyOverride('report', pp)
+    expect(await readEmergencyOverrides(pp)).toHaveLength(0)
+  })
+
+  it('emergency override: create rejects missing scope fields', async () => {
+    const pp = provPaths()
+    await expect(
+      createEmergencyOverride(
+        // @ts-expect-error 故意に不足
+        { name: 'report' },
+        pp
+      )
+    ).rejects.toThrow(/requires/)
   })
 })

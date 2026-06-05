@@ -1,6 +1,13 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
+// Enforcement 発火統計の型別集計（Part B Phase 2a）。main/services/enforcementStats.ts と同型を inline 複製（preload は main を import しない既存慣習に倣う）。
+type EnforcementTypeStat = {
+  total: number
+  ranking: { key: string; count: number }[]
+  scopeNote: string
+}
+
 const api = {
   // Golden
   goldenList: (): Promise<string[]> => ipcRenderer.invoke('golden:list'),
@@ -348,7 +355,10 @@ const api = {
       | 'realpath-failed'
       | 'write-failed'
       | 'post-verify-failed'
+      | 'golden-name-collision'
     rolledBack?: boolean
+    /** ケース2（先行衝突）で一時名に退避採用した場合の実 skill 名 */
+    renamedTo?: string
   }> => ipcRenderer.invoke('settings:applyChange', request, password),
   settingsListLogs: (): Promise<
     {
@@ -364,6 +374,81 @@ const api = {
     ipcRenderer.invoke('settings:listBackups'),
   settingsRollback: (backupId: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('settings:rollback', backupId),
+
+  // Skill Proposals (Part B 候補ブラウザ, 構想3)
+  skillProposalsDefaultFolder: (): Promise<string> =>
+    ipcRenderer.invoke('skillProposals:defaultFolder'),
+  skillProposalsList: (
+    folder: string
+  ): Promise<
+    {
+      filePath: string
+      requestId: string
+      target: string
+      skillName: string
+      sourceProject: string
+      adoptionLabel: string
+      title: string
+      what: string
+      why: string
+      how: string
+      axes: { axis: string; score: number | null; rationale: string }[]
+      reviewBox: { verdict: string; findings: string; reviewerId: string; ccRebuttal: string }
+      parseError: string | null
+      state: 'candidate' | 'adopted' | 'rejected' | 'held'
+      alreadyAdopted: boolean
+    }[]
+  > => ipcRenderer.invoke('skillProposals:list', folder),
+  skillProposalsSetState: (
+    requestId: string,
+    state: 'candidate' | 'adopted' | 'rejected' | 'held'
+  ): Promise<void> => ipcRenderer.invoke('skillProposals:setState', requestId, state),
+
+  // Skill Firing Stats (Part B 発火統計, 構想4-A, 読み取り専用)
+  skillFiringStatsCompute: (): Promise<{
+    stats: {
+      skill: string
+      count: number
+      lastFiredAt: string | null
+      byProject: { project: string; count: number }[]
+    }[]
+    totalFirings: number
+    filesScanned: number
+    scopeNote: string
+  }> => ipcRenderer.invoke('skillFiringStats:compute'),
+  // Enforcement Stats (Part B Phase 2a, countable 4型 発火可視化, 読み取り専用。skill は skillFiringStatsCompute を使用)
+  enforcementStatsCompute: (): Promise<{
+    hooksStop: EnforcementTypeStat
+    rulesB: EnforcementTypeStat
+    deny: { settingsJson: EnforcementTypeStat; rulePolicy: EnforcementTypeStat; scopeNote: string }
+    marshal: EnforcementTypeStat
+    rulesLayerA: { note: string }
+    filesScanned: number
+  }> => ipcRenderer.invoke('enforcementStats:compute'),
+  skillMdOpen: (
+    skillName: string
+  ): Promise<{ ok: boolean; reason?: 'not-found'; error?: string; path: string }> =>
+    ipcRenderer.invoke('skillMd:open', skillName),
+
+  // Emergency override (Part B 判断H, Doctor 経由)
+  emergencyOverrideCreate: (input: {
+    name: string
+    reason: string
+    drDecisionId: string
+    expiresAt?: string
+  }): Promise<void> => ipcRenderer.invoke('emergencyOverride:create', input),
+  emergencyOverrideListObsolete: (): Promise<
+    {
+      name: string
+      goldenVersion: string
+      reason: string
+      drDecisionId: string
+      createdAt: string
+      expiresAt?: string
+    }[]
+  > => ipcRenderer.invoke('emergencyOverride:listObsolete'),
+  emergencyOverrideRemove: (name: string): Promise<void> =>
+    ipcRenderer.invoke('emergencyOverride:remove', name),
 
   // Developer Tools
   devGetCcpitDir: (): Promise<string> => ipcRenderer.invoke('dev:getCcpitDir'),

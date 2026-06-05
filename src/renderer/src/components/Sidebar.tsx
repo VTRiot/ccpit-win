@@ -1,4 +1,4 @@
-import { BookOpen, FolderOpen } from 'lucide-react'
+import { BookOpen, FolderOpen, Sparkles, ShieldAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../lib/utils'
 import { SettingsDialogTrigger } from './SettingsDialog'
@@ -19,6 +19,8 @@ interface SidebarProps {
 const ALL_NAV_ITEMS: { id: PageId; labelKey: string; icon: React.ElementType }[] = [
   { id: 'setup', labelKey: 'sidebar.setup', icon: BookOpen },
   { id: 'projects', labelKey: 'sidebar.projects', icon: FolderOpen },
+  { id: 'adoption', labelKey: 'settings.skillAdoption', icon: Sparkles },
+  { id: 'enforcementStats', labelKey: 'settings.enforcementStats', icon: ShieldAlert },
 ]
 
 export function Sidebar({ activePage, onNavigate, theme, onToggleTheme, language, onToggleLanguage, showSetupNav, onToggleShowSetupNav, onResetSetup }: SidebarProps): React.JSX.Element {

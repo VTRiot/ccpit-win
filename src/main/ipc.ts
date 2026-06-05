@@ -1,6 +1,13 @@
 import { ipcMain, dialog, shell, clipboard, app, BrowserWindow } from 'electron'
 import { join } from 'path'
-import { listTemplates, previewDeploy, deploy, checkExisting } from './services/golden'
+import { existsSync } from 'fs'
+import {
+  listTemplates,
+  previewDeploy,
+  deploy,
+  checkExisting,
+  listGoldenSkillNames
+} from './services/golden'
 import {
   scanProject,
   generateConversionPack,
@@ -31,6 +38,7 @@ import {
   softRestore
 } from './services/recovery'
 import { generateDoctorPack, saveDoctorPack, getDefaultOutputDir } from './services/doctor'
+import { runMarshalReview } from './services/marshalLauncher'
 import { getConfig, setConfig, getParcFermeDir } from './services/appConfig'
 import { getState as profileGetState, switchToLegacy, switchToManx } from './services/profileSwitch'
 import { launchCc, type LaunchArgs } from './services/ccLaunch'
@@ -55,6 +63,19 @@ import {
   hasPasswordRegistered,
   type ChangeRequest
 } from './services/settingsChange'
+import {
+  listProposals,
+  setProposalState,
+  getDefaultProposalsFolder,
+  type ProposalState
+} from './services/skillProposals'
+import { computeFiringStats } from './services/skillFiringStats'
+import { computeEnforcementStats } from './services/enforcementStats'
+import {
+  createEmergencyOverride,
+  removeEmergencyOverride,
+  listObsoleteOverrides
+} from './services/skillProvenance'
 import { generateExtensionsSummary, formatAsMarkdown } from './services/cces/summaryGenerator'
 import { validateProjectPath } from './services/cces/extensionScanner'
 import {
@@ -330,12 +351,55 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('settings:read', () => readSettingsJson())
   ipcMain.handle('settings:hasPassword', () => hasPasswordRegistered())
   ipcMain.handle('settings:readRequest', (_e, filePath: string) => parseChangeRequestMd(filePath))
-  ipcMain.handle('settings:applyChange', (_e, request: ChangeRequest, password: string) =>
-    applyChange(request, password)
-  )
+  ipcMain.handle('settings:applyChange', async (_e, request: ChangeRequest, password: string) => {
+    // 判断H: kind:skill の同名採用ガード用に golden 配布 skill 名を渡す。
+    // currentGoldenVersion は app バージョン（golden は app に同梱されるため版が一致）。
+    const goldenSkillNames = await listGoldenSkillNames()
+    return applyChange(request, password, undefined, {
+      goldenSkillNames,
+      currentGoldenVersion: app.getVersion()
+    })
+  })
   ipcMain.handle('settings:listLogs', () => listChangeLogs())
   ipcMain.handle('settings:listBackups', () => listSettingsBackups())
   ipcMain.handle('settings:rollback', (_e, backupId: string) => rollbackToBackup(backupId))
+
+  // --- Skill Proposals (Part B 候補ブラウザ, 構想3) ---
+  ipcMain.handle('skillProposals:defaultFolder', () => getDefaultProposalsFolder())
+  ipcMain.handle('skillProposals:list', (_e, folder: string) => listProposals(folder))
+  ipcMain.handle('skillProposals:setState', (_e, requestId: string, state: ProposalState) =>
+    setProposalState(requestId, state)
+  )
+
+  // --- Skill Firing Stats (Part B 発火統計, 構想4-A, 読み取り専用) ---
+  ipcMain.handle('skillFiringStats:compute', () => computeFiringStats())
+  // --- Enforcement Stats (Part B Phase 2a, countable 5型 発火可視化, 読み取り専用) ---
+  ipcMain.handle('enforcementStats:compute', () => computeEnforcementStats())
+  // 発火統計の行 右クリック → 当該 Skill の ~/.claude/skills/<name>/SKILL.md を OS 既定で開く
+  ipcMain.handle('skillMd:open', async (_e, skillName: string) => {
+    const p = join(app.getPath('home'), '.claude', 'skills', skillName, 'SKILL.md')
+    if (!existsSync(p)) return { ok: false, reason: 'not-found' as const, path: p }
+    const err = await shell.openPath(p)
+    return { ok: err === '', error: err || undefined, path: p }
+  })
+
+  // --- 緊急避難 override (判断H, Doctor Analysis 経由でのみ。golden バグ時の同名一時許可) ---
+  ipcMain.handle(
+    'emergencyOverride:create',
+    (_e, input: { name: string; reason: string; drDecisionId: string; expiresAt?: string }) =>
+      createEmergencyOverride({
+        name: input.name,
+        goldenVersion: app.getVersion(),
+        reason: input.reason,
+        drDecisionId: input.drDecisionId,
+        expiresAt: input.expiresAt,
+        createdAt: new Date().toISOString()
+      })
+  )
+  ipcMain.handle('emergencyOverride:listObsolete', () =>
+    listObsoleteOverrides({ currentGoldenVersion: app.getVersion() })
+  )
+  ipcMain.handle('emergencyOverride:remove', (_e, name: string) => removeEmergencyOverride(name))
 
   // --- MCP (Model Context Protocol) servers ---
   ipcMain.handle(
@@ -411,5 +475,27 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('dev:relaunchApp', () => {
     app.relaunch()
     app.exit(0)
+  })
+
+  // --- Marshal Tier（外部 Codex adversarial-review）起動 + integrity（PIKES §5-15-9） ---
+  // outDir は renderer から受け取らず main 固定の app-owned ディレクトリに限定する
+  // （Marshal 成果物3-F2: renderer 制御パスでの任意ファイル書込を防ぐ）。
+  // async spawn + in-flight gating で main event loop を塞がず多重起動も防ぐ（成果物3-F2 round2）。
+  let marshalInFlight = false
+  ipcMain.handle('marshal:run', async (_e, params: { scope?: string; focus: string }) => {
+    if (marshalInFlight) {
+      return { status: 'spawn_failure', reason: 'Marshal レビューが既に実行中です（多重起動防止）。' }
+    }
+    marshalInFlight = true
+    try {
+      return await runMarshalReview({
+        scope: params.scope ?? 'auto',
+        focus: params.focus,
+        outDir: join(getParcFermeDir(), 'marshal-reviews'),
+        timestamp: new Date().toISOString()
+      })
+    } finally {
+      marshalInFlight = false
+    }
   })
 }

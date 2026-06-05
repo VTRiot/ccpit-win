@@ -1,6 +1,10 @@
 [
   "Read(~/Library/Keychains/**)",
-  "Bash(security dump-keychain)",
-  "Bash(security find-generic-password)",
-  "Bash(security find-internet-password)"
+  "Bash(cat ~/Library/Keychains/**)",
+  "Read(/Library/Keychains/**)",
+  "Bash(cat /Library/Keychains/**)",
+  "Bash(security dump-keychain*)",
+  "Bash(security export*)",
+  "Bash(security find-generic-password*-w*)",
+  "Bash(security find-internet-password*-w*)"
 ]

@@ -1,5 +1,12 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 
+// Enforcement 発火統計の型別集計（Part B Phase 2a）。main/services/enforcementStats.ts と同型を inline 複製。
+interface EnforcementTypeStat {
+  total: number
+  ranking: { key: string; count: number }[]
+  scopeNote: string
+}
+
 interface ParcFermeAPI {
   goldenList(): Promise<string[]>
   goldenPreview(templateName: string): Promise<{ relativePath: string; source: string }[]>
@@ -301,7 +308,9 @@ interface ParcFermeAPI {
       | 'realpath-failed'
       | 'write-failed'
       | 'post-verify-failed'
+      | 'golden-name-collision'
     rolledBack?: boolean
+    renamedTo?: string
   }>
   settingsListLogs(): Promise<
     {
@@ -315,6 +324,70 @@ interface ParcFermeAPI {
   >
   settingsListBackups(): Promise<{ id: string; path: string; sizeBytes: number }[]>
   settingsRollback(backupId: string): Promise<{ success: boolean; error?: string }>
+
+  skillProposalsDefaultFolder(): Promise<string>
+  skillProposalsList(folder: string): Promise<
+    {
+      filePath: string
+      requestId: string
+      target: string
+      skillName: string
+      sourceProject: string
+      adoptionLabel: string
+      title: string
+      what: string
+      why: string
+      how: string
+      axes: { axis: string; score: number | null; rationale: string }[]
+      reviewBox: { verdict: string; findings: string; reviewerId: string; ccRebuttal: string }
+      parseError: string | null
+      state: 'candidate' | 'adopted' | 'rejected' | 'held'
+      alreadyAdopted: boolean
+    }[]
+  >
+  skillProposalsSetState(
+    requestId: string,
+    state: 'candidate' | 'adopted' | 'rejected' | 'held'
+  ): Promise<void>
+  skillFiringStatsCompute(): Promise<{
+    stats: {
+      skill: string
+      count: number
+      lastFiredAt: string | null
+      byProject: { project: string; count: number }[]
+    }[]
+    totalFirings: number
+    filesScanned: number
+    scopeNote: string
+  }>
+  enforcementStatsCompute(): Promise<{
+    hooksStop: EnforcementTypeStat
+    rulesB: EnforcementTypeStat
+    deny: { settingsJson: EnforcementTypeStat; rulePolicy: EnforcementTypeStat; scopeNote: string }
+    marshal: EnforcementTypeStat
+    rulesLayerA: { note: string }
+    filesScanned: number
+  }>
+  skillMdOpen(
+    skillName: string
+  ): Promise<{ ok: boolean; reason?: 'not-found'; error?: string; path: string }>
+  emergencyOverrideCreate(input: {
+    name: string
+    reason: string
+    drDecisionId: string
+    expiresAt?: string
+  }): Promise<void>
+  emergencyOverrideListObsolete(): Promise<
+    {
+      name: string
+      goldenVersion: string
+      reason: string
+      drDecisionId: string
+      createdAt: string
+      expiresAt?: string
+    }[]
+  >
+  emergencyOverrideRemove(name: string): Promise<void>
 
   devGetCcpitDir(): Promise<string>
   devGetClaudeDir(): Promise<string>

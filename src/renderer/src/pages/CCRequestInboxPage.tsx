@@ -64,6 +64,7 @@ type ApplyResultReason =
   | 'realpath-failed'
   | 'write-failed'
   | 'post-verify-failed'
+  | 'golden-name-collision'
 
 interface ApplyResult {
   success: boolean

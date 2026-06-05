@@ -36,6 +36,8 @@
     "snapshotPath": "Snapshot save path",
     "doctorAnalysis": "Doctor Analysis",
     "requestInbox": "CC Request Inbox",
+    "skillAdoption": "Skill candidates",
+    "enforcementStats": "Enforcement stats",
     "doctorPackOutput": "Doctor Pack output",
     "desktop": "Desktop",
     "customPath": "Custom path",

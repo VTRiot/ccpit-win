@@ -14,10 +14,20 @@
   "Bash(cat ~/.claude/settings.json)",
   "Bash(cat ~/.claude/settings.local.json)",
   "Read(~/.ssh/**)",
+  "Bash(cat ~/.ssh/**)",
   "Read(~/.aws/**)",
+  "Bash(cat ~/.aws/**)",
   "Read(~/.gnupg/**)",
+  "Bash(cat ~/.gnupg/**)",
   "Bash(env)",
   "Read(~/.config/gh/hosts.yml)",
+  "Bash(cat ~/.config/gh/hosts.yml)",
   "Read(~/.kube/config)",
-  "Read(~/.docker/config.json)"
+  "Bash(cat ~/.kube/config)",
+  "Read(~/.docker/config.json)",
+  "Bash(cat ~/.docker/config.json)",
+  "Read(~/.npmrc)",
+  "Bash(cat ~/.npmrc)",
+  "Read(**/.npmrc)",
+  "Bash(cat **/.npmrc)"
 ]

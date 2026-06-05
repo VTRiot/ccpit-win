@@ -20,13 +20,18 @@
             "type": "command",
             "command": "$HOME/.claude/hooks/debug-report-gate.sh",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/skill-proposal-gate.sh",
+            "timeout": 10
           }
         ]
       }
     ],
     "PreToolUse": [
       {
-        "matcher": "Edit|Write",
+        "matcher": "Bash|Edit|Write",
         "hooks": [
           {
             "type": "command",

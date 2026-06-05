@@ -5,8 +5,10 @@ import { useTheme } from './hooks/useTheme'
 import { useLanguage } from './hooks/useLanguage'
 import { SetupPage } from './pages/SetupPage'
 import { ProjectsPage } from './pages/ProjectsPage'
+import { SkillProposalsPage } from './pages/SkillProposalsPage'
+import { EnforcementStatsPage } from './pages/EnforcementStatsPage'
 
-export type PageId = 'setup' | 'projects'
+export type PageId = 'setup' | 'projects' | 'adoption' | 'enforcementStats'
 
 export interface HealthStatus {
   configured: boolean
@@ -104,6 +106,10 @@ function App(): React.JSX.Element {
         return <SetupPage onSetupCompleted={handleSetupCompleted} />
       case 'projects':
         return <ProjectsPage />
+      case 'adoption':
+        return <SkillProposalsPage />
+      case 'enforcementStats':
+        return <EnforcementStatsPage />
     }
   }
 

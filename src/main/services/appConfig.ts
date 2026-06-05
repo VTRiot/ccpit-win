@@ -73,6 +73,15 @@ export interface CcesConfig {
   allowAllProjects?: boolean // 段階 2 default: false
 }
 
+/**
+ * 提案 Stop hook (skill-proposal-gate.sh) の発火モード（Part B Phase2b / B1, FSA §5-b）。
+ * - soft  (既定): セッションにつき一度だけ block して emitter 発火を促す（stop_hook_active で継続 stop は素通し）
+ * - strict: 提案/該当なしが出るまで新 stop 毎に block（report-gate 同型・ノイズ大）
+ * - off   : 提案 Stop hook を無効化（opt-in 運用）
+ * 実際に読むのは hook スクリプト（~/.ccpit/app-config.json を grep/sed）。本フィールドは正本・round-trip 保持用。
+ */
+export type EmissionMode = 'soft' | 'strict' | 'off'
+
 export interface AppConfig {
   splashDurationMs: number
   splashRareChance: number
@@ -85,8 +94,11 @@ export interface AppConfig {
   legacyMasterPath?: string
   lastBackupAt?: string
   deploySource?: DeploySource
+  deployedTemplate?: string // deploy() が記録する実デプロイ template (manx/macau/asama)。health coverage の検証基準
   pitReference?: PitReference
   cces?: CcesConfig
+  /** 提案 Stop hook の発火モード（既定 soft）。切替は本 JSON の直接編集。hook が読む。 */
+  emissionMode?: EmissionMode
 }
 
 function getDefaults(): AppConfig {
@@ -103,6 +115,7 @@ function getDefaults(): AppConfig {
     currentProfile: 'manx',
     features: { ...DEFAULT_FEATURES },
     cces: { allowAllProjects: false },
+    emissionMode: 'soft',
   }
 }
 

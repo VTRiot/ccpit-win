@@ -5,6 +5,12 @@ import { createHash } from 'crypto'
 import { app } from 'electron'
 import { getConfig } from './appConfig'
 import { resolveClaudeBin } from './cliResolver'
+import {
+  validateDenySymmetry,
+  validateDenyCoverage,
+  resolveExpectedDeny,
+  platformToTemplate
+} from './denyValidation'
 
 const GOLDEN_DIR = app.isPackaged
   ? join(process.resourcesPath, 'golden')
@@ -45,12 +51,12 @@ function diffAgainstPit(
   if (added.length === 0) {
     return {
       status: 'warn',
-      detail: `-${removed.length} ${label} removed (could break .pit-based features)`,
+      detail: `-${removed.length} ${label} removed (could break .pit-based features)`
     }
   }
   return {
     status: 'warn',
-    detail: `${added.length} added, ${removed.length} removed`,
+    detail: `${added.length} added, ${removed.length} removed`
   }
 }
 
@@ -142,10 +148,62 @@ export async function runHealthCheck(): Promise<HealthCheckItem[]> {
         if (denyCount >= goldenDenyCount) {
           results.push({ name: 'settings.json', status: 'ok', detail: `${denyCount} deny rules` })
         } else {
-          results.push({ name: 'settings.json', status: 'warn', detail: `${denyCount} deny rules (Golden has ${goldenDenyCount})` })
+          results.push({
+            name: 'settings.json',
+            status: 'warn',
+            detail: `${denyCount} deny rules (Golden has ${goldenDenyCount})`
+          })
         }
       } else {
         results.push({ name: 'settings.json', status: 'ok', detail: `${denyCount} deny rules` })
+      }
+
+      // deny 網羅検証（Marshal F1/F2/F4）: golden 期待 deny（common + 実デプロイ template の extra）
+      // が実 settings に全部あるか。template 未知・golden 欠落・parse 不能・部分欠落は全て
+      // fail-closed（error）。期待リストの解決は resolveExpectedDeny（純関数）に委譲しテスト可能化。
+      // deployedTemplate は deploy() が記録。未記録（旧インストール/未 deploy）は process.platform
+      // から推定（Marshal F7: manx 固定だと fix 前に Fresh Start した macOS が macau deny を検証
+      // しない false-green になる。darwin→macau 推定で legacy macOS upgrade も正しく検証する）。
+      const activeTemplate = cfg.deployedTemplate ?? platformToTemplate(process.platform)
+      const exp = resolveExpectedDeny(GOLDEN_DIR, activeTemplate)
+      if (!exp.ok) {
+        results.push({
+          name: 'settings.deny (coverage)',
+          status: 'error',
+          detail: `golden 期待 deny を解決できず検証不能（${exp.error}）。fail-closed`
+        })
+      } else {
+        const cov = validateDenyCoverage(json.permissions?.deny || [], exp.expected)
+        if (cov.valid) {
+          results.push({
+            name: 'settings.deny (coverage)',
+            status: 'ok',
+            detail: `golden 期待 ${exp.expected.length} 件すべて適用済（template=${activeTemplate}）`
+          })
+        } else {
+          results.push({
+            name: 'settings.deny (coverage)',
+            status: 'error',
+            detail: `golden deny ${cov.missing.length}/${exp.expected.length} 件 欠落（先頭: ${cov.missing[0]}）`
+          })
+        }
+      }
+
+      // deny 双方向対称検証（Marshal F1/F2: これ単体を「安全」と誤認させない）
+      const sym = validateDenySymmetry(json.permissions?.deny || [])
+      if (sym.valid) {
+        results.push({
+          name: 'settings.deny (symmetry)',
+          status: 'ok',
+          detail:
+            'Read↔Bash(cat) 対称 OK（注: 対称=保護パス整合。実 enforcement は settings-guard hook）'
+        })
+      } else {
+        results.push({
+          name: 'settings.deny (symmetry)',
+          status: 'warn',
+          detail: `非対称 ${sym.mismatches.length} 件（先頭: ${sym.mismatches[0]}）。enforcement は settings-guard が担う`
+        })
       }
     } catch {
       results.push({ name: 'settings.json', status: 'error', detail: 'Invalid JSON' })
@@ -165,7 +223,7 @@ export async function runHealthCheck(): Promise<HealthCheckItem[]> {
       results.push({
         name: 'CLAUDE.md',
         status: 'info',
-        detail: 'Modified from imported .pit (user-edited)',
+        detail: 'Modified from imported .pit (user-edited)'
       })
     }
   } else {
@@ -218,7 +276,7 @@ export async function runHealthCheck(): Promise<HealthCheckItem[]> {
         results.push({
           name: 'skills/',
           status: 'warn',
-          detail: `${actualSkills.length} skills (Golden has ${goldenCount})`,
+          detail: `${actualSkills.length} skills (Golden has ${goldenCount})`
         })
       }
     } else {

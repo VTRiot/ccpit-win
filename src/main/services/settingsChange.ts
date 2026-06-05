@@ -26,6 +26,14 @@ import {
 import { existsSync } from 'fs'
 import { join, resolve, normalize as pathNormalize, dirname, basename } from 'path'
 import { homedir } from 'os'
+import {
+  hashSkillBody,
+  isEmergencyOverrideValid,
+  readAdoptedRegistry,
+  readEmergencyOverrides,
+  upsertAdoptedSkill,
+  type ProvenancePaths
+} from './skillProvenance'
 
 const REQUIRED_FRONTMATTER_KEYS = [
   'request_id',
@@ -54,6 +62,8 @@ export type ApplyResultReason =
   | 'realpath-failed'
   | 'write-failed'
   | 'post-verify-failed'
+  /** 判断H: 採用 skill 名が golden 配布 skill と同名（恒久シャドウ防止のため基本禁止） */
+  | 'golden-name-collision'
 
 export interface ChangeRequestFrontmatter {
   request_id: string
@@ -95,6 +105,8 @@ export interface ApplyResult {
   /** PIKES r1.4 §7-3-A 第 3-4 項に対応した失敗事由コード（UI/log で区別表示） */
   reason?: ApplyResultReason
   rolledBack?: boolean
+  /** ケース2（先行衝突）で一時名に退避して採用した場合の実際の skill 名（判断H） */
+  renamedTo?: string
 }
 
 export interface ChangeLogEntry {
@@ -177,6 +189,38 @@ function parseFrontmatter(yaml: string): ParseFrontmatterOk | ParseFrontmatterEr
 }
 
 /**
+ * "## 3." 見出し（行頭一致）以降のテキストを返す。見出しが無ければ null。
+ * settings 用 lookahead regex と違い、本文に `## N.` 見出しを含む SKILL.md でも
+ * 後段のフェンス境界で本文を画定できるよう、ここでは見出し以降を丸ごと返す。
+ */
+function sliceAfterSection3(body: string): string | null {
+  const m = /(?:^|\n)##\s*3\.[^\n]*\r?\n/.exec(body)
+  if (!m) return null
+  return body.slice(m.index + m[0].length)
+}
+
+/**
+ * CommonMark 風の可変長フェンス抽出（kind:skill 用）。
+ * 開きフェンス = 行頭 N>=3 個のバックティック + 任意の info string（バックティック以外）。
+ * 閉じフェンス = 行頭 M>=N 個のバックティックのみ（後続は空白のみ）。
+ * 最初の開きフェンスと、最初に現れる「N 個以上の閉じフェンス」の間を raw のまま返す。
+ * これにより内側に N-1 個以下のフェンスを含む SKILL.md 本文を切らない（emitter は
+ * 「外側 = 内側の最長連 +1 以上」で出力するため、内側フェンスが閉じ判定に誤マッチしない）。
+ * CRLF/LF はそのまま保持。開き/閉じが見つからなければ null。
+ */
+function extractFencedBody(section: string): string | null {
+  const openM = /(?:^|\n)(`{3,})[^\n`]*\r?\n/.exec(section)
+  if (!openM) return null
+  const fenceLen = openM[1].length
+  const bodyStart = openM.index + openM[0].length
+  const rest = section.slice(bodyStart)
+  const closeRe = new RegExp(`(?:^|\\r?\\n)\`{${fenceLen},}[ \\t]*(?:\\r?\\n|$)`)
+  const closeM = closeRe.exec(rest)
+  if (!closeM) return null
+  return rest.slice(0, closeM.index)
+}
+
+/**
  * settings-change-request.md を読み込んでパースする。
  * 失敗ケースは throw でクライアントに返す（Renderer 側で error 表示）。
  *
@@ -223,15 +267,13 @@ export async function parseChangeRequestMd(filePath: string): Promise<ChangeRequ
   const body = fmMatch[2]
 
   // Section 3 = 「変更後の完成版」（kind 共通の section name）。
-  // 終端は「次の番号付き見出し (## 4. 等)」または body 末尾。
-  // body 内の markdown 見出し (## Section 等) を section 区切りと誤認しないため、数字 + ピリオドを必須化。
-  const sect3 = body.match(/##\s*3\.[^\n]*\n([\s\S]*?)(?=\n##\s\d+\.|$)/)
-  if (!sect3) {
-    throw new Error('section "## 3." not found (expected the proposed content section)')
-  }
-
   if (kind === 'settings') {
-    // 既存挙動: ```json fenced block を取得 → JSON.parse
+    // 既存挙動: lookahead で section 3 を切り出し、```json fenced block を取得 → JSON.parse。
+    // settings(JSON) は本文に `## N.` 見出しや ``` を含まないため lookahead で安全。
+    const sect3 = body.match(/##\s*3\.[^\n]*\n([\s\S]*?)(?=\n##\s\d+\.|$)/)
+    if (!sect3) {
+      throw new Error('section "## 3." not found (expected the proposed content section)')
+    }
     const jsonBlock = sect3[1].match(/```json\r?\n([\s\S]*?)\r?\n```/)
     if (!jsonBlock) {
       throw new Error('JSON code block not found in section 3 (expected ```json ... ``` fence)')
@@ -255,12 +297,16 @@ export async function parseChangeRequestMd(filePath: string): Promise<ChangeRequ
     }
   }
 
-  // kind === 'skill': 言語タグ問わず最初の fenced block の raw body 抽出（JSON.parse なし）。
-  const skillBlock = sect3[1].match(/```[A-Za-z0-9_+-]*\r?\n([\s\S]*?)\r?\n```/)
-  if (!skillBlock) {
+  // kind === 'skill': SKILL.md 本文は内側に ``` フェンスや `## N.` 見出しを含みうるため、
+  // settings 用 lookahead では切れる。"## 3." 見出し以降を取り、可変長フェンス境界で raw body を画定する。
+  const sect3Body = sliceAfterSection3(body)
+  if (sect3Body === null) {
+    throw new Error('section "## 3." not found (expected the proposed content section)')
+  }
+  const proposedSkillBody = extractFencedBody(sect3Body)
+  if (proposedSkillBody === null) {
     throw new Error('skill code block not found in section 3 (expected ``` ... ``` fence)')
   }
-  const proposedSkillBody = skillBlock[1]
   return {
     filePath,
     frontmatter,
@@ -446,15 +492,26 @@ async function normalizeTargetPath(
       return { ok: false, reason: 'realpath-failed' }
     }
   } else {
-    // 対象ファイル不在: 親ディレクトリの realpath + basename で吸収
-    const parent = dirname(absolute)
-    if (!existsSync(parent)) {
-      // MN-3: 親も不在 → 新規 skill ディレクトリ自動作成は v1 では不許可
-      return { ok: false, reason: 'parent-not-found' }
+    // 対象ファイル不在: 存在する最近接の祖先を realpath し、不在のサフィックスを再付与する。
+    // Part B 採用 FB: 新規 skill 採用では target の親 (~/.claude/skills/<name>/) も未作成が常態。
+    // 親不在で弾くと採用が成立しないため、存在する祖先 (skills/) まで遡って realpath し、
+    // 不在セグメント (<name>/SKILL.md) を再付与する。不在セグメントは symlink になり得ないので、
+    // 祖先の realpath でトラバーサル防御は保たれる。許容範囲は後段 allowlist (深さ1 glob
+    // skills/*/SKILL.md) が画定し、write 時に mkdir -p で親を作成する。
+    let existingAncestor = dirname(absolute)
+    const missingSegments: string[] = [basename(absolute)]
+    while (!existsSync(existingAncestor)) {
+      missingSegments.unshift(basename(existingAncestor))
+      const up = dirname(existingAncestor)
+      if (up === existingAncestor) {
+        // ルートまで遡っても存在する祖先が無い（実 FS では通常あり得ない）
+        return { ok: false, reason: 'parent-not-found' }
+      }
+      existingAncestor = up
     }
     try {
-      const realParent = await realpath(parent)
-      realAbs = join(realParent, basename(absolute))
+      const realAncestor = await realpath(existingAncestor)
+      realAbs = join(realAncestor, ...missingSegments)
     } catch {
       return { ok: false, reason: 'realpath-failed' }
     }
@@ -577,10 +634,103 @@ async function takeSkillBackup(
  *
  * `paths` は test では明示指定、本番では `getDefaultSettingsPaths()` 由来の `~/.claude/`。
  */
-export async function applyChange(
+/** applyChange の追加オプション（判断H: 同名禁止 + provenance）。 */
+export interface ApplyOptions {
+  /**
+   * kind:skill の同名禁止判定に使う golden 配布 skill 名集合。
+   * 未指定または空なら同名チェックをスキップ（既存テスト/後方互換）。本番 IPC は常に指定する。
+   */
+  goldenSkillNames?: string[]
+  /** provenance/emergency override の保存先（テスト上書き用、既定 ~/.ccpit）。 */
+  provenancePaths?: ProvenancePaths
+  /** 現在の golden バージョン（緊急 override の版前進失効判定 + 採用記録用）。 */
+  currentGoldenVersion?: string
+}
+
+// --- ロック (Codex#6: competing writes 対策) ---
+// 単一 Electron Main プロセス内で applyChange を直列化する in-process async mutex。
+// 同時採用（連打）でレジストリ/provenance の read-modify-write が競合するのを防ぐ。
+// 注: cross-instance（複数 CCPIT 同時起動）は単一インスタンス前提のため範囲外。
+let applyChain: Promise<unknown> = Promise.resolve()
+function withApplyLock<T>(fn: () => Promise<T>): Promise<T> {
+  const run = applyChain.then(fn, fn)
+  applyChain = run.then(
+    () => undefined,
+    () => undefined
+  )
+  return run
+}
+
+/**
+ * ケース2 警告ヘッダを SKILL.md 本文の frontmatter 直後に HTML コメントで挿入する。
+ * frontmatter（name/description）を壊さない位置に入れる（先頭挿入は frontmatter を無効化するため不可）。
+ */
+function injectCollisionWarning(body: string, originalName: string, tempName: string): string {
+  const warning = `<!--\n[CCPIT name-collision / 同名衝突 警告]\n採用時に既存の非 golden 先行 skill '${originalName}' と同名衝突を検出したため、本 skill は一時名 '${tempName}' で採用された。\n解決: 先行 '${originalName}' と採用版 '${tempName}' のどちらを残すか決め、不要な方を ~/.claude/skills/ から削除/リネームせよ。詳細レポート: ~/.ccpit/reports/。\n-->\n`
+  const m = body.match(/^(---\r?\n[\s\S]*?\r?\n---\r?\n)([\s\S]*)$/)
+  if (m) return m[1] + warning + m[2]
+  return warning + body
+}
+
+/** ケース2 解決レポートを ~/.ccpit/reports/ に書く（正当性パス外。失敗は採用成功を覆さない）。 */
+async function writeCase2Report(
+  paths: SettingsPaths,
+  info: { originalName: string; tempName: string; tempTarget: string }
+): Promise<string | null> {
+  try {
+    const reportsDir = join(paths.parcFermeDir, 'reports')
+    await mkdir(reportsDir, { recursive: true })
+    const ts = new Date().toISOString().replace(/[:.]/g, '-')
+    const fp = join(reportsDir, `${ts}-name-collision-${info.originalName}.md`)
+    const content = `# 同名衝突レポート (ケース2 先行衝突)
+
+- 検出時刻: ${new Date().toISOString()}
+- 提案 skill 名: ${info.originalName}
+- 状況: 既存の **非 golden 先行 skill**（ユーザーが手で置いた等、採用レジストリ未登録）と同名衝突
+- 採用した一時名: ${info.tempName}
+- 一時 target: ${info.tempTarget}
+
+## 解決手順
+1. 先行 skill (\`${info.originalName}\`) と採用版 (\`${info.tempName}\`) のどちらを残すか決める。
+2. 不要な方を \`~/.claude/skills/\` から削除 or リネームする。
+3. 判断に迷えば CCPIT 標準 WebAI 動線（claude.ai）で相談してよい。
+`
+    await writeFile(fp, content, 'utf-8')
+    return fp
+  } catch {
+    return null // レポート失敗は採用を覆さない（Codex nit: 正当性パス外）
+  }
+}
+
+/**
+ * provenance/emergency override の保存先を解決する。
+ * opts 明示が無ければ **paths.parcFermeDir 由来**（本番 = ~/.ccpit、テスト = temp）。
+ * これにより no-opts テストが実 ~/.ccpit を汚染しない（test 分離）。
+ */
+function resolveProvenancePaths(opts: ApplyOptions, paths: SettingsPaths): ProvenancePaths {
+  return (
+    opts.provenancePaths ?? {
+      adoptedRegistryPath: join(paths.parcFermeDir, 'adopted-skills.json'),
+      emergencyOverridesPath: join(paths.parcFermeDir, 'emergency-overrides.json')
+    }
+  )
+}
+
+/** 公開 API: ロックで直列化してから実体を実行する。 */
+export function applyChange(
   request: ChangeRequest,
   password: string,
-  paths: SettingsPaths = getDefaultSettingsPaths()
+  paths: SettingsPaths = getDefaultSettingsPaths(),
+  opts: ApplyOptions = {}
+): Promise<ApplyResult> {
+  return withApplyLock(() => applyChangeInner(request, password, paths, opts))
+}
+
+async function applyChangeInner(
+  request: ChangeRequest,
+  password: string,
+  paths: SettingsPaths = getDefaultSettingsPaths(),
+  opts: ApplyOptions = {}
 ): Promise<ApplyResult> {
   // Step 1: Authentication (kind 別)
   const authOk = await verifyPassword(password, paths, request.kind)
@@ -657,14 +807,85 @@ export async function applyChange(
     return { success: false, error: `target rejected: ${allowed.reason}`, reason: allowed.reason }
   }
 
+  // Step 3.5: 同名衝突ガード (kind:skill, 判断H) — golden 配布 skill と同名の採用は基本禁止。
+  //           恒久シャドウ（公式更新が黙って届かない地雷）を構造的に消す。
+  //           有効な緊急 override (Dr 動線・スコープ付き) がある場合のみ許可（フェイルセーフ）。
+  if (request.kind === 'skill' && opts.goldenSkillNames && opts.goldenSkillNames.length > 0) {
+    const collidingName = basename(dirname(toFsPath(norm.absolute)))
+    if (opts.goldenSkillNames.includes(collidingName)) {
+      const provPaths = resolveProvenancePaths(opts, paths)
+      const overrides = await readEmergencyOverrides(provPaths)
+      const emergencyOk = isEmergencyOverrideValid(collidingName, overrides, {
+        currentGoldenVersion: opts.currentGoldenVersion
+      })
+      if (!emergencyOk) {
+        await appendChangeLog(
+          {
+            timestamp: new Date().toISOString(),
+            request_id: request.frontmatter.request_id,
+            purpose: request.frontmatter.purpose,
+            result: 'failed',
+            backup_path: '',
+            kind: 'skill',
+            error: `golden-name-collision: '${collidingName}'`,
+            reason: 'golden-name-collision'
+          },
+          paths
+        )
+        return {
+          success: false,
+          error: `adoption refused: '${collidingName}' は golden 配布 skill と同名です（恒久シャドウ防止のため基本禁止）。提案 skill 名を変えるか、Doctor Analysis の緊急避難動線を使ってください。`,
+          reason: 'golden-name-collision'
+        }
+      }
+    }
+  }
+
+  // Step 3.6: ケース2 — 先行衝突ハンドリング (kind:skill, 判断H)。
+  //   target が既に存在し、golden 名でなく、採用レジストリにも無い = ユーザーが手で置いた等の
+  //   「先行 skill」。問答無用で上書きすると気づけない clobber になるため、一時名で退避採用し、
+  //   警告ヘッダ + ~/.ccpit/reports/ レポートで解決動線に乗せる。
+  //   （新規 skill = target 不在は非該当 / 自採用 skill の更新 = レジストリ登録済は非該当
+  //    / golden 同名 = Step 3.5 で処理済（緊急 override 許可時は意図的上書きゆえ非該当））。
+  let effectiveCanonical = norm.absolute
+  let effectiveSkillBody = request.kind === 'skill' ? request.proposedSkillBody : ''
+  let case2RenamedFrom: string | null = null
+  let case2TempName: string | null = null
+  // Part B 採用文脈（opts.goldenSkillNames 指定時）でのみ作動。opts 無しの素の applyChange
+  // （既存 v1.4 経路 / CC Request Inbox settings）は従来どおり上書き（後方互換）。
+  if (request.kind === 'skill' && opts.goldenSkillNames !== undefined) {
+    const origName = basename(dirname(toFsPath(norm.absolute)))
+    const isGolden = opts.goldenSkillNames.includes(origName)
+    if (!isGolden && existsSync(toFsPath(norm.absolute))) {
+      const provPaths = resolveProvenancePaths(opts, paths)
+      let inRegistry = false
+      try {
+        const reg = await readAdoptedRegistry(provPaths)
+        inRegistry = reg.some((e) => e.name === origName)
+      } catch {
+        inRegistry = false // フェイルクローズ: 不明なら先行扱い（temp 名で安全側、clobber しない）
+      }
+      if (!inRegistry) {
+        const ts = new Date().toISOString().replace(/[:.]/g, '-')
+        const tempName = `${origName}-adopted-${ts}`
+        const skillsRootFs = dirname(dirname(toFsPath(norm.absolute)))
+        const tempFsTarget = join(skillsRootFs, tempName, 'SKILL.md')
+        effectiveCanonical = normalizeForCompare(tempFsTarget)
+        effectiveSkillBody = injectCollisionWarning(request.proposedSkillBody, origName, tempName)
+        case2RenamedFrom = origName
+        case2TempName = tempName
+      }
+    }
+  }
+
   // Step 4: backup (kind 別)
   const backupPath =
     request.kind === 'settings'
       ? await takeSettingsBackup(paths)
-      : await takeSkillBackup(norm.absolute, paths)
+      : await takeSkillBackup(effectiveCanonical, paths)
 
-  // Step 5: write (kind 別)
-  const fsTargetPath = toFsPath(norm.absolute)
+  // Step 5: write (kind 別)。kind:skill は effective（ケース2 で一時名/警告ヘッダ込みになりうる）を使う。
+  const fsTargetPath = toFsPath(effectiveCanonical)
   try {
     if (request.kind === 'settings') {
       const proposedFormatted = JSON.stringify(request.proposedSettingsParsed, null, 2)
@@ -673,7 +894,7 @@ export async function applyChange(
     } else {
       // kind: 'skill' — raw body 全文置換 (LF/BOM はそのまま、tester が opts で制御)
       await mkdir(dirname(fsTargetPath), { recursive: true })
-      await writeFile(fsTargetPath, request.proposedSkillBody, 'utf-8')
+      await writeFile(fsTargetPath, effectiveSkillBody, 'utf-8')
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
@@ -705,8 +926,8 @@ export async function applyChange(
     if (request.kind === 'settings') {
       JSON.parse(postRaw)
     } else {
-      // skill: バイト列等価チェック
-      if (postRaw !== request.proposedSkillBody) {
+      // skill: バイト列等価チェック（effective ＝ ケース2 で警告ヘッダ込みになりうる）
+      if (postRaw !== effectiveSkillBody) {
         verifyError = 'post-write content mismatch (byte-level inequality)'
       }
     }
@@ -771,6 +992,46 @@ export async function applyChange(
     },
     paths
   )
+
+  // Step 8.5: kind:skill 採用を出自レジストリに記録（ケース2 検出・緊急ライフサイクル用）。
+  //           best-effort。記録失敗は apply 成功を覆さない（採用は既に完了している）。
+  if (request.kind === 'skill') {
+    try {
+      const provPaths = resolveProvenancePaths(opts, paths)
+      // ケース2 では effective（一時名）が実採用先。出自記録もその名で行う。
+      const skillName = basename(dirname(toFsPath(effectiveCanonical)))
+      let isEmergency = false
+      if (opts.goldenSkillNames?.includes(skillName)) {
+        const overrides = await readEmergencyOverrides(provPaths)
+        isEmergency = isEmergencyOverrideValid(skillName, overrides, {
+          currentGoldenVersion: opts.currentGoldenVersion
+        })
+      }
+      await upsertAdoptedSkill(
+        {
+          name: skillName,
+          target: effectiveCanonical,
+          hash: hashSkillBody(effectiveSkillBody),
+          adoptedAt: appliedAt,
+          source: isEmergency ? 'emergency' : 'adopted',
+          goldenVersionAtAdoption: opts.currentGoldenVersion
+        },
+        provPaths
+      )
+    } catch {
+      // provenance 記録失敗は apply 成功を覆さない（best-effort）
+    }
+  }
+
+  // ケース2: 解決レポートを ~/.ccpit/reports/ に書く（正当性パス外。失敗は採用を覆さない）。
+  if (case2RenamedFrom && case2TempName) {
+    await writeCase2Report(paths, {
+      originalName: case2RenamedFrom,
+      tempName: case2TempName,
+      tempTarget: effectiveCanonical
+    })
+    return { success: true, backupPath, appliedAt, renamedTo: case2TempName }
+  }
 
   return { success: true, backupPath, appliedAt }
 }

@@ -1,5 +1,12 @@
 [
   "Bash(rm -rf C:\\\\)",
   "Bash(rm -rf C:\\\\*)",
-  "Bash(rmdir /s /q C:\\\\)"
+  "Bash(rm -rf D:\\\\)",
+  "Bash(rm -rf D:\\\\*)",
+  "Bash(rmdir /s /q C:\\\\)",
+  "Bash(rmdir /s /q D:\\\\)",
+  "Bash(rm -rf /c)",
+  "Bash(rm -rf /c/*)",
+  "Bash(rm -rf /d)",
+  "Bash(rm -rf /d/*)"
 ]

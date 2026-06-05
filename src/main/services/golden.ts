@@ -3,6 +3,7 @@ import { join, relative } from 'path'
 import { existsSync } from 'fs'
 import { app } from 'electron'
 import { getConfig, setConfig } from './appConfig'
+import { KNOWN_TEMPLATES, resolveExpectedDeny } from './denyValidation'
 
 const GOLDEN_DIR = app.isPackaged
   ? join(process.resourcesPath, 'golden')
@@ -21,35 +22,6 @@ function getCommonLangDir(): string {
 /** common/hooks（言語非依存） */
 function getCommonHooksDir(): string {
   return join(GOLDEN_DIR, 'common', 'hooks')
-}
-
-/**
- * PIKES r1 §4-3 + 提案 3 (CCPIT v1.1 Phase E-4):
- * common/settings.deny-base.json (PIKES 共通 21 件) + {template}/settings.deny-extra.json (OS 固有) を読込し、
- * union (重複除去 + 順序保持) で 1 つの deny 配列を返す。
- * ファイル不在時は空配列にフォールバック (壊さない設計)。
- */
-async function readMergedDenyList(templateDir: string): Promise<string[]> {
-  const denySet = new Set<string>()
-  const baseDenyPath = join(GOLDEN_DIR, 'common', DENY_BASE_FILENAME)
-  if (existsSync(baseDenyPath)) {
-    try {
-      const base = JSON.parse(await readFile(baseDenyPath, 'utf-8')) as string[]
-      for (const item of base) denySet.add(item)
-    } catch {
-      // パース失敗時は基底スキップ (起動信頼性優先、警告は呼び出し側で記録)
-    }
-  }
-  const extraDenyPath = join(templateDir, DENY_EXTRA_FILENAME)
-  if (existsSync(extraDenyPath)) {
-    try {
-      const extra = JSON.parse(await readFile(extraDenyPath, 'utf-8')) as string[]
-      for (const item of extra) denySet.add(item)
-    } catch {
-      // 同上
-    }
-  }
-  return [...denySet]
 }
 
 /**
@@ -99,6 +71,22 @@ export async function listTemplates(): Promise<string[]> {
   return entries
     .filter((e) => e.isDirectory() && e.name !== 'common')
     .map((e) => e.name)
+}
+
+/**
+ * golden が配布する全 skill 名（重複排除）。判断H の同名採用ガード用。
+ * GOLDEN_DIR 配下の skills/<name>/SKILL.md（各階層）から <name> を集める
+ * （common/{lang}/skills/... とテンプレート/skills/... の和集合。保守的に「golden が出しうる名前」全部）。
+ */
+export async function listGoldenSkillNames(): Promise<string[]> {
+  if (!existsSync(GOLDEN_DIR)) return []
+  const names = new Set<string>()
+  for (const f of await walkDir(GOLDEN_DIR)) {
+    const norm = f.replace(/\\/g, '/')
+    const m = norm.match(/\/skills\/([^/]+)\/SKILL\.md$/i)
+    if (m) names.add(m[1])
+  }
+  return [...names]
 }
 
 /** common/{lang} + common/hooks + 指定テンプレートをマージした展開プレビューを返す */
@@ -182,6 +170,25 @@ export async function deploy(
   templateName: string,
   password: string
 ): Promise<DeployResult> {
+  // Marshal F4: 未知 template を書込/永続化前に reject（health coverage の fail-closed 前提）。
+  if (!(KNOWN_TEMPLATES as readonly string[]).includes(templateName)) {
+    return {
+      deployed: [],
+      backedUp: [],
+      errors: [`未知の template '${templateName}'（許可: ${KNOWN_TEMPLATES.join('/')}）`]
+    }
+  }
+  // Marshal F5: golden の期待 deny を「書込前」に fail-closed 解決する。base/extra が欠落/parse
+  // 不能なら backup/write/config 永続化を一切せず deploy を中止（deny 無しの settings.json を
+  // 書く fail-open を防ぐ）。health の事後検証と同じ resolveExpectedDeny を共有。
+  const expectedDeny = resolveExpectedDeny(GOLDEN_DIR, templateName)
+  if (!expectedDeny.ok) {
+    return {
+      deployed: [],
+      backedUp: [],
+      errors: [`golden deny 期待リスト解決失敗で deploy 中止（${expectedDeny.error}）`]
+    }
+  }
   const userHome = app.getPath('home')
   const targetDir = join(userHome, '.claude')
   const commonLangDir = getCommonLangDir()
@@ -241,8 +248,9 @@ export async function deploy(
         if (json.auth) {
           json.auth.password = password
         }
-        // PIKES 共通 21 件 + {template} 固有 extra を deny にマージ (union)
-        const mergedDeny = await readMergedDenyList(templateDir)
+        // PIKES 共通 + {template} 固有 extra を deny にマージ (union)。Marshal F5: 書込前に
+        // fail-closed 解決済の expectedDeny を使う（silent-skip の readMergedDenyList は廃止）。
+        const mergedDeny = expectedDeny.expected
         const existingDeny = Array.isArray(json.permissions?.deny)
           ? (json.permissions.deny as string[])
           : []
@@ -285,8 +293,9 @@ export async function deploy(
     }
   }
 
-  // Fresh Start 完了 — deploySource を 'golden' に固定し pitReference をクリア
-  setConfig({ deploySource: 'golden', pitReference: undefined })
+  // Fresh Start 完了 — deploySource を 'golden' に固定し pitReference をクリア。
+  // deployedTemplate を記録（Marshal F2: health coverage が実デプロイ template の deny を検証するため）。
+  setConfig({ deploySource: 'golden', pitReference: undefined, deployedTemplate: templateName })
 
   return result
 }

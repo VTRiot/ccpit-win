@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Loader2, ExternalLink, Copy, Check, Save } from 'lucide-react'
+import { Loader2, ExternalLink, Copy, Check, Save, ShieldAlert, Trash2 } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Label } from '../components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
@@ -10,8 +10,12 @@ import { toNativePath } from '../lib/utils'
 const STORAGE_KEY_DA_OUTPUT = 'ccpit-da-output'
 const STORAGE_KEY_DA_PATH = 'ccpit-da-custom-path'
 
+type ObsoleteOverride = Awaited<ReturnType<typeof window.api.emergencyOverrideListObsolete>>[number]
+
 export function DAPage(): React.JSX.Element {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const ja = i18n.language.startsWith('ja')
+  const L = (j: string, e: string): string => (ja ? j : e)
   const [symptom, setSymptom] = useState('')
   const [packContent, setPackContent] = useState('')
   const [generating, setGenerating] = useState(false)
@@ -24,10 +28,45 @@ export function DAPage(): React.JSX.Element {
   const [customPath, setCustomPath] = useState(
     () => localStorage.getItem(STORAGE_KEY_DA_PATH) || ''
   )
+  // 緊急避難 override（判断H, golden バグ時の同名一時許可。Doctor 経由でのみ）
+  const [ovName, setOvName] = useState('')
+  const [ovReason, setOvReason] = useState('')
+  const [ovDr, setOvDr] = useState('')
+  const [obsolete, setObsolete] = useState<ObsoleteOverride[]>([])
+  const [ovMsg, setOvMsg] = useState('')
+
+  const loadObsolete = (): void => {
+    window.api.emergencyOverrideListObsolete().then(setObsolete)
+  }
 
   useEffect(() => {
     window.api.daDefaultOutputDir().then(setDefaultOutputDir)
+    loadObsolete()
   }, [])
+
+  const createOverride = async (): Promise<void> => {
+    if (!ovName.trim() || !ovReason.trim() || !ovDr.trim()) {
+      setOvMsg(L('skill 名 / 理由 / Dr 決定 ID は必須です。', 'name / reason / Dr decision id are required.'))
+      return
+    }
+    await window.api.emergencyOverrideCreate({ name: ovName.trim(), reason: ovReason.trim(), drDecisionId: ovDr.trim() })
+    setOvMsg(
+      L(
+        `緊急避難 override を作成しました（${ovName.trim()}）。golden 版が進むと自動失効します。`,
+        `Emergency override created (${ovName.trim()}). It auto-expires when the golden version advances.`
+      )
+    )
+    setOvName('')
+    setOvReason('')
+    setOvDr('')
+    loadObsolete()
+  }
+
+  const removeOverride = async (name: string): Promise<void> => {
+    await window.api.emergencyOverrideRemove(name)
+    setOvMsg(L(`override を削除しました（${name}）。`, `Removed override (${name}).`))
+    loadObsolete()
+  }
 
   const handleOutputModeChange = (mode: 'desktop' | 'custom'): void => {
     setOutputMode(mode)
@@ -182,6 +221,70 @@ export function DAPage(): React.JSX.Element {
           </CardContent>
         </Card>
       )}
+
+      {/* 緊急避難 override (判断H): golden skill バグ時の同名一時許可。Doctor 経由でのみ。 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShieldAlert size={16} />
+            {L('緊急避難 override（golden バグ時）', 'Emergency override (golden bug)')}
+          </CardTitle>
+          <CardDescription>
+            {L(
+              'golden skill にバグがあり同名の修正版を一時採用する必要がある時のみ使う。スコープ＋失効付き。golden 版が進むと自動失効。',
+              'Use only when a golden skill is buggy and a same-name fix must be adopted temporarily. Scoped + expiring; auto-expires when the golden version advances.'
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 gap-2">
+            <input
+              value={ovName}
+              onChange={(e) => setOvName(e.target.value)}
+              placeholder={L('対象 golden skill 名', 'target golden skill name')}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+            />
+            <input
+              value={ovReason}
+              onChange={(e) => setOvReason(e.target.value)}
+              placeholder={L('理由（どのバグか）', 'reason (which bug)')}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+            />
+            <input
+              value={ovDr}
+              onChange={(e) => setOvDr(e.target.value)}
+              placeholder={L('Dr 決定 ID（診断の識別子）', 'Dr decision id')}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+            />
+          </div>
+          <Button variant="outline" size="sm" onClick={createOverride}>
+            <ShieldAlert size={14} /> {L('緊急避難 override を作成', 'Create emergency override')}
+          </Button>
+
+          {obsolete.length > 0 && (
+            <div className="rounded-md border border-amber-300 bg-amber-500/10 p-3 space-y-2">
+              <p className="text-xs font-medium text-amber-700">
+                {L(
+                  '不要になった override（golden 修正済 or 失効）— 削除推奨:',
+                  'Obsolete overrides (golden fixed or expired) — recommended to delete:'
+                )}
+              </p>
+              {obsolete.map((o) => (
+                <div key={o.name} className="flex items-center gap-2 text-xs">
+                  <code className="font-mono flex-1 truncate" title={o.reason}>
+                    {o.name} (golden {o.goldenVersion})
+                  </code>
+                  <Button variant="outline" size="sm" onClick={() => removeOverride(o.name)}>
+                    <Trash2 size={12} /> {L('削除', 'Delete')}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {ovMsg && <p className="text-xs text-muted-foreground">{ovMsg}</p>}
+        </CardContent>
+      </Card>
     </div>
   )
 }
