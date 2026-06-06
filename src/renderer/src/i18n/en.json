@@ -247,7 +247,7 @@
         "button": "DetectLink",
         "title": "Discover CC Projects",
         "description": "Scan under the given folder for projects containing CLAUDE.md. Multi-select to import in batch.",
-        "rootPlaceholder": "Root folder to scan (e.g. C:\\_Prog)",
+        "rootPlaceholder": "Root folder to scan (e.g. C:\\Projects)",
         "browse": "Browse",
         "scan": "Scan",
         "import": "Import",

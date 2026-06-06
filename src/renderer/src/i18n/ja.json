@@ -247,7 +247,7 @@
         "button": "DetectLink",
         "title": "CC プロジェクトを検出",
         "description": "指定フォルダ以下を走査し、CLAUDE.md を持つプロジェクトを検出します。複数選択して一括インポートできます。",
-        "rootPlaceholder": "走査するルートフォルダ (例: C:\\_Prog)",
+        "rootPlaceholder": "走査するルートフォルダ (例: C:\\Projects)",
         "browse": "選択",
         "scan": "スキャン",
         "import": "インポート",

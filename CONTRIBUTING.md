@@ -1,4 +1,4 @@
-﻿# Contributing to CCPIT
+# Contributing to CCPIT
 
 This document captures invariants and review checklists that have been earned the hard way through past incidents.
 
@@ -29,7 +29,7 @@ These invariants are also enforced by tests in `src/main/services/protocol/__tes
 
 ## How these rules were earned
 
-These invariants did not arrive in advance. They were extracted from a real bug shipped during the v0.x development of CCPIT
+These invariants did not arrive in advance. They were extracted from a real bug shipped during the v0.x development of CCPIT:
 
 1. **A `confirmed` boolean was added to `ProjectEntry`** as a lazy-migration field marking user-explicit intent. Existing manually-edited markers had `confirmed: undefined` and were unprotected against automated re-scans.
 

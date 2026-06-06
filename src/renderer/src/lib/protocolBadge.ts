@@ -69,7 +69,7 @@ export const PROTOCOL_COLOR: Record<
     low: 'bg-amber-500/5 text-amber-700 dark:text-amber-300 border-amber-500/30',
     explicit: 'bg-amber-500/25 text-amber-700 dark:text-amber-300 border-amber-500/50',
   },
-  // FSA r7 §6: manx-host (CCDG2 等の MANX 提供・管理側、レガシー保護内蔵の特殊構造)
+  // FSA r7 §6: manx-host (MANX 提供・管理側、レガシー保護内蔵の特殊構造)
   // 中間色 violet で「他とは違う特別な PJ」を視認できる (緑 manx / 橙 legacy と独立軸)
   // WCAG AA: violet-700 (light) / violet-300 (dark) は背景に対し 4.5:1 以上を確保
   'manx-host': {
@@ -138,7 +138,7 @@ export function formatBadgeView(m: ProtocolMarkerView | null): BadgeView | null 
       : 'low'
 
   // protocol を 'manx' / 'legacy' / 'manx-host' に分類
-  // FSA r7 §6: manx-host を新 protocol 値として導入 (CCDG2 等の MANX 提供側、violet 中間色)
+  // FSA r7 §6: manx-host を新 protocol 値として導入 (MANX 提供側、violet 中間色)
   // それ以外の派生値 ('manx_plot' 等) は manx 色系で扱う
   let protocolKey: 'manx' | 'legacy' | 'manx-host'
   if (normalizedProtocol === 'legacy') protocolKey = 'legacy'

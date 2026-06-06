@@ -41,7 +41,7 @@ export interface ProtocolProfile {
  *   既存 21 PJ の `manx_version` 単独 PJ は warning fallback で従来動作維持。
  * - manxRole   : オプション (default: "managed")。pikes_role 命名移行は CCPIT v1.4 へ繰越。
  *   - "managed": グローバル ~/.claude/ MANX を継承運用 (Raiko/MdriveSetup)
- *   - "host"   : MANX を提供・管理する側、レガシー保護を内蔵 (CCDG2)
+ *   - "host"   : MANX を提供・管理する側、レガシー保護を内蔵 (MANX host repo)
  *   - "local"  : PJ ローカルに完全 MANX 構造あり (R1/R2 該当)
  * - pikesVersion: PIKES r1.3 で必須化 (CCPIT v1.3、新規 PJ から strictPikesValidation で適用)。
  *   PIKES Protocol revision (e.g. "r1.3")。既存 PJ は warning fallback で manxVersion 単独判定。

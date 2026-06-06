@@ -1,4 +1,4 @@
-import { readFile, stat } from 'fs/promises'
+﻿import { readFile, stat } from 'fs/promises'
 import { homedir } from 'os'
 import { join } from 'path'
 import { readProtocol } from './protocolReader'
@@ -174,7 +174,7 @@ export async function parseManxFrontmatter(
  *   - R5 (グローバル MANX 完備 → manx/low) を**撤廃** (CCDG-V1 過剰判定の元凶)
  *   - R0a 新規: nlink > 1 で CCDG-V1 ハードリンク配布検出 → 確定 Legacy
  *   - R6 新規: YAML manx_role=managed (default) → manx/low (Raiko/MdriveSetup 救済)
- *   - R7 新規: YAML manx_role=host → manx-host/low (CCDG2 自動判定、新 protocol 値)
+ *   - R7 新規: YAML manx_role=host → manx-host/low (CCPIT 自動判定、新 protocol 値)
  *   - merged は依然 global 除外 (R1/R2/R3a/R3b 挙動は不変)
  *   - hasHooksGlobal/hasSkillsGlobal/hasRulesGlobal は r7 で再び informational only
  *   - isGlobalManxInherited は deprecated として export 維持 (互換性)
