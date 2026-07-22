@@ -272,6 +272,7 @@ CCPIT は Electron アプリ:
 - **採用/deploy 用パスワードは `settings.json`（`auth.password`）にローカル保存**され、settings-guard hook が照合する。これは不用意・無人での編集に対する統治ゲートであり、暗号化ではない。ユーザープロファイルへ完全アクセスできる者は読める
 - **hook は bash スクリプト**で、`~/.claude/hooks/` に配置され `settings.json` に登録される。実行するのは Claude Code（CCPIT ではない）で、セッションイベント（Stop / PreToolUse / SessionStart）で発火する。全スクリプトは本リポジトリの `golden/common/hooks/` で配備前に読める
 - **破壊的操作はスナップショット先行。** golden deploy・移行・skill 採用は書込前にバックアップ / Recovery Kit スナップショットを取り、採用は検証失敗時に自動ロールバックする
+- **公開ミラーでの仮名化。** 裁定原文等（ソースコメント・UI 文言）に含まれる保守者の個人ハンドルは、本リポジトリでは *maintainer* に置換している。private 原本は逐語のまま保持される
 
 ---
 

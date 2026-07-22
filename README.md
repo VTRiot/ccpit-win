@@ -272,6 +272,7 @@ Things you should know, stated plainly:
 - **The adoption/deploy password is stored locally** in `settings.json` (`auth.password`) and checked by the settings-guard hook. It is a governance gate against casual/unattended edits — not encryption. Anyone with full access to your user profile can read it.
 - **Hooks are bash scripts** installed under `~/.claude/hooks/` and registered in `settings.json`. Claude Code (not CCPIT) executes them at session events (Stop / PreToolUse / SessionStart). You can read every script before deploying — they are plain text in this repository under `golden/common/hooks/`.
 - **Destructive operations snapshot first.** Golden deploy, migration, and skill adoption all take a backup / Recovery Kit snapshot before writing, and adoption rolls back automatically on validation failure.
+- **Pseudonymization in this public mirror.** The maintainer's personal handle that appears in historical ruling texts (source comments and UI strings) is replaced with *maintainer* in this repository; the private originals keep the verbatim wording.
 
 ---
 
