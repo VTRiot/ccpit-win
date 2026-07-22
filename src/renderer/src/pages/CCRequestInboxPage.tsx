@@ -65,6 +65,7 @@ type ApplyResultReason =
   | 'write-failed'
   | 'post-verify-failed'
   | 'golden-name-collision'
+  | 'codex-review-missing'
 
 interface ApplyResult {
   success: boolean

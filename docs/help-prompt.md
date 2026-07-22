@@ -38,9 +38,11 @@ JSON by hand.
 - Projects — auto-detect Claude Code projects on disk, tag each with its
   protocol (MANX / ASAMA / Macau / Legacy), pin favorites, launch Claude Code
   in the right directory.
-- Health — runs ~17 checks across settings.json, CLAUDE.md, rules/, skills/,
-  and hooks/, and reports PASS / WARN / FAIL with the offending entries
-  inline.
+- Health — runs a battery of checks across settings.json (deny coverage &
+  symmetry, hook registration coverage and liveness), CLAUDE.md, rules/,
+  skills/, and hooks/, and reports pass / warn / info / fail with the
+  offending entries inline. A user-customized CLAUDE.md is informational
+  (customizing is normal use); a missing or empty CLAUDE.md is an error.
 - Doctor Analysis — generates a "doctor pack" the user can attach to a bug
   report or paste back into Claude when something is misbehaving.
 - Recovery Kit — named snapshots of the entire ~/.claude/ directory.
@@ -57,6 +59,32 @@ JSON by hand.
   CodeMirror syntax highlighting). Two scopes: global ~/.claude.json and
   per-project .mcp.json. Every server is auto-tagged Safe / Caution /
   Strict based on env credentials and write-tool keywords.
+- Skill Proposals — Claude Code (or a teammate) drops SKILL.md candidates
+  into a proposals queue; the user browses them in a dedicated tab with
+  provenance and body preview, then adopts or rejects from the GUI. When
+  the OpenAI Codex CLI is installed, proposals carrying a "recommend"
+  badge additionally require an independent Codex review before adoption;
+  Claude Code may reject individual review findings, but each rejection
+  rationale is recorded and auditable. Without Codex, adoption works as
+  before.
+- Report renderer — the bundled md-render skill turns Markdown reports
+  into deterministic offline HTML: day/dark themes, H2 section tabs,
+  persistent per-section comments, one-click reply-prompt generation,
+  inline diagrams, and a bidirectional --verify that fails closed when
+  HTML and source Markdown drift apart.
+- Bulk CC restart — one-click, generation-flag based restart of all
+  registered Claude Code sessions: each session exits at a safe completion
+  point and relaunches with --resume, and a confirmation dialog previews
+  per-session resolution before anything runs.
+- Per-session CC identity — each Claude Code session is atomically
+  assigned a persistent 10-hex ID, surfaced in exported session summaries
+  so reviewers can trace which session did what.
+- Enforcement stats — a read-only statistics page that shows how often
+  governance actually fired, computed from local Claude Code session
+  transcripts: skill activations, Stop-hook cycles, rule blocks, deny
+  hits, and independent review launches, each in its own tab. Every tab
+  states its measurement limits up front instead of showing fabricated
+  numbers.
 - i18n — full English and Japanese UI.
 
 ## Your role

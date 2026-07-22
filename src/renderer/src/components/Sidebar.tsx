@@ -41,7 +41,7 @@ export function Sidebar({ activePage, onNavigate, theme, onToggleTheme, language
             key={id}
             onClick={() => onNavigate(id)}
             className={cn(
-              'flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors',
+              'flex items-center gap-3 px-3 py-2 text-sm text-left break-keep rounded-md transition-colors',
               activePage === id
                 ? 'bg-sidebar-active text-foreground font-medium'
                 : 'text-muted-foreground hover:bg-sidebar-hover hover:text-foreground'

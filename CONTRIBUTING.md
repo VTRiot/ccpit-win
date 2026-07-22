@@ -25,7 +25,7 @@ When adding any field that records "the user explicitly chose X":
 - [ ] Does this PR widen the `ProtocolEntrySource` union? **If yes, the priority logic in `getCurrentMarker` and the migration in `runProtocolHistoryV2Migration` need explicit re-review.**
 - [ ] Does this PR add a "destructive" operation (an action that loses past data)? **If yes, restate it as an additive operation that records what the user wanted.**
 
-These invariants are also enforced by tests in `src/main/services/protocol/__tests__/protocolHistorySchema.test.ts`. If you find yourself updating a test to relax these checks, the change is almost certainly wrong — talk to the maintainers first.
+These invariants are also enforced by tests in `src/main/__tests__/protocolSchema.test.ts` (schema checks) and `src/main/services/protocol/__tests__/protocolHistory.test.ts` (history behaviour). If you find yourself updating a test to relax these checks, the change is almost certainly wrong — talk to the maintainers first.
 
 ## How these rules were earned
 

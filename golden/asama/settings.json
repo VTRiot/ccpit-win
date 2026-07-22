@@ -13,18 +13,48 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/report-gate.sh",
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/report-gate.sh\""
+            ],
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/debug-report-gate.sh",
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/debug-report-gate.sh\""
+            ],
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/skill-proposal-gate.sh",
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/skill-proposal-gate.sh\""
+            ],
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash",
+            "timeout": 10,
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/restart-request-gate.sh\""
+            ]
+          },
+          {
+            "type": "command",
+            "command": "bash",
+            "timeout": 10,
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/restart-all-gate.sh\""
+            ]
           }
         ]
       }
@@ -35,8 +65,37 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/settings-guard.sh",
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/settings-guard.sh\""
+            ],
             "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash",
+            "timeout": 10,
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/session-launch-record.sh\""
+            ]
+          },
+          {
+            "type": "command",
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/cc-identity-register.sh\""
+            ],
+            "timeout": 10
           }
         ]
       }

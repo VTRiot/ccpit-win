@@ -1,4 +1,4 @@
-import { ElectronAPI } from '@electron-toolkit/preload'
+﻿import { ElectronAPI } from '@electron-toolkit/preload'
 
 // Enforcement 発火統計の型別集計（Part B Phase 2a）。main/services/enforcementStats.ts と同型を inline 複製。
 interface EnforcementTypeStat {
@@ -6,6 +6,31 @@ interface EnforcementTypeStat {
   ranking: { key: string; count: number }[]
   scopeNote: string
 }
+
+// CC 検出 + DELEGATE 再起動。main/services と同型を inline 複製。
+interface CcDetectedCcDto {
+  pid: number
+  resolution: 'resolved' | 'resume-only' | 'unresolved'
+  sessionId?: string
+  cwd?: string
+  status?: 'busy' | 'waiting' | 'idle' | 'unknown'
+  name?: string
+  waitingFor?: string
+  createdAt?: string | null
+}
+interface CcDetectSummaryDto {
+  total: number
+  resolved: number
+  resumeOnly: number
+  unresolved: number
+  sessions: CcDetectedCcDto[]
+}
+type CcDetectResultDto =
+  | { ok: true; summary: CcDetectSummaryDto }
+  | { ok: false; error: string }
+type CcRestartAllResultDto =
+  | { ok: true; generation: number; summary: CcDetectSummaryDto | null; detectError?: string }
+  | { ok: false; error: string }
 
 interface ParcFermeAPI {
   goldenList(): Promise<string[]>
@@ -208,6 +233,10 @@ interface ParcFermeAPI {
     flags: string[]
   }): Promise<{ shell: string; spawned: boolean; error?: string }>
 
+  // CC 検出 + DELEGATE generation 再起動
+  ccListSessions(): Promise<CcDetectResultDto>
+  ccRestartAll(): Promise<CcRestartAllResultDto>
+
   protocolRead(projectPath: string): Promise<unknown>
   protocolWrite(projectPath: string, marker: unknown, force?: boolean): Promise<void>
   protocolDetect(projectPath: string): Promise<unknown>
@@ -309,6 +338,7 @@ interface ParcFermeAPI {
       | 'write-failed'
       | 'post-verify-failed'
       | 'golden-name-collision'
+      | 'codex-review-missing'
     rolledBack?: boolean
     renamedTo?: string
   }>
@@ -349,6 +379,26 @@ interface ParcFermeAPI {
     requestId: string,
     state: 'candidate' | 'adopted' | 'rejected' | 'held'
   ): Promise<void>
+  skillProposalsCodexGate(
+    adoptionLabel: string,
+    requestId: string
+  ): Promise<{
+    codexPresent: boolean
+    codexVersion?: string
+    required: boolean
+    reviewed: boolean
+    reviewerId?: string
+    verdict?: string
+    ccRebuttal?: string
+    satisfied: boolean
+    blockReason?: 'request-id-missing' | 'codex-review-missing' | 'reviewer-not-codex'
+  }>
+  skillProposalsCodexReviewPrompt(input: {
+    filePath: string
+    requestId: string
+    skillName: string
+    title: string
+  }): Promise<string>
   skillFiringStatsCompute(): Promise<{
     stats: {
       skill: string

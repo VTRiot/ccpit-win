@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+﻿import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 // Enforcement 発火統計の型別集計（Part B Phase 2a）。main/services/enforcementStats.ts と同型を inline 複製（preload は main を import しない既存慣習に倣う）。
@@ -7,6 +7,36 @@ type EnforcementTypeStat = {
   ranking: { key: string; count: number }[]
   scopeNote: string
 }
+
+// CC 検出 + DELEGATE 再起動。main/services/sessionRegistry.ts と同型を inline 複製。
+type CcDetectedCcDto = {
+  pid: number
+  resolution: 'resolved' | 'resume-only' | 'unresolved'
+  sessionId?: string
+  cwd?: string
+  status?: 'busy' | 'waiting' | 'idle' | 'unknown'
+  name?: string
+  waitingFor?: string
+  createdAt?: string | null
+}
+type CcDetectSummaryDto = {
+  total: number
+  resolved: number
+  resumeOnly: number
+  unresolved: number
+  sessions: CcDetectedCcDto[]
+}
+/** detectLiveSessions の判別共用体。列挙失敗は ok:false（fail-closed）。 */
+type CcDetectResultDto =
+  | { ok: true; summary: CcDetectSummaryDto }
+  | { ok: false; error: string }
+/**
+ * restartAll の戻り。bump 失敗のみ ok:false。bump 成功後の detect 失敗は
+ * partial-success（ok:true + summary:null + detectError）。
+ */
+type CcRestartAllResultDto =
+  | { ok: true; generation: number; summary: CcDetectSummaryDto | null; detectError?: string }
+  | { ok: false; error: string }
 
 const api = {
   // Golden
@@ -243,6 +273,11 @@ const api = {
   }): Promise<{ shell: string; spawned: boolean; error?: string }> =>
     ipcRenderer.invoke('cc:launch', args),
 
+  // CC 検出 + DELEGATE generation 再起動
+  // DTO は main を import せず preload inline 複製（既存慣習）。
+  ccListSessions: (): Promise<CcDetectResultDto> => ipcRenderer.invoke('cc:listSessions'),
+  ccRestartAll: (): Promise<CcRestartAllResultDto> => ipcRenderer.invoke('cc:restartAll'),
+
   // Protocol Marker
   protocolRead: (projectPath: string): Promise<unknown> =>
     ipcRenderer.invoke('protocol:read', projectPath),
@@ -356,6 +391,7 @@ const api = {
       | 'write-failed'
       | 'post-verify-failed'
       | 'golden-name-collision'
+      | 'codex-review-missing'
     rolledBack?: boolean
     /** ケース2（先行衝突）で一時名に退避採用した場合の実 skill 名 */
     renamedTo?: string
@@ -403,6 +439,27 @@ const api = {
     requestId: string,
     state: 'candidate' | 'adopted' | 'rejected' | 'held'
   ): Promise<void> => ipcRenderer.invoke('skillProposals:setState', requestId, state),
+  // WS2 (maintainer裁定 2026-07-13): 推奨バッジ提案の Codex レビューゲート
+  skillProposalsCodexGate: (
+    adoptionLabel: string,
+    requestId: string
+  ): Promise<{
+    codexPresent: boolean
+    codexVersion?: string
+    required: boolean
+    reviewed: boolean
+    reviewerId?: string
+    verdict?: string
+    ccRebuttal?: string
+    satisfied: boolean
+    blockReason?: 'request-id-missing' | 'codex-review-missing' | 'reviewer-not-codex'
+  }> => ipcRenderer.invoke('skillProposals:codexGate', adoptionLabel, requestId),
+  skillProposalsCodexReviewPrompt: (input: {
+    filePath: string
+    requestId: string
+    skillName: string
+    title: string
+  }): Promise<string> => ipcRenderer.invoke('skillProposals:codexReviewPrompt', input),
 
   // Skill Firing Stats (Part B 発火統計, 構想4-A, 読み取り専用)
   skillFiringStatsCompute: (): Promise<{

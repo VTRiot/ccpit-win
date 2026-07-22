@@ -16,6 +16,7 @@
 ## Output
 - English. Concise. No decoration.
 - Reports must be written to MD files. In-conversation text does not count as a report.
+- The moment you decide to create an HTML file, output it as a self-contained document that opens in a browser (DOCTYPE + charset utf-8 + inline CSS/JS, no external dependencies) in the same turn, and report the full path with extension plus a file:/// URL.
 - Maximum of 2 questions at a time. Yes/No or multiple choice only.
 
 ## Trust Boundary

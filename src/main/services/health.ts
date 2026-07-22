@@ -11,6 +11,14 @@ import {
   resolveExpectedDeny,
   platformToTemplate
 } from './denyValidation'
+import {
+  resolveExpectedHooks,
+  validateHooksCoverage,
+  validateRequiredSkills,
+  hooksCoverageStatus,
+  REQUIRED_RUNTIME_SKILLS
+} from './hooksValidation'
+import { claudeMdComparisonStatus, isDegenerateClaudeMd } from './claudeMdStatus'
 
 const GOLDEN_DIR = app.isPackaged
   ? join(process.resourcesPath, 'golden')
@@ -205,6 +213,32 @@ export async function runHealthCheck(): Promise<HealthCheckItem[]> {
           detail: `非対称 ${sym.mismatches.length} 件（先頭: ${sym.mismatches[0]}）。enforcement は settings-guard が担う`
         })
       }
+
+      // hooks 登録網羅検証: golden template settings の hooks（event→command）が実 settings に
+      // 全部登録されているか。実体ファイルは下記 5.（hooks/）が見るが、settings.json に登録が
+      // 無ければ実体があっても一切発火しない（golden 実装済み ≠ 実働で動く、の配備ドリフト検出）。
+      // 解決不能は fail-closed（error）。
+      const expHooks = resolveExpectedHooks(GOLDEN_DIR, activeTemplate)
+      if (!expHooks.ok) {
+        results.push({
+          name: 'settings.hooks (coverage)',
+          status: 'error',
+          detail: `golden 期待 hooks を解決できず検証不能（${expHooks.error}）。fail-closed`
+        })
+      } else {
+        const hcov = validateHooksCoverage(json.hooks, expHooks.expected)
+        // status/detail の決定は worst-first 純関数へ委譲（missing error → 空白入り HOME の
+        // 未クォート hazard error → mismatch warn → legacy 注記 ok → ok）。warn が hazard error を
+        // マスクしない順序をテスト可能な形で固定する（Codex round-3 high 対応）。
+        const st = hooksCoverageStatus(
+          hcov,
+          userHome,
+          expHooks.expected.length,
+          activeTemplate,
+          process.platform
+        )
+        results.push({ name: 'settings.hooks (coverage)', status: st.status, detail: st.detail })
+      }
     } catch {
       results.push({ name: 'settings.json', status: 'error', detail: 'Invalid JSON' })
     }
@@ -214,29 +248,31 @@ export async function runHealthCheck(): Promise<HealthCheckItem[]> {
   const claudeMdPath = join(claudeDir, 'CLAUDE.md')
   if (!existsSync(claudeMdPath)) {
     results.push({ name: 'CLAUDE.md', status: 'error', detail: 'Not found' })
+  } else if (isDegenerateClaudeMd(await readFile(claudeMdPath, 'utf-8'))) {
+    // 空/空白のみ＝不在と挙動等価（意味論は claudeMdStatus 参照）。従来は warn「Modified…」に
+    // 埋没していた壊れ方 — info 化と同時に error へ引き上げ（検出はむしろ強化）
+    results.push({
+      name: 'CLAUDE.md',
+      status: 'error',
+      detail: 'Empty file — restore from Recovery Kit or redeploy'
+    })
   } else if (usePitReference) {
+    // ユーザー追記は正常運用 (CCPIT は設定 GUI、CLAUDE.md カスタマイズが目的) — 意味論は claudeMdStatus に集約
     const currentHash = await fileHash(claudeMdPath)
-    if (currentHash === cfg.pitReference!.claudeMdHash) {
-      results.push({ name: 'CLAUDE.md', status: 'ok', detail: 'Matches imported .pit' })
-    } else {
-      // ユーザー追記は正常運用 (CCPIT は設定 GUI、CLAUDE.md カスタマイズが目的)
-      results.push({
-        name: 'CLAUDE.md',
-        status: 'info',
-        detail: 'Modified from imported .pit (user-edited)'
-      })
-    }
+    results.push({
+      name: 'CLAUDE.md',
+      ...claudeMdComparisonStatus('pit', currentHash === cfg.pitReference!.claudeMdHash)
+    })
   } else {
     const info = await stat(claudeMdPath)
     const goldenClaude = join(getCommonLangDir(), 'CLAUDE.md')
     if (existsSync(goldenClaude)) {
       const currentHash = await fileHash(claudeMdPath)
       const goldenHash = await fileHash(goldenClaude)
-      if (currentHash === goldenHash) {
-        results.push({ name: 'CLAUDE.md', status: 'ok', detail: 'Matches Golden' })
-      } else {
-        results.push({ name: 'CLAUDE.md', status: 'warn', detail: 'Modified from Golden' })
-      }
+      results.push({
+        name: 'CLAUDE.md',
+        ...claudeMdComparisonStatus('golden', currentHash === goldenHash)
+      })
     } else {
       results.push({ name: 'CLAUDE.md', status: 'ok', detail: `${info.size} bytes` })
     }
@@ -262,8 +298,29 @@ export async function runHealthCheck(): Promise<HealthCheckItem[]> {
   const goldenSkillsDir = join(getCommonLangDir(), 'skills')
   if (!existsSync(skillsDir)) {
     results.push({ name: 'skills/', status: 'warn', detail: 'Directory not found' })
+    results.push({
+      name: 'skills (required)',
+      status: 'error',
+      detail: `必須 runtime skill 欠落: ${REQUIRED_RUNTIME_SKILLS.join(', ')}（skills/ 不在）`
+    })
   } else {
     const actualSkills = await listSkillNames(skillsDir)
+    // 必須 runtime skill の実在検査。上の個数比較は無関係 skill の追加が欠落を隠す
+    // false-green になるため、hook が依存する skill は名前で membership 検証する。
+    const req = validateRequiredSkills(actualSkills)
+    if (req.valid) {
+      results.push({
+        name: 'skills (required)',
+        status: 'ok',
+        detail: `必須 runtime skill ${REQUIRED_RUNTIME_SKILLS.length} 件すべて実在`
+      })
+    } else {
+      results.push({
+        name: 'skills (required)',
+        status: 'error',
+        detail: `必須 runtime skill 欠落: ${req.missing.join(', ')}（Stop hook が空振りする）`
+      })
+    }
     if (usePitReference) {
       const expected = cfg.pitReference!.skillsList
       const diff = diffAgainstPit(expected, actualSkills, 'skills')

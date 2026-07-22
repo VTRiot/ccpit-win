@@ -4,6 +4,7 @@ import { existsSync } from 'fs'
 import { app } from 'electron'
 import { getConfig, setConfig } from './appConfig'
 import { KNOWN_TEMPLATES, resolveExpectedDeny } from './denyValidation'
+import { resolveBashBin, injectResolvedBash } from './bashResolver'
 
 const GOLDEN_DIR = app.isPackaged
   ? join(process.resourcesPath, 'golden')
@@ -190,6 +191,20 @@ export async function deploy(
     }
   }
   const userHome = app.getPath('home')
+  // 起動形 order: hook は exec form（command:"bash"）で配備し、deploy 時に bash 実体パスを注入して
+  // 端末 Windows CC でも確実に発火させる（46fc171 Phase 0 V1 実機実証）。解決不能なら fail-closed で
+  // deploy 中止 — 壊れた security hook（settings-guard 等）を出さないため（bare `.sh` は不発、bare
+  // `bash` は「Git Bash not found」で失敗し、full-path bash.exe の exec form のみ確実に発火する）。
+  const bash = resolveBashBin()
+  if (!bash.path) {
+    return {
+      deployed: [],
+      backedUp: [],
+      errors: [
+        'bash.exe を解決できず deploy 中止（hook の exec form 起動に必須。Git for Windows もしくは scoop git をインストールせよ）'
+      ]
+    }
+  }
   const targetDir = join(userHome, '.claude')
   const commonLangDir = getCommonLangDir()
   const commonHooksDir = getCommonHooksDir()
@@ -256,6 +271,8 @@ export async function deploy(
           : []
         const denyUnion = new Set<string>([...mergedDeny, ...existingDeny])
         json.permissions = { ...(json.permissions ?? {}), deny: [...denyUnion] }
+        // 起動形 order: hook exec form の command:"bash" を解決済み実体パスへ注入する（純関数へ委譲）。
+        injectResolvedBash(json.hooks, bash.path)
         await writeFile(destPath, JSON.stringify(json, null, 2), 'utf-8')
       } else {
         await copyFile(srcPath, destPath)

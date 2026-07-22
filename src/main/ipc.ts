@@ -1,4 +1,4 @@
-import { ipcMain, dialog, shell, clipboard, app, BrowserWindow } from 'electron'
+﻿import { ipcMain, dialog, shell, clipboard, app, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import {
@@ -42,6 +42,9 @@ import { runMarshalReview } from './services/marshalLauncher'
 import { getConfig, setConfig, getParcFermeDir } from './services/appConfig'
 import { getState as profileGetState, switchToLegacy, switchToManx } from './services/profileSwitch'
 import { launchCc, type LaunchArgs } from './services/ccLaunch'
+import { detectLiveSessions } from './services/sessionRegistry'
+import { bumpRestartGeneration } from './services/restartAllFlag'
+import { ccIdentitiesForCwd } from './services/ccRegistry'
 import {
   readProtocol,
   readProtocolHistory,
@@ -69,6 +72,7 @@ import {
   getDefaultProposalsFolder,
   type ProposalState
 } from './services/skillProposals'
+import { evaluateProposalCodexGate, buildCodexReviewPrompt } from './services/proposalCodexGate'
 import { computeFiringStats } from './services/skillFiringStats'
 import { computeEnforcementStats } from './services/enforcementStats'
 import {
@@ -206,10 +210,13 @@ export function registerIpcHandlers(): void {
         const claudeDir = join(app.getPath('home'), '.claude')
         const cfg = getConfig()
         const opening = cfg.cces?.openingText ?? ''
+        // CC固有ID（戸籍係 台帳）を本 project の cwd で引き、CCES に併記する（Juiz の紐付け追跡）。
+        const ccIds = ccIdentitiesForCwd(args.projectPath).map((c) => c.ccId)
         const summary = await generateExtensionsSummary({
           claudeDir,
           projectPath: args.projectPath,
-          opening
+          opening,
+          ccIds
         })
         const markdown = formatAsMarkdown(summary)
         const bytes = Buffer.byteLength(markdown, 'utf8')
@@ -240,6 +247,41 @@ export function registerIpcHandlers(): void {
     // フォアグラウンドを取りやすくなる。CCPIT 自体はクリックで再アクティブ化可能。
     BrowserWindow.fromWebContents(e.sender)?.blur()
     return launchCc(args)
+  })
+
+  // --- CC Sessions（検出 + DELEGATE generation 再起動） ---
+  // 検出は CIM 全列挙（fresh 端末 CC も取りこぼさない / 列挙失敗は fail-closed ok:false）。
+  // 再起動は DIRECT kill を使わず settings generation を +1 するのみ。各 CC の Stop hook が
+  // 「loaded-gen < flag-gen」で自己 exit→resume する（窓は同窓内入替＝位置自動保持）。
+  // DIRECT 親 kill（bulkRestartSessions/killProcessTree）は Codex critical ゲート中ゆえ本経路から外す。
+  ipcMain.handle('cc:listSessions', () => detectLiveSessions())
+
+  // async + in-flight gate で多重起動防止（marshal:run と同流儀）。
+  // 戻り: bump 失敗のみ ok:false。bump 成功後の detect 失敗は partial-success
+  // （ok:true + summary:null + detectError）で返す（generation は既に上がっているため
+  //  「失敗」と潰すと再クリックで二重 bump を誘発する。Codex レビュー High）。
+  let bulkRestartInFlight = false
+  ipcMain.handle('cc:restartAll', async () => {
+    if (bulkRestartInFlight) {
+      return { ok: false as const, error: 'CC 一括再起動が既に実行中です（多重起動防止）。' }
+    }
+    bulkRestartInFlight = true
+    try {
+      const bumped = await bumpRestartGeneration()
+      if (!bumped.ok) return { ok: false as const, error: bumped.error }
+      const detected = await detectLiveSessions()
+      if (!detected.ok) {
+        return {
+          ok: true as const,
+          generation: bumped.generation,
+          summary: null,
+          detectError: detected.error
+        }
+      }
+      return { ok: true as const, generation: bumped.generation, summary: detected.summary }
+    } finally {
+      bulkRestartInFlight = false
+    }
   })
 
   // --- Protocol Marker (034-B: append-only event log) ---
@@ -369,6 +411,15 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('skillProposals:list', (_e, folder: string) => listProposals(folder))
   ipcMain.handle('skillProposals:setState', (_e, requestId: string, state: ProposalState) =>
     setProposalState(requestId, state)
+  )
+  // WS2 (maintainer裁定 2026-07-13): 推奨バッジ提案の Codex レビューゲート判定 + レビュー依頼プロンプト生成
+  ipcMain.handle('skillProposals:codexGate', (_e, adoptionLabel: string, requestId: string) =>
+    evaluateProposalCodexGate({ adoptionLabel, requestId })
+  )
+  ipcMain.handle(
+    'skillProposals:codexReviewPrompt',
+    (_e, input: { filePath: string; requestId: string; skillName: string; title: string }) =>
+      buildCodexReviewPrompt(input)
   )
 
   // --- Skill Firing Stats (Part B 発火統計, 構想4-A, 読み取り専用) ---

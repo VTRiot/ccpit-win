@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Plus,
@@ -11,6 +11,7 @@ import {
   Search,
   ListMinus,
   RefreshCw,
+  RotateCw,
   Star,
   ChevronDown,
   Clipboard,
@@ -34,6 +35,11 @@ import { RemoveFromListDialog } from '../components/RemoveFromListDialog'
 import { ProtocolBadge, type ProtocolMarkerView } from '../components/ProtocolBadge'
 import { EditMarkerDialog, type EditMarkerSubmit } from '../components/EditMarkerDialog'
 import { FullRescanConfirmDialog } from '../components/FullRescanConfirmDialog'
+import { CcRestartConfirmDialog } from '../components/CcRestartConfirmDialog'
+
+// preload の検出戻り型を api から導出（型重複を避ける）
+type CcDetectResult = Awaited<ReturnType<typeof window.api.ccListSessions>>
+type CcDetectSummary = Extract<CcDetectResult, { ok: true }>['summary']
 import { useFeatureFlag } from '../hooks/useFeatureFlag'
 import { cn, toNativePath } from '../lib/utils'
 import {
@@ -105,6 +111,83 @@ export function ProjectsPage(): React.JSX.Element {
     changed: 0,
     unchanged: 0,
   })
+
+  // 検出 + DELEGATE generation 再起動の状態
+  const [ccRestartDialogOpen, setCcRestartDialogOpen] = useState(false)
+  const [ccRestartSummary, setCcRestartSummary] = useState<CcDetectSummary | null>(null)
+  const [ccRestartInFlight, setCcRestartInFlight] = useState(false)
+  const [ccRestartToast, setCcRestartToast] = useState<{
+    open: boolean
+    kind: 'success' | 'error'
+    message: string
+  }>({ open: false, kind: 'success', message: '' })
+
+  // 再起動ボタン: 活性 CC を CIM 全列挙で検出して確認ダイアログを開く。
+  // 列挙失敗（ok:false）は fail-visible でエラー表示し、空＝green に潰さない。
+  const handleCcRestartOpen = async (): Promise<void> => {
+    try {
+      const result = await window.api.ccListSessions()
+      if (!result.ok) {
+        setCcRestartToast({
+          open: true,
+          kind: 'error',
+          message: t('pages.projects.ccRestart.detectError', { error: result.error }),
+        })
+        return
+      }
+      setCcRestartSummary(result.summary)
+      setCcRestartDialogOpen(true)
+    } catch (e) {
+      console.error('ccListSessions error:', e)
+      setCcRestartToast({
+        open: true,
+        kind: 'error',
+        message: t('pages.projects.ccRestart.error'),
+      })
+    }
+  }
+
+  // 確認後の実行: settings generation を +1（DIRECT kill なし）。各 CC は次の Stop 到達時に
+  // 自己再起動する＝「キュー投入」であり「再起動完了」ではない（Codex High）。
+  const executeCcRestart = async (): Promise<void> => {
+    setCcRestartDialogOpen(false)
+    setCcRestartInFlight(true)
+    try {
+      const result = await window.api.ccRestartAll()
+      if (!result.ok) {
+        setCcRestartToast({ open: true, kind: 'error', message: result.error })
+        return
+      }
+      // bump 成功後の detect 失敗は partial-success（generation は上がっている）。
+      if (result.summary === null) {
+        setCcRestartToast({
+          open: true,
+          kind: 'success',
+          message: t('pages.projects.ccRestart.queuedPartial', {
+            generation: result.generation,
+            error: result.detectError ?? '',
+          }),
+        })
+        return
+      }
+      setCcRestartToast({
+        open: true,
+        kind: 'success',
+        message: t('pages.projects.ccRestart.queued', {
+          generation: result.generation,
+          total: result.summary.total,
+          resolved: result.summary.resolved,
+          resumeOnly: result.summary.resumeOnly,
+          unresolved: result.summary.unresolved,
+        }),
+      })
+    } catch (e) {
+      console.error('ccRestartAll error:', e)
+      setCcRestartToast({ open: true, kind: 'error', message: t('pages.projects.ccRestart.error') })
+    } finally {
+      setCcRestartInFlight(false)
+    }
+  }
 
   useEffect(() => {
     saveProjectsViewState(viewState)
@@ -403,6 +486,19 @@ export function ProjectsPage(): React.JSX.Element {
         targetCount={fullRescanTargetCount}
         onConfirm={() => void executeFullRescan()}
       />
+      <Toast
+        open={ccRestartToast.open}
+        message={ccRestartToast.message}
+        variant={ccRestartToast.kind}
+        onClose={() => setCcRestartToast((prev) => ({ ...prev, open: false }))}
+        durationMs={6000}
+      />
+      <CcRestartConfirmDialog
+        open={ccRestartDialogOpen}
+        onOpenChange={setCcRestartDialogOpen}
+        summary={ccRestartSummary}
+        onConfirm={() => void executeCcRestart()}
+      />
       <div className="flex items-center justify-between mb-6 gap-2 flex-wrap">
         <h1 className="text-xl font-bold">{t('pages.projects.title')}</h1>
         <div className="flex flex-1 items-center gap-2 flex-wrap justify-end">
@@ -419,6 +515,17 @@ export function ProjectsPage(): React.JSX.Element {
               {t('pages.projects.protocolBadge.fullRescan')}
             </Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void handleCcRestartOpen()}
+            disabled={ccRestartInFlight}
+            className="order-1 gap-1.5"
+            title={t('pages.projects.ccRestart.button')}
+          >
+            <RotateCw size={14} className={ccRestartInFlight ? 'animate-spin' : ''} />
+            {t('pages.projects.ccRestart.button')}
+          </Button>
           {showDetectLinkRemove && (
             <>
               <Button variant="outline" size="sm" onClick={() => setShowDiscover(true)} className="order-2 gap-1.5">

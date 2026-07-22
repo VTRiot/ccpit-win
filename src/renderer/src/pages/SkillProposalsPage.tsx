@@ -1,11 +1,22 @@
 ﻿import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FolderOpen, RefreshCw, Check, X, PauseCircle, AlertTriangle, ShieldCheck } from 'lucide-react'
+import {
+  FolderOpen,
+  RefreshCw,
+  Check,
+  X,
+  PauseCircle,
+  AlertTriangle,
+  ShieldCheck,
+  Copy
+} from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { cn } from '../lib/utils'
 
 type Proposal = Awaited<ReturnType<typeof window.api.skillProposalsList>>[number]
 type ProposalState = Proposal['state']
+/** WS2: 推奨バッジ提案の Codex レビューゲート判定（Main 側 evaluateProposalCodexGate の結果） */
+type CodexGate = Awaited<ReturnType<typeof window.api.skillProposalsCodexGate>>
 
 // v2: 集約先 ~/.ccpit/proposals/ への移行に伴い新キー。旧キー(_Prompt 残骸)は参照しない（クリーンブレイク）
 const STORAGE_KEY_FOLDER = 'ccpit-skill-proposals-folder-v2'
@@ -23,6 +34,7 @@ export function SkillProposalsPage(): React.JSX.Element {
   const [hasPassword, setHasPassword] = useState(false)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ kind: 'ok' | 'err' | 'info'; text: string } | null>(null)
+  const [codexGate, setCodexGate] = useState<CodexGate | null>(null)
 
   const reload = useCallback(async (dir: string): Promise<void> => {
     if (!dir) {
@@ -66,7 +78,10 @@ export function SkillProposalsPage(): React.JSX.Element {
     setSelected(p)
     setSkillBody('')
     setMessage(null)
+    setCodexGate(null)
     if (p.parseError) return
+    // WS2: 推奨バッジ × Codex 検出時のみ required が立つ（Codex 未導入環境では表示ごと不変）
+    void window.api.skillProposalsCodexGate(p.adoptionLabel, p.requestId).then(setCodexGate)
     try {
       const req = await window.api.settingsReadRequest(p.filePath)
       if (req.kind === 'skill') setSkillBody(req.proposedSkillBody)
@@ -79,6 +94,33 @@ export function SkillProposalsPage(): React.JSX.Element {
     await window.api.skillProposalsSetState(p.requestId, state)
     await reload(folder)
     setSelected((cur) => (cur && cur.requestId === p.requestId ? { ...cur, state } : cur))
+  }
+
+  /** WS2: レビュー実施後の再判定（CC セッションでのレビュー完了を UI に反映する動線） */
+  const refreshGate = async (): Promise<void> => {
+    if (!selected) return
+    setCodexGate(
+      await window.api.skillProposalsCodexGate(selected.adoptionLabel, selected.requestId)
+    )
+  }
+
+  /** WS2: Codex レビュー依頼プロンプト（maintainer裁定原文＝棄却権条項を逐語で含む）をコピー */
+  const copyReviewPrompt = async (): Promise<void> => {
+    if (!selected) return
+    const prompt = await window.api.skillProposalsCodexReviewPrompt({
+      filePath: selected.filePath,
+      requestId: selected.requestId,
+      skillName: selected.skillName,
+      title: selected.title
+    })
+    await navigator.clipboard.writeText(prompt)
+    setMessage({
+      kind: 'info',
+      text: L(
+        'レビュー依頼プロンプトをコピーしました。CC セッションに貼り付けて Codex レビューを実施し、完了後「再判定」を押してください。',
+        'Review request prompt copied. Paste it into a CC session, run the Codex review, then click Re-check.'
+      )
+    })
   }
 
   const adopt = async (p: Proposal): Promise<void> => {
@@ -109,9 +151,15 @@ export function SkillProposalsPage(): React.JSX.Element {
                 ' — golden 配布 skill と同名です。提案 skill 名を変更してください。',
                 ' — same name as a golden skill. Rename the proposed skill.'
               )
-            : result.reason === 'authentication-failed' || result.reason === 'auth-missing-for-skill'
-              ? L(' — パスワードを確認してください。', ' — check the password.')
-              : ''
+            : result.reason === 'codex-review-missing'
+              ? L(
+                  ' — Codex レビュー未実施です。「レビュー依頼プロンプトをコピー」から実施してください。',
+                  ' — Codex review missing. Use "Copy review request prompt" first.'
+                )
+              : result.reason === 'authentication-failed' ||
+                  result.reason === 'auth-missing-for-skill'
+                ? L(' — パスワードを確認してください。', ' — check the password.')
+                : ''
         setMessage({ kind: 'err', text: `${result.error ?? 'apply failed'}${hint}` })
       }
     } catch (err) {
@@ -133,6 +181,8 @@ export function SkillProposalsPage(): React.JSX.Element {
   }
 
   const passwordOk = !hasPassword || password.length > 0
+  // WS2: UI 側の先回りブロック（真の強制は Main 側 applyChange Step 3.7。ここは動線案内）
+  const codexBlocked = codexGate !== null && codexGate.required && !codexGate.satisfied
 
   return (
     <div className="flex flex-col h-full gap-3">
@@ -309,6 +359,57 @@ export function SkillProposalsPage(): React.JSX.Element {
                     </div>
                   </div>
 
+                  {/* WS2: Codex レビューゲート（推奨バッジ × Codex 検出時のみ表示） */}
+                  {codexGate?.required && (
+                    <div
+                      className={cn(
+                        'text-xs rounded p-2 space-y-1.5',
+                        codexGate.satisfied
+                          ? 'bg-green-500/10 text-green-700'
+                          : 'bg-amber-500/15 text-amber-700'
+                      )}
+                    >
+                      <div className="flex items-center gap-1.5 font-medium">
+                        {codexGate.satisfied ? (
+                          <ShieldCheck size={12} />
+                        ) : (
+                          <AlertTriangle size={12} />
+                        )}
+                        {codexGate.satisfied
+                          ? L(
+                              `Codex レビュー済（${codexGate.reviewerId ?? 'codex'} / verdict: ${codexGate.verdict ?? '-'}）`,
+                              `Codex review done (${codexGate.reviewerId ?? 'codex'} / verdict: ${codexGate.verdict ?? '-'})`
+                            )
+                          : L(
+                              'Codex レビュー必須（maintainer裁定 2026-07-13）: 未実施のため採用できません。',
+                              'Codex review required (maintainer ruling 2026-07-13): adoption is blocked until reviewed.'
+                            )}
+                      </div>
+                      {!codexGate.satisfied && (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void copyReviewPrompt()}
+                            disabled={busy}
+                          >
+                            <Copy size={12} className="mr-1" />
+                            {L('レビュー依頼プロンプトをコピー', 'Copy review request prompt')}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => void refreshGate()}
+                            disabled={busy}
+                          >
+                            <RefreshCw size={12} className="mr-1" />
+                            {L('再判定', 'Re-check')}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* 採用される SKILL.md プレビュー */}
                   {skillBody && (
                     <details>
@@ -335,7 +436,7 @@ export function SkillProposalsPage(): React.JSX.Element {
                     <Button
                       size="sm"
                       onClick={() => void adopt(selected)}
-                      disabled={busy || !passwordOk || selected.state === 'adopted'}
+                      disabled={busy || !passwordOk || selected.state === 'adopted' || codexBlocked}
                     >
                       <Check size={14} className="mr-1" />
                       {L('採用 (Apply)', 'Adopt (Apply)')}

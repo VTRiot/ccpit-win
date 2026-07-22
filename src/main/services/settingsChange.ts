@@ -1,4 +1,4 @@
-/**
+﻿/**
  * settingsChange — `~/.claude/settings.json` および `~/.claude/skills/<name>/SKILL.md` への
  * 変更案を CC Request Inbox で受理 / 適用 / ロールバックするサービス。
  *
@@ -34,6 +34,8 @@ import {
   upsertAdoptedSkill,
   type ProvenancePaths
 } from './skillProvenance'
+import { evaluateProposalCodexGate, extractAdoptionLabel } from './proposalCodexGate'
+import type { ProposalStorePaths } from './skillProposals'
 
 const REQUIRED_FRONTMATTER_KEYS = [
   'request_id',
@@ -64,6 +66,8 @@ export type ApplyResultReason =
   | 'post-verify-failed'
   /** 判断H: 採用 skill 名が golden 配布 skill と同名（恒久シャドウ防止のため基本禁止） */
   | 'golden-name-collision'
+  /** WS2 (maintainer裁定 2026-07-13): 推奨バッジ提案は Codex 検出環境では独立レビュー記録なしに採用不可 */
+  | 'codex-review-missing'
 
 export interface ChangeRequestFrontmatter {
   request_id: string
@@ -645,6 +649,11 @@ export interface ApplyOptions {
   provenancePaths?: ProvenancePaths
   /** 現在の golden バージョン（緊急 override の版前進失効判定 + 採用記録用）。 */
   currentGoldenVersion?: string
+  /**
+   * WS2: 推奨バッジ提案の Codex レビューゲートのパス上書き（テスト用）。
+   * 未指定なら実環境（~/.claude/plugins/cache/openai-codex/codex + ~/.ccpit/proposal-reviews.json）。
+   */
+  codexGate?: { codexCacheDir?: string; proposalStorePaths?: ProposalStorePaths }
 }
 
 // --- ロック (Codex#6: competing writes 対策) ---
@@ -874,6 +883,49 @@ async function applyChangeInner(
         effectiveSkillBody = injectCollisionWarning(request.proposedSkillBody, origName, tempName)
         case2RenamedFrom = origName
         case2TempName = tempName
+      }
+    }
+  }
+
+  // Step 3.7: Codex レビューゲート (kind:skill, maintainer裁定 2026-07-13 / v1.6.0 WS2)。
+  //   推奨バッジ（adoption_label: recommend）付き提案は、Codex プラグイン検出環境では
+  //   独立 Codex レビュー記録（~/.ccpit/proposal-reviews.json・契約 C1）なしに採用できない。
+  //   adoption_label は request.rawMarkdown の frontmatter から Main 側で導出（renderer 非信頼）。
+  //   Codex 未導入環境・非推奨提案では required が立たず素通し（従来どおり・強制失敗にしない）。
+  if (request.kind === 'skill') {
+    const adoptionLabel = extractAdoptionLabel(request.rawMarkdown)
+    if (adoptionLabel === 'recommend') {
+      const gate = await evaluateProposalCodexGate({
+        adoptionLabel,
+        requestId: request.frontmatter.request_id,
+        codexCacheDir: opts.codexGate?.codexCacheDir,
+        storePaths: opts.codexGate?.proposalStorePaths
+      })
+      if (!gate.satisfied) {
+        const detail =
+          gate.blockReason === 'reviewer-not-codex'
+            ? `レビュー記録の reviewer が codex ではありません（reviewerId: '${gate.reviewerId ?? ''}'）。`
+            : gate.blockReason === 'request-id-missing'
+              ? 'request_id が空のためレビュー記録を照合できません。'
+              : 'Codex レビュー記録が見つかりません。'
+        await appendChangeLog(
+          {
+            timestamp: new Date().toISOString(),
+            request_id: request.frontmatter.request_id,
+            purpose: request.frontmatter.purpose,
+            result: 'failed',
+            backup_path: '',
+            kind: 'skill',
+            error: `codex-review-missing: ${gate.blockReason ?? 'unknown'}`,
+            reason: 'codex-review-missing'
+          },
+          paths
+        )
+        return {
+          success: false,
+          error: `adoption refused: 推奨バッジ付き提案は Codex レビュー必須です（maintainer裁定 2026-07-13）。${detail}候補ブラウザの「レビュー依頼プロンプトをコピー」から Codex レビューを実施してください。`,
+          reason: 'codex-review-missing'
+        }
       }
     }
   }

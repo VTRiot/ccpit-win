@@ -53,6 +53,14 @@ export interface ExtensionsSummaryMetadata {
    * Project basename (display label).
    */
   projectName: string
+
+  /**
+   * 16進10桁の CC固有ID 群（戸籍係 cc-identity-register.sh が ~/.ccpit/.cc-id に発番した、
+   * 本 project の cwd 一致分）。Juiz が CCES を受け取り「自分がどの ClaudeCode と紐づくか」を
+   * 辿るための識別子（HandOver Vol.2-7 §3-4 指示元自己識別義務と対）。
+   * セッション依存（発行毎に変わり得る）ゆえ hostHash（config の安定ID）には含めない。
+   */
+  ccIds?: string[]
 }
 
 /**

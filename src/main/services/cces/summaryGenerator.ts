@@ -27,6 +27,8 @@ interface GenerateOpts {
   claudeDir: string
   projectPath: string
   opening: string
+  /** 本 project の cwd に登録された CC固有ID 群（ipc が ccRegistry から引いて渡す・任意）。 */
+  ccIds?: string[]
 }
 
 export async function generateExtensionsSummary(opts: GenerateOpts): Promise<ExtensionsSummary> {
@@ -54,6 +56,7 @@ export async function generateExtensionsSummary(opts: GenerateOpts): Promise<Ext
       hostHash,
       projectPath: opts.projectPath,
       projectName,
+      ccIds: opts.ccIds,
     },
     opening: opts.opening,
     global: globalLayer,
@@ -119,6 +122,7 @@ function renderMetadata(summary: ExtensionsSummary): string[] {
     `- hostHash: ${summary.metadata.hostHash}`,
     `- projectPath: \`${summary.metadata.projectPath}\``,
     `- projectName: ${summary.metadata.projectName}`,
+    `- ccIds: ${(summary.metadata.ccIds ?? []).join(', ') || '(none)'}`,
   ]
 }
 

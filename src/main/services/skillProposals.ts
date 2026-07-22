@@ -90,7 +90,10 @@ export function getDefaultProposalsFolder(): string {
 
 // --- frontmatter / section helpers（flat key:value、言語非依存） ---
 
-function parseFlatFrontmatter(md: string): { data: Record<string, string>; body: string } | null {
+/** flat な key:value frontmatter をパースする（proposalCodexGate の adoption_label 抽出でも再利用）。 */
+export function parseFlatFrontmatter(
+  md: string
+): { data: Record<string, string>; body: string } | null {
   const m = md.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/)
   if (!m) return null
   const data: Record<string, string> = {}

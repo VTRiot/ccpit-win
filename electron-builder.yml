@@ -12,6 +12,9 @@ files:
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
   - '!dev.bat'
   - '!*.lnk'
+  # バックアップ類は配布物に絶対に入れない（.bak は redaction 前原本・旧設定を含み得る leak 経路）
+  - '!_bak_preserve'
+  - '!**/*.bak*'
 asarUnpack:
   - resources/**
 extraResources:
@@ -21,6 +24,9 @@ extraResources:
     to: Logo.png
   - from: golden
     to: golden
+    filter:
+      - '**/*'
+      - '!**/*.bak*'
 win:
   executableName: CCPIT
   icon: build/icon.ico

@@ -298,6 +298,26 @@
         "success": "Re-scanned {{processed}} project(s) ({{changed}} changed / {{unchanged}} unchanged / {{skipped}} protected)",
         "error": "Re-scan failed ({{failed}} project(s) errored)"
       },
+      "ccRestart": {
+        "button": "Apply settings to all CC (self-restart)",
+        "dialogTitle": "Bump the settings generation and let each CC self-restart?",
+        "dialogBody": "{{count}} live CC detected (this preview is a snapshot taken when opened).\nRunning bumps the settings generation by +1. Each CC self-restarts (exit→resume) when it next reaches a Stop point.\nNo process is killed directly (window position is preserved by in-window swap). Busy CCs that never stop are not applied until they reach a Stop.",
+        "empty": "No live CC detected.",
+        "resResolved": "Resolved",
+        "resResumeOnly": "Resume-only",
+        "resUnresolved": "Unresolved",
+        "countTotal": "Total {{n}}",
+        "countResolved": "Resolved {{n}}",
+        "countResumeOnly": "Resume-only {{n}}",
+        "countUnresolved": "Unresolved live CC {{n}}",
+        "noCwd": "cwd unknown (pid {{pid}})",
+        "queued": "Bumped to generation {{generation}}. Each CC self-restarts when it next reaches a Stop. Detected: {{total}} total / {{resolved}} resolved / {{resumeOnly}} resume-only / {{unresolved}} unresolved (busy CCs that never stop are not applied until a Stop).",
+        "queuedPartial": "Bump to generation {{generation}} succeeded (each CC self-restarts at its next Stop). Re-detecting live CC right after failed: {{error}}",
+        "detectError": "Failed to detect live CC: {{error}}",
+        "error": "An error occurred while restarting CC",
+        "confirm": "Run",
+        "cancel": "Cancel"
+      },
       "launch": {
         "launch": "Launch",
         "launchTitle": "Launch Claude Code",

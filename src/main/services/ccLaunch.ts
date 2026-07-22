@@ -1,4 +1,4 @@
-import { spawn } from 'child_process'
+﻿import { spawn } from 'child_process'
 import { existsSync, lstatSync } from 'fs'
 import { join, normalize } from 'path'
 
@@ -30,6 +30,12 @@ export function whichExe(name: string): string | null {
 export interface LaunchArgs {
   projectPath: string
   flags: string[]
+  /**
+   * 指定時、`claude --resume <sessionId>` で既存セッションを resume 起動する
+   * （exit→resume の resume 側）。
+   * resume は settings/hooks/skills/plugins をリロードするため設定反映の正攻法。
+   */
+  resumeSessionId?: string
 }
 
 export interface LaunchResult {
@@ -55,7 +61,8 @@ export function buildLaunchSpec(
   exePaths: { wt: string | null; ps: string | null }
 ): LaunchSpec | { error: string } {
   const projectPath = normalize(args.projectPath)
-  const claudeCmd = ['claude', ...args.flags.filter((f) => f.length > 0)].join(' ')
+  const resumePart = args.resumeSessionId ? ['--resume', args.resumeSessionId] : []
+  const claudeCmd = ['claude', ...resumePart, ...args.flags.filter((f) => f.length > 0)].join(' ')
 
   if (exePaths.wt) {
     // 037 Phase 2-C 追加: wt.exe は GUI アプリで自前のウィンドウを生成するため、

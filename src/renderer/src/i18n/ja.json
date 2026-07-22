@@ -37,7 +37,7 @@
     "doctorAnalysis": "Doctor Analysis",
     "requestInbox": "CC リクエスト・インボックス",
     "skillAdoption": "Skill 候補ブラウザ",
-    "enforcementStats": "Enforcement 発火統計",
+    "enforcementStats": "強制発火統計",
     "doctorPackOutput": "Doctor Pack 出力先",
     "desktop": "デスクトップ",
     "customPath": "カスタムパス",
@@ -297,6 +297,26 @@
       "fullRescan": {
         "success": "{{processed}} 件を再判定（変更 {{changed}} / 不変 {{unchanged}} / 保護 {{skipped}}）",
         "error": "再判定中にエラーが発生しました（{{failed}} 件失敗）"
+      },
+      "ccRestart": {
+        "button": "全 CC 設定反映（自己再起動）",
+        "dialogTitle": "設定 generation を上げ、各 CC を自己再起動させますか？",
+        "dialogBody": "現在 {{count}} 件の活性 CC を検出しました（このプレビューは開いた時点のスナップショットです）。\n実行すると設定 generation を +1 します。各 CC は次の停止点（Stop）到達時に自己 exit→resume します。\nプロセスの直接 kill は行いません（窓位置は同窓内入替で保持）。稼働中・停止しない CC は Stop 到達まで反映されません。",
+        "empty": "活性 CC が検出されませんでした。",
+        "resResolved": "解決済",
+        "resResumeOnly": "resume のみ",
+        "resUnresolved": "未解決",
+        "countTotal": "合計 {{n}}",
+        "countResolved": "解決済 {{n}}",
+        "countResumeOnly": "resume のみ {{n}}",
+        "countUnresolved": "未解決の活性 CC {{n}}",
+        "noCwd": "cwd 不明 (pid {{pid}})",
+        "queued": "generation {{generation}} に更新しました。各 CC は次の Stop 到達時に自己再起動します。検出: 合計 {{total}} / 解決済 {{resolved}} / resume のみ {{resumeOnly}} / 未解決 {{unresolved}}（稼働中・停止しない CC は Stop 到達まで未反映）。",
+        "queuedPartial": "generation {{generation}} への更新は完了しました（各 CC は次の Stop で自己再起動）。直後の活性 CC 再検出に失敗: {{error}}",
+        "detectError": "活性 CC の検出に失敗しました: {{error}}",
+        "error": "CC 再起動中にエラーが発生しました",
+        "confirm": "実行",
+        "cancel": "キャンセル"
       },
       "launch": {
         "launch": "起動",
