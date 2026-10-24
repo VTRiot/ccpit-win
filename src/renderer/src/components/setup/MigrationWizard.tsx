@@ -515,6 +515,9 @@ export function MigrationWizard({ onBack, onSetupCompleted }: MigrationWizardPro
                     {deployResult.backedUp.map((f) => <li key={f}>{f}</li>)}
                   </ul>
                 </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {t('goldenReconcile.undo.wizardFollowUpHint')}
+                </p>
               </div>
             )}
             {deployResult.errors.length > 0 && (

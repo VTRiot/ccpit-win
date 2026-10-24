@@ -1,0 +1,19 @@
+# golden 配布物（全テンプレート・全言語の配布正本）
+* text=auto eol=lf
+
+# バイナリ保護（改行変換を防止）
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.exe binary
+*.dll binary
+*.node binary
+*.zip binary
+*.tar binary
+*.gz binary

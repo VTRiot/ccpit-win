@@ -6,7 +6,7 @@
 
 > 🇺🇸 **[English README](./README.md)**
 
-[![Version](https://img.shields.io/badge/version-1.6.0-3b82f6)](./package.json)
+[![Version](https://img.shields.io/badge/version-1.7.0-3b82f6)](./package.json)
 [![License](https://img.shields.io/badge/license-MIT-22c55e)](./LICENSE)
 [![Electron](https://img.shields.io/badge/Electron-39-47848F)](https://www.electronjs.org/)
 [![Platform](https://img.shields.io/badge/platform-Windows-0078d4)](#クイックスタート)
@@ -31,8 +31,30 @@ Claude Code を数週間以上使い込んだことがあれば、こんな経�
 | MCP サーバに write API を持つやつを入れたが、暴走しないか不安 | MCP タブが各サーバを Safe / Caution / Strict に自動分類、write 系ツールはデフォルトで disable |
 | チームに同じ Claude Code 設定を配布したい | Golden Bundle が設定一式をパスワード保護 `.pit` ファイルにエクスポート、相手は同じ UI からインポート |
 | 複数 PJ を行き来していて、どれがどれだか分からない | Projects が CC プロジェクトを自動検出し、プロトコル種別（MANX / ASAMA / Macau / Legacy）バッジで識別 |
+| 何か月も前に配った設定一式を、その後あちこち自分で直した。今どちらが正しい？ | 起動時の golden 更新チェックが、バンドル・配備記録・`~/.claude/` を内容ハッシュで突き合わせ、ファイルごとに「控えを取って上書き／自分の編集を配布側へ戻す／Claude Code に合成を相談」を聞く |
+| 3 つのセッションが同じ skill を 3 通り提案してきた | Skill 候補ブラウザで選んで、背景の Claude Code に 1 本の合成提案へまとめさせる。昇格を止めている競合があれば画面が理由と解き方を案内する |
 
 CCPIT は Claude Code のラッパーではない。Claude Code の隣に立って、設定面の世話をするツール。本来の作業に集中するための土台。
+
+---
+
+## v1.7.0 の新機能
+
+更新して実際に目に入るものだけ。全部は [CHANGELOG](./CHANGELOG.md)、各項目の詳細は [主な機能](#主な機能) に。
+
+| どこ | 何ができる |
+|---|---|
+| **Fable 起動ボタン** | PXP ダッシュボードを有効にすると、各 PJ の行にワンクリックの *Fable* ボタンが出る。その PJ に保存したモデル・起動オプションで、手元の pxpipe プロキシ経由の Claude Code を起動する |
+| **PXP ダッシュボード（任意）** | 既定は off。有効にすると CCPIT が **pxpipe**（トークン節約プロキシ・第三者 OSS・版を固定）を監督し、セッションごとの節約量を日本語で重ねて表示。CCPIT が話すのはプロキシの localhost ポートだけ |
+| **起動オプションの PJ 単位保存** | Bypass・再開セッション・モデルを *PJ ごと* に記憶。他の PJ へ漏れず、再開セッション ID は出た PJ から離れない |
+| **起動メニューの新モデル** | Opus 5.5 / Opus 5 / Sonnet 5 を追加。起動時に取ったモデル一覧がアプリの再起動なしで反映される |
+| **特別エントリ** | 走査対象の外にある PJ を Projects 一覧の先頭に固定 |
+| **提案のまとめて合成** | 3 つのセッションが同じ skill を 3 通り提案してきた？ 選んで、背景の Claude Code に 1 本の合成提案へまとめさせる。元の提案には「合成に取り込み済み／承認待ち」の札 |
+| **競合の案内 + 1 クリック修復** | 同じ skill の提案が競合しているとき、何が昇格を止めているか・なぜか・どう解くかを画面が案内。読めなかった提案は「Claude Code に修復を頼む」が出る |
+| **採用済みスキルの整合** | 採用した skill を `~/.claude/skills` と突き合わせ、「一致／ハッシュ不一致／ディスクに無い／ゲート回避」に分類。削除・復元・名前衝突の解決 |
+| **背景の Claude Code パネル** | 長く走る仕事（合成・独立レビュー・コメント返信）は隠れた `claude -p` セッションで。トレイの印からパネルを開くと状態・経過時間・おおよその費用 |
+| **気付く修正** | 日本語パスの PJ が起動する／括弧入りパスの PJ が正しいフォルダで開く／読めなかった提案 175 件が読める／PXP が `/model` の切替に追従 |
+| **1.6.x からの更新** | 初回起動で、バンドルと差のある設定ファイルについてファイルごとに「どうするか」を聞くことがある。答えるまで何も触らない。「もう聞かない」で以後は黙る |
 
 ---
 
@@ -114,6 +136,8 @@ flowchart TD
 4. パスワードを入れて **採用**。CCPIT は先にスナップショットを取り、検証し、失敗したら自動ロールバック。skill は `~/.claude/skills/` に配置される
 5. 次のセッション: トリガーが合致すれば skill が発火する。reject した提案も理由ごと残る — 何も黙って消えない。恒久化できる唯一のゲートはあなた
 
+同じ skill への提案が複数ある？ チェックを付けて **まとめて合成** を押す — 背景の Claude Code セッションが 1 本の合成提案にまとめ、元の提案には「合成に取り込み済み」の札が付き、押した場所に進み具合が出る。昇格できる提案が同じ skill に 2 本以上あるときは、何が選択を止めているか・どう解くかをブラウザが案内する。
+
 ---
 
 ## 主な機能
@@ -134,6 +158,8 @@ Settings からいつでも再実行可能。
 - **Health** — `settings.json`（deny の網羅・対称、hook 登録の網羅と**発火可能性**——発火しない登録は緑にせず報告）/ `CLAUDE.md` / `rules/` / `skills/` / `hooks/` を横断チェック。PASS / WARN / INFO / FAIL を集計し、該当箇所をインライン表示。v1.6.0 から、ユーザーがカスタマイズした `CLAUDE.md` は情報表示（info）——カスタマイズは正常運用——とし、欠落・空ファイルは error として報告
 - **Doctor Analysis** — 不具合報告や Claude への状況説明に添付できる「doctor pack」を生成
 - **CLI 検出** — `claude` が `PATH` に存在するかとバージョンを確認
+- **配備済み `scripts/` の検査** — 同梱の補助スクリプト（レビュー台帳の記録器など）が deploy 後に実在するかを確認
+- **BG-CC タブ** — 背景の Claude Code（合成・独立レビュー・コメント返信）向け。モデル一覧キャッシュの消去と生ログの閲覧
 
 ### Project Management（プロジェクト管理）
 
@@ -143,6 +169,8 @@ Settings からいつでも再実行可能。
 - **Favorites** — よく使う PJ をピン留め
 - **Protocol History** — その PJ がどのプロトコル rev を経てきたかの履歴表示
 - **CC Launch Button** — 正しい PJ ディレクトリでワンクリック Claude Code 起動
+- **起動オプションの PJ 単位保存** — Bypass・再開セッション・モデル（Opus 5.5 / Opus 5 / Sonnet 5 ほか）は PJ ごとに保存。他の PJ へ暗黙に引き継がれず、再開セッション ID は出た PJ に束縛される
+- **特別エントリ** — 走査対象の外にある PJ を一覧の先頭に固定
 - **CC Request Inbox** — Claude Code から「設定をこう変えたい」とリクエストが届くと、ここに溜まる。GUI で承認/却下、JSON 直接編集不要
 
 ### Configuration & Distribution（設定の配布）
@@ -150,6 +178,8 @@ Settings からいつでも再実行可能。
 - **CCES (Claude Code Extensions Summary)** — 現在の設定一式を Markdown スナップショット化。新しい会話への貼付・チーム共有・リポへのコミットに使える
 - **Recovery Kit** — `~/.claude/` 全体の名前付きスナップショット。任意の過去状態にワンクリック復旧
 - **Golden Bundle** — settings + rules + skills をパスワード保護 `.pit` アーカイブにパッケージ。受領側は同じ UI からインポート
+- **起動時の golden 更新チェック** ★ v1.7.0 新機能 — 起動のたびに（Setup 中を除く）配備済みバンドル・配備記録・`~/.claude/` の写しを内容ハッシュで突き合わせ、差のあるファイルごとに「上書き（控えあり）／配布側へ送る（自分の編集をバンドルへ昇格）／配布側へ送って提案（Claude Code が GitHub issue を起草）／Claude Code に相談（並べて見る合成相談）／もう聞かない／後で」を聞く。部分的な配備を成功と言わず、上書き前に前の版を退避する
+- **`settings.json` の二階建て** ★ v1.7.0 新機能 — golden を配り直しても自分の `settings.json` の編集は消えない。golden 層と自分の層を合成し、golden が持つキーだけを更新する
 - **i18n** — 日本語 / 英語の完全 UI 対応
 
 ### Skill Proposal Loop（skill 提案ループ）
@@ -158,7 +188,11 @@ Settings からいつでも再実行可能。
 
 - **センシング** — Stop hook がセッション終了時に CC へ提案の蒸留を要求（無ければ明示的な「該当なし」）。`~/.ccpit/proposals/` に全 PJ 横断で集約
 - **Skill 候補ブラウザ** — 提案を What / Why / How + recommend / reject 自己ラベル + 5 軸スコアのカードで一覧
-- **レビューゲート + ワンクリック採用** — 独立レビューの findings をカード横に表示。採用はパスワードゲート + スナップショット / 検証 / 自動ロールバック付き
+- **レビューゲート + ワンクリック採用** — 独立レビューの findings をカード横に表示。採用はパスワードゲート + スナップショット / 検証 / 自動ロールバック付き。ゲートは経路を問わず（記録された独立レビュアーなら可。OpenAI Codex CLI はその一つ）、承認は提案の内容ハッシュに束縛され編集で失効、ゲートの強行（break-glass）は監査ログに追記される
+- **まとめて合成** ★ v1.7.0 新機能 — 同じ skill への提案を複数選び、背景の Claude Code セッションに 1 本の合成提案へまとめさせる。元の提案には「合成に取り込み済み／承認待ち」の札が付き、合成は破棄もできる
+- **競合の案内 + 修復** ★ v1.7.0 新機能 — 同じ skill に昇格できる提案が 2 本以上あるとき、何が選択を止めているか・なぜか・どう解くか（競合相手をその場で reject する手順を含む）を案内。読めなかった提案は 1 クリックで Claude Code に修復を頼める
+- **採用済みスキルの整合** ★ v1.7.0 新機能 — 採用の台帳と `~/.claude/skills` を突き合わせ、各 skill を「一致／ハッシュ不一致／ディスクに無い／ゲート回避」に分類。削除・復元・名前衝突の解決ができる
+- **背景の Claude Code（BG-CC）** ★ v1.7.0 新機能 — 合成・独立レビュー・コメント返信は隠れた `claude -p` セッションで走る。トレイの印からパネルを開くと状態・経過時間・おおよその費用が見える
 - 手を動かす版は上の **ツアー 2** 参照
 
 ### Enforcement Stats（強制発火統計）
@@ -175,7 +209,7 @@ Settings からいつでも再実行可能。
 
 各タブは冒頭バナーで**測定限界を明示**する——測れないものは「測れない」と宣言し、偽の数字で埋めない。書込は一切なし: このページはセッション記録を読むだけ。
 
-### MCP Server Management ★（最新の目玉機能）
+### MCP Server Management
 
 MCP サーバを使い始めたチーム向け。「うっかり write 権限を渡してしまった」を構造的に防ぐ設計。
 
@@ -190,6 +224,10 @@ MCP サーバを使い始めたチーム向け。「うっかり write 権限を
 
 ![CCPIT の Add MCP Server ダイアログ — Guided (Mode A) 選択、deepwiki プリセット (Read-only public docs/wiki access) で Name / Command (npx) / Args が充填。Environment は VAR_NAME プレースホルダ形式を強制、リスク表示は「Safe — Read-only, no auth, local-only」、Cancel / Save (run CLI) ボタン](./docs/screenshots/mcp.png)
 
+### PXP ダッシュボード（任意）★ v1.7.0 新機能
+
+既定は off。有効にすると、Claude Code 向けのトークン節約プロキシ **pxpipe**（第三者 OSS・版を固定・NOTICE 同梱）を CCPIT が監督し、セッションごとの節約量を日本語ダッシュボードで重ねて表示する。PJ ごとに *Fable* 起動ボタンが出る。CCPIT が話すのはプロキシの localhost ポートだけで、自身は外部サービスを呼ばない。
+
 ---
 
 ## クイックスタート
@@ -200,7 +238,8 @@ MCP サーバを使い始めたチーム向け。「うっかり write 権限を
 |---|---|
 | **Windows 10 / 11（64-bit）** | パッケージ版インストーラは Windows 向け。macOS / Linux はソースビルドのみ（未サポート・未検証） |
 | **Git for Windows** または **scoop Git**（`bash.exe`） | CCPIT の統治 hook は bash スクリプトとして動く。v1.6.0 から golden deploy はローカルの Git Bash を解決して実体パスを hook 登録に焼き込む——見つからない場合は**「発火しない hook」を書かずに案内を出して中止**する（fail-closed） |
-| **Claude Code CLI**（`claude` が `PATH` 上） | CC 起動ボタン・MCP の書込操作・CLI 経由編集に必要。無くても他の UI は動作する（無効化された箇所はバナーで明示） |
+| **Claude Code CLI**（`claude` が `PATH` 上） | CC 起動ボタン・MCP の書込操作・CLI 経由編集・背景の Claude Code（BG-CC）に必要。無くても他の UI は動作する（無効化された箇所はバナーで明示） |
+| **Node.js**（`node` が `PATH` 上）— 推奨 | v1.7.0 から同梱ゲート hook は本体を Node（`.cjs`）に置き、bash は薄い入口。`node` が無いとゲートは止めずに黙って通る（fail-open）。Health はまだこれを検出しない |
 
 ### パッケージ済みインストーラから導入（推奨）
 
@@ -263,12 +302,13 @@ CCPIT は Electron アプリ:
 | `~/.claude/settings.json` | ✅ | ✅ | Health 検査。golden deploy は**既存ファイルをバックアップ**（`*.bak.<タイムスタンプ>`）してから書き換える。deploy はローカル Git Bash の実体パスを hook 登録へ注入する |
 | `~/.claude/CLAUDE.md`・`rules/`・`skills/`・`hooks/` | ✅ | ✅ | golden deploy / 移行 / skill 採用。上書き前に必ずバックアップまたは Recovery Kit スナップショット |
 | `~/.claude.json`・`{project}/.mcp.json` | ✅ | ✅ | MCP タブ（両スコープ）。CLI が対応する編集は CLI 経由 |
-| `~/.ccpit/` | ✅ | ✅ | CCPIT 自身の状態: `app-config.json`・`projects.json`・`snapshots/`（Recovery Kit）・`proposals/`（CC セッションからの skill 提案）・レビュー記録・CC 変更リクエスト |
+| `~/.ccpit/` | ✅ | ✅ | CCPIT 自身の状態: `app-config.json`・`projects.json`・`snapshots/`（Recovery Kit）・`proposals/`（CC セッションからの skill 提案）・レビュー記録・break-glass の監査ログ・golden の配備記録と昇格台帳・背景 Claude Code（BG-CC）のログ・CC 変更リクエスト |
 | 各プロジェクトディレクトリ | ✅ | — | プロジェクト検出（DetectLink）とプロトコルバッジのための read-only スキャン |
 
 はっきり書いておくべきこと:
 
-- **テレメトリなし・ネットワーク通信なし。** アプリ自身は HTTP リクエストを一切発行しない——すべてローカルファイルに対して動く（UI 内の外部リンクはブラウザを開くだけ。設定した MCP サーバを実行するのは Claude Code であって CCPIT ではない）
+- **テレメトリなし・アプリ自身のネットワーク通信なし。** アプリ本体は HTTP リクエストを発行しない——すべてローカルファイルに対して動く。ただし*ネットワークと話す別のプログラムを起動する*機能はあり、隠さずここに列挙する: (1) 下記の背景の Claude Code（BG-CC） (2) 設定した MCP サーバ（実行するのは Claude Code であって CCPIT ではない） (3) 任意の PXP プロキシ（CCPIT が話すのは localhost だけ）。UI 内の外部リンクはブラウザを開くだけ
+- **背景の Claude Code は見える——そして 1 つは起動時に走る。** 合成・独立レビュー・コメント返信・モデル一覧の更新は、あなた自身のアカウントと利用枠で隠れた `claude -p` セッションとして走る。トレイの印と BG-CC パネルに、何が・どれだけの時間・おおよそいくらで動いているかが出る。ボタンを押さずに走る唯一の仕事がモデル一覧の更新で、キャッシュが 24 時間より古いときに起動時 1 回だけ取り直す（ツールチップのとおり 1 回あたり目安 $0.05）。他の仕事はあなたが始めたときだけ走る
 - **採用/deploy 用パスワードは `settings.json`（`auth.password`）にローカル保存**され、settings-guard hook が照合する。これは不用意・無人での編集に対する統治ゲートであり、暗号化ではない。ユーザープロファイルへ完全アクセスできる者は読める
 - **hook は bash スクリプト**で、`~/.claude/hooks/` に配置され `settings.json` に登録される。実行するのは Claude Code（CCPIT ではない）で、セッションイベント（Stop / PreToolUse / SessionStart）で発火する。全スクリプトは本リポジトリの `golden/common/hooks/` で配備前に読める
 - **破壊的操作はスナップショット先行。** golden deploy・移行・skill 採用は書込前にバックアップ / Recovery Kit スナップショットを取り、採用は検証失敗時に自動ロールバックする
@@ -306,6 +346,11 @@ CCPIT は二層 AI 開発パターンを前提に設計されている:
 - 報告書 HTML レンダラ skill（`md-render`: ダークテーマ・タブ・セクション別コメント・`--verify`）
 - CC 一括再起動（世代フラグ方式・確認プレビュー付き）
 - CC 固有 ID（エクスポートサマリに併記）
+- 起動時の golden 更新チェック + 配り直し時の `settings.json` 二階建て（v1.7.0）
+- skill 提案のまとめて合成・競合の案内・1 クリック修復・採用済みスキルの整合（v1.7.0）
+- 背景の Claude Code（BG-CC）パネル（v1.7.0）
+- 起動オプションの PJ 単位保存 + 特別エントリ（v1.7.0）
+- PXP ダッシュボード（任意・v1.7.0）
 - 日本語 / 英語 UI
 - パッケージ済み Windows インストーラ（NSIS・現時点で未署名——クイックスタートの SmartScreen 注記を参照）
 
@@ -317,10 +362,14 @@ CCPIT は二層 AI 開発パターンを前提に設計されている:
 
 ---
 
-## 既知の問題（v1.6.0）
+## 既知の問題（v1.7.0）
 
 後から気づかれるより、先に書いておく:
 
+- **golden 更新チェックは、差が残る限り起動のたびに聞く** — 手元の編集が意図したものなら、そのファイルに「もう聞かない」を選ぶ。ファイルには触らず質問だけ消える
+- **一部の同梱 skill は当面日本語のみ** — v1.7.0 の英語バンドルで 4 本が *Translation Pending* の印付き（`handover-cc`・`golden-name-collision-proposal-triage`・`memory-import-size-rotation`・`remote-tmux-lane-drive`）。動作はするが、本文が日本語
+- **ゲート hook の強制には Node.js が要る** — 同梱ゲートは `node` が `PATH` に無いと黙って通る（設計上の fail-open。実行環境の欠落で締め出されないため）。Health はまだこれを報告しない。ゲートに実際に止めさせたいなら Node.js を入れる
+- **PXP ダッシュボードにはプロキシが要る** — 任意の PXP ダッシュボードは pxpipe の導入が前提。別のツールがプロキシのポートを先に握っているときは、動いているふりをせず CCPIT がそれを報告する
 - **インストーラ未署名** — 初回実行時に Windows SmartScreen の警告が出る。回避手順は[クイックスタート](#クイックスタート)。コード署名は法人化と合わせて計画中
 - **hook には Git Bash が必須** — golden deploy は Git Bash（`bash.exe`・scoop Git / Git for Windows）を解決できないとき、「発火しない hook」を登録しないよう意図的に中止する。どちらかを導入して deploy を再実行
 - **旧バージョンで deploy 済みの環境からのアップグレード** — Health が既存の hook 登録について以下を表示することがある:
@@ -362,6 +411,8 @@ CCPIT は `golden/common/` 配下に `md-render` という Claude Code skill を
 - **ワンクリック返信プロンプト生成 + コピー** — 任意のセクションを、そのまま貼れる追い質問プロンプトに変換
 - **インライン図解** — Mermaid（vendored・オフライン）と値駆動バー図
 - **sha1 見出しアンカー** — 安定したディープリンク。加えて双方向 `--verify`（HTML ⊆ MD かつ MD ⊆ HTML）で HTML と原本の乖離を fail-closed 検出
+
+v1.7.0 での更新: コードブロックの**コピーボタン**、**図の配色検査**（読めない対比は fail-closed）、**`comments_resolved` の焼き込み**——対応済みのレビュアーコメントを著者の応答と並べて HTML に読み取り専用で埋め込む。
 
 - 日本語（正本）: `golden/common/ja/skills/md-render/SKILL.md`
 - 英語: `golden/common/en/skills/md-render/SKILL.md`

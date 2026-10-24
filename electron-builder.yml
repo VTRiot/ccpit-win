@@ -15,6 +15,10 @@ files:
   # バックアップ類は配布物に絶対に入れない（.bak は redaction 前原本・旧設定を含み得る leak 経路）
   - '!_bak_preserve'
   - '!**/*.bak*'
+  # dashboard-ja は extraResources で asar の外へ実ファイルとして置く。asarUnpack:resources/** の
+  # 対象に入ると asar 内にも同じ実体が入り二重同梱になるため、asar 側からは明示的に外す。
+  # （`node <path>` 相当の spawn には実ファイルパスが要る＝asar 内では起動できない）
+  - '!resources/dashboard-ja/**'
 asarUnpack:
   - resources/**
 extraResources:
@@ -24,6 +28,14 @@ extraResources:
     to: Logo.png
   - from: golden
     to: golden
+    filter:
+      - '**/*'
+      - '!**/*.bak*'
+  # 日本語ダッシュボード（serve-ja）の同梱。golden/ には置かない — golden は deploy() が
+  # ~/.claude/ へ配る正本であり、配らないペイロードを混ぜると「deploy は 3 ルートしか走査しない」
+  # という否定的性質に依存することになる（将来の一括配備改修で全ユーザーへ撒かれる事故の芽）。
+  - from: resources/dashboard-ja
+    to: dashboard-ja
     filter:
       - '**/*'
       - '!**/*.bak*'

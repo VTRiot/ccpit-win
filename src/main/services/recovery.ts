@@ -1,4 +1,4 @@
-﻿import { readdir, readFile, writeFile, copyFile, mkdir, rename } from 'fs/promises'
+import { readdir, readFile, writeFile, copyFile, mkdir, rename } from 'fs/promises'
 import { join, relative } from 'path'
 import { existsSync } from 'fs'
 import { createHash } from 'crypto'

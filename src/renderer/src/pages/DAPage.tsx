@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Loader2, ExternalLink, Copy, Check, Save, ShieldAlert, Trash2 } from 'lucide-react'
 import { Button } from '../components/ui/button'

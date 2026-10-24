@@ -19,6 +19,7 @@ import {
   REQUIRED_RUNTIME_SKILLS
 } from './hooksValidation'
 import { claudeMdComparisonStatus, isDegenerateClaudeMd } from './claudeMdStatus'
+import { distributedScriptsStatus } from './scriptsValidation'
 
 const GOLDEN_DIR = app.isPackaged
   ? join(process.resourcesPath, 'golden')
@@ -361,6 +362,15 @@ export async function runHealthCheck(): Promise<HealthCheckItem[]> {
     const count = await countFiles(hooksDir)
     results.push({ name: 'hooks/', status: 'ok', detail: `${count} files` })
   }
+
+  // 6. scripts/ — Golden と比較（node 明示起動の配布スクリプト。例: レビュー台帳の正規書込経路）。
+  //    hooks/ と同型に「存在」だけを見る。内容の一致は起動時照合（manifest 三方向照合）が担うため二重化しない。
+  //    golden 側に scripts/ が無い版では項目自体を出さない（判定は scriptsValidation 側）。
+  const scriptsItem = await distributedScriptsStatus(
+    claudeDir,
+    join(GOLDEN_DIR, 'common', 'scripts')
+  )
+  if (scriptsItem) results.push(scriptsItem)
 
   return results
 }

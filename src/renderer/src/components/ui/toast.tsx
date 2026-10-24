@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
-import { Check, AlertCircle } from 'lucide-react'
+import { Check, AlertCircle, AlertTriangle } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
-type ToastVariant = 'success' | 'error'
+type ToastVariant = 'success' | 'error' | 'warning'
 
 interface ToastProps {
   open: boolean
@@ -32,9 +32,11 @@ export function Toast({
   const colorClass =
     variant === 'error'
       ? 'border-red-600/50 bg-red-600 text-white'
-      : 'border-green-600/50 bg-green-600 text-white'
+      : variant === 'warning'
+        ? 'border-amber-500/50 bg-amber-500 text-white'
+        : 'border-green-600/50 bg-green-600 text-white'
 
-  const Icon = variant === 'error' ? AlertCircle : Check
+  const Icon = variant === 'error' ? AlertCircle : variant === 'warning' ? AlertTriangle : Check
 
   return (
     <div

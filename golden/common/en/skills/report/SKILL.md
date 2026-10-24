@@ -22,10 +22,10 @@ In-conversation text does not count as "outputting a report."
 **Before** writing the body, fire the diagram-craft skill, decide the figures via its trigger table, and declare them in frontmatter:
 
 ```yaml
-figures: [da-table, where-map]   # kinds: da-table / where-map / flow / state / arch-svg
-# When using no figures (omission must be justified):
+figures: [da-table, where-map]   # 図種: da-table / where-map / flow / state / arch-svg
+# 図を使わない場合（省略理由の明文化義務）:
 figures: none
-figures_reason: <one-line reason>
+figures_reason: <理由 1 行>
 ```
 
 - Silently omitting figures is forbidden. Every declared kind must have a body counterpart (`--lint` machine-checks declaration-reality match)
@@ -36,52 +36,67 @@ figures_reason: <one-line reason>
 The report MUST start with the following section right after the frontmatter:
 
 ```markdown
-## Readers and Purpose of This Report
+## 本報告書の読者と目的
 
-- **Who reads it**: <primary audience, in order of priority if multiple>
-- **For what purpose**: <information the reader should obtain, why they should read it>
-- **Next action**: <action expected from the reader after finishing the report>
+- **誰が読む**: <主読者、複数なら優先順>
+- **何のために**: <読者が本文書から得るべき情報、なぜ読むべきか>
+- **次のアクション**: <読者に期待する次のアクション、読み終わったら何をすべきか>
 ```
 
 Also recommended in frontmatter (machine-readable, optional):
 ```yaml
-audience: [<FILL: specify the primary reader role>]  # e.g. design-ai, human-user, cc-next, cc-self, public
-purpose: <FILL: one-line summary>
-expected_action: <FILL: one-line summary>
+audience: [<FILL: 主読者ロールを指定>]  # 例: design-ai, human-user, cc-next, cc-self, public
+purpose: <FILL: 1 文で要約>
+expected_action: <FILL: 1 文で要約>
 ```
 
 Skipping this section with "N/A" is forbidden. If the reader is unclear, revisit the design.
+
+### Line pointing to the case milestone document (only for cases that have such a document)
+
+In a multi-day case where a document tracks and updates stage progress on a single sheet (e.g., `<case_identifier>_MILESTONES.md`; the schema of the `case-journey-map` skill where available), add the following line to "Readers and Purpose of This Report":
+
+```markdown
+- **案件の現在地**: `<その文書のパス>`（この報告の対象の段: <段の番号>）
+```
+
+- For "target stage", write the stage number covered by this report. Write this even for reports that only investigated or waited and did not advance the stage state.
+- Do not copy the overall case progress (list of completed and remaining stages) into the report. The report is a record at the time of writing, not the canonical source of truth for the current milestone. When read later, current progress should be viewed in that tracking document. Copying progress into each report makes it unclear which represents the current state.
+- If this report changed stage state, next steps, new traps, or stage ordering, update that tracking document in the same turn (same conditions as that document's update rules). However, do not update if that document is closed (e.g. marked with `status: closed` in frontmatter, indicating no further edits). If new stages are needed after closing, create a new tracking document as a new case, and point reports there.
+- Frontmatter `where:` and where-map diagrams represent "which parts of code or documentation were touched", which is distinct from case milestone stage progress. Both may coexist.
+- For cases without such a document, do not write this line (there is no obligation to create a document just for this line).
 
 ## Conclusion Summary (required — right after Readers & Purpose)
 
 Reports follow the order **Readers & Purpose → Conclusion Summary → (pending-decisions / TOC = renderer-automatic) → Details**. So the reader grasps the conclusion and its "good/bad direction" up front, always place it right after Readers & Purpose (md-render auto-hoists it):
 
 ```markdown
-## Conclusion Summary
+## 結論の概要
 
-- **OK** — <conclusion (has a measured verification PASS)>
-- **CAVEAT** — <conclusion (works, but conditional / open issues)>
-- **FAIL** — <conclusion (measured breakage / unresolved)>
-- **INFO** — <conclusion (neutral / out of scope)>
+- **OK** — <結論（検証 PASS の実測あり）>
+- **CAVEAT** — <結論（動くが条件付き・残課題）>
+- **FAIL** — <結論（実測で破綻・未解決）>
+- **INFO** — <結論（中立・対象外）>
 ```
 
 - **Content**: a 1–5 line outcome (what the reader should now believe / do). Do not rephrase Readers & Purpose, duplicate the decision list, or pad it (it is not a second TOC).
 - **Status badge**: a leading `**OK/FAIL/CAVEAT/INFO**` is converted by md-render into a colored pill (OK=teal / FAIL=red / CAVEAT=amber / INFO=slate). Only bold that **exactly matches** the set is converted (`**OK:**`, `**OK …**` are not).
 - **★No badge without grounds (honesty standard — most important)**: every badge states its grounds. **OK = a measured verification PASS exists / FAIL = measured breakage or unresolved / CAVEAT = works but conditional, open issues / INFO = neutral, out of scope**. A groundless "OK" is forbidden (a brake against the report drifting toward "looking good"). For mixed cases, reflect the **principal outcome / risk** (if the core failed, it is FAIL even if parts work; anti-gaming demotions like FAIL→CAVEAT are forbidden).
-- **Do not hand-write the pending-decisions list or TOC**: the pending-decisions list is auto-generated by the renderer from `> [!DECISION]` in the body, and the TOC from headings. The author writes only Readers & Purpose, Conclusion Summary, [!DECISION], Details, and Out-of-Scope (Pending). If a conclusion requires action, mirror it into `[!DECISION]` (Conclusion Summary = direction / [!DECISION] = decision & action).
-- **Exemption**: pure descriptive memos / minutes / references etc. are exempt via frontmatter `conclusion_summary: none` + `conclusion_summary_reason: <reason>` (same shape as `figures: none`; `--lint` checks it).
+- **Do not hand-write the pending-decisions list or TOC**: the pending-decisions list is auto-generated by the renderer from `> [!DECISION]` in the body, and the TOC from headings. The author writes only Readers & Purpose, Conclusion Summary, [!DECISION], Details, and Out-of-Scope (Pending). If a conclusion requires reader judgment or approval, mirror it into `[!DECISION]` (Conclusion Summary = direction / [!DECISION] = pending matters for the reader to decide). Settled decisions and operator instructions must not be placed in `[!DECISION]`.
+- **Exemption (Conclusion Summary)**: pure descriptive memos / minutes / references etc. are exempt via frontmatter `conclusion_summary: none` + `conclusion_summary_reason: <reason>` (same shape as `figures: none`; `--lint` checks it).
+- **Exemption (Pending-Decisions List)**: reports that truly have no pending decision items for the reader must explicitly declare exemption via frontmatter `decisions: none` + `decisions_reason: <reason>` (`--lint` checks it; creating fake DECISIONs just to silence warnings when there are no pending matters is forbidden).
 
 ## Interlock Verification Section (required)
 Include the following checklist in the report:
 
 ```
-## Interlock Verification
-- rumination: fired / not fired (reason: )
-- testable-impl: fired / not fired (reason: )
-- investigation: fired / not fired (reason: )
-- diagram-craft: fired / not fired (reason: )
-- md2html --lint: exit 0 / not run (reason: )
-- md2html --check: run / not applicable (reason: _index.md not updated, etc.)
+## インターロック検証
+- rumination: 発火した / 発火していない（理由: ）
+- testable-impl: 発火した / 発火していない（理由: ）
+- investigation: 発火した / 発火していない（理由: ）
+- diagram-craft: 発火した / 発火していない（理由: ）
+- md2html --lint: exit 0 / 未実行（理由: ）
+- md2html --check: 実行済 / 対象外（理由: _index.md 非更新 等）
 ```
 
 If any "not fired" entry lacks a justified reason, stop the report and re-fire the missing skill.
@@ -90,9 +105,9 @@ If any "not fired" entry lacks a justified reason, stop the report and re-fire t
 Include the following in the report. Evaluate candidates; if none are needed, state why. Skipping this section with "N/A" is forbidden.
 
 ```
-## Local Knowledge Proposal
-- Candidates: (Is there any knowledge worth storing in rules/ or skills/?)
-- Decision: adopt / not needed (reason: )
+## ローカル知見提案
+- 候補: （rules/ や skills/ に格納すべき知見はないか）
+- 判断: 採用 / 不要（理由: ）
 ```
 
 ## Allowed Syntax (closed set of 8)
@@ -124,14 +139,51 @@ Every report you render gets, by default, a per-topic comment box under each bod
 - Suppress with `comments: off` (e.g. for dev logs / non-interactive docs).
 - The renderer only produces the reply *prompt* (fixed-format, LLM-free) + copy button; writing the reply itself is out of scope. See the md-render skill for details.
 
+## Substantive Comment Replies Go Into a Report (not the chat)
+
+When replying to review comments, anything **substantive — analysis, investigation, design judgment, audit responses** (beyond a plain Yes/No or acknowledgment) must not be written out in the chat body; **output it as a report**. Two reasons:
+
+- **Leave it for posterity**: chat does not survive as design material. The context behind a conclusion (why, the evidence, alternatives, rejection reasons) is an asset for the next session's CC and for human reviewers, and only becomes reusable once fixed in a report that carries a `report_id`.
+- **Lower the human's cognitive load**: a long analysis streamed through chat forces the reader to extract the gist, re-read, and go back and forth. A well-formed HTML — conclusion first, status badges, tabs — is grasped in one pass.
+
+Operation:
+
+1. Write the substantive reply into a report. Existing topic → append a section (e.g. audit response) to the relevant report; independent topic → start a new report.
+2. **The chat-side reply must always carry that report's `file:///` (encoded, in code formatting) and its `report_id` (report signature)** so the human can reach the full text in one step.
+3. Also burn the handling into `comments_resolved` (3-part form) so the ✓ badge shows read / handled. **From the 2nd round onward** (comments written in the "Re-comment" field below the handled field), append `:re` to the key (`- <heading>:re || <original comment> || <memo>`; in round n, append n−1 `:re` tags). Merging into the previous round's declaration without `:re` leaves the re-comment field unprocessed and causes it to appear in the reply prompt every time — looking like it was neglected.
+4. **Exception (no over-generation)**: plain acknowledgments, Yes/No, and minor factual corrections are covered by the `comments_resolved` memo alone — no new report.
+
+Criterion: could this reply later be cited as grounds for a design decision? If so, make it a report; if it is a throwaway nod, a memo suffices.
+
 ## Decision Marker Rules
 
 | Requirement | How to write |
 |---|---|
-| Design decision points | `> [!DECISION] <title>` (auto-aggregated into the pending-decisions panel) |
+| Decision items (unsettled) | `> [!DECISION] <title>` (auto-aggregated into the pending-decisions panel; limited strictly to unsettled matters requiring reader judgment or approval) |
+| Settled matters / records | `> [!NOTE] <title>` or `> [!IMPORTANT] <title>` (not aggregated into pending-decisions; records of already-decided matters or instruction contents) |
 | DA recommendation | `> [!DA] <recommendation + one-sentence reason>` (optional) |
 | Current location (Where) | frontmatter `where: A > B > C` + `## Current Location` section + where-map figure when needed |
 | Out-of-scope accounting | fixed heading `## Out-of-Scope Proposals (Pending)` + table |
+
+### [!DECISION] Admission Criteria and Rule Provisions
+
+- **Admission criteria (permitted only when all are met)**:
+  1. **Unsettledness**: The decision regarding the matter is not yet final, remaining pending or under consideration.
+  2. **Reader discretion**: The reader (owner / design AI) holds the authority and responsibility to judge, choose, or reject the matter.
+  3. **Presentation of options**: The matter requests the reader to choose among multiple options or make an explicit Yes/No (approve/reject) judgment.
+- **Exclusion criteria (prohibited if any applies)**:
+  1. Content the owner has already instructed or decided (instructions / settled matters).
+  2. Decisions already approved or ratified by the owner or design lane.
+  3. Reversible internal design choices decidable at implementation lane's autonomous discretion (explain these with `[!NOTE]` or in body text).
+- **Standard format for settled matters (defining destination)**:
+  - `> [!NOTE] 【Settled matter: Actor (Date)】<Topic>` (or `> [!IMPORTANT]` depending on severity)
+  - Example: `> [!NOTE] 【Settled matter: Operator instruction (2026-09-13)】Do not change the Progress main path (fixed URL)`
+  - Example: `> [!NOTE] 【Settled matter: Design role decision (2026-09-14)】Submit artifacts as diffs against golden ja`
+- **Boundary case evaluation procedure**:
+  - **Case 1 (Single proposal approval/rejection Yes/No)**: Since the reader retains the rejection option, **include** in `[!DECISION]`.
+  - **Case 2 (Confirmation of pre-approved instruction)**: Since the reader has already decided and no choice remains, **do not include** in `[!DECISION]` (move to `[!NOTE]`).
+  - **Case 3 (How at implementation discretion)**: To avoid wasting reader working memory, **do not include** in `[!DECISION]` (move to `[!NOTE]`). However, seek prior approval via `[!DECISION]` for irreversible or high-cost changes.
+  - **Case 4 (Lifecycle when past DECISION is resolved)**: In subsequent reports, transition to settled matter under `[!NOTE]`. If revising the same document, clearly state resolution via `comments_resolved` or history.
 
 ## Evaluation Axis Direction Rule (DA tables)
 

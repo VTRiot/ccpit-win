@@ -53,6 +53,10 @@ type ChangeRequest = SettingsChangeRequest | SkillChangeRequest
 
 /** PIKES r1.4 §7-3-A: 3 種エラー区別 + その他失敗事由 */
 type ApplyResultReason =
+  | 'read-error'
+  | 'content-changed'
+  | 'review-required'
+  | 'terminal-state'
   | 'authentication-failed'
   | 'auth-missing-for-skill'
   | 'json-syntax-error'
@@ -65,7 +69,7 @@ type ApplyResultReason =
   | 'write-failed'
   | 'post-verify-failed'
   | 'golden-name-collision'
-  | 'codex-review-missing'
+  | 'hook-prerequisite-missing'
 
 interface ApplyResult {
   success: boolean
@@ -123,6 +127,9 @@ export function CCRequestInboxPage(): React.JSX.Element {
   const [password, setPassword] = useState<string>('')
   const [applying, setApplying] = useState(false)
   const [result, setResult] = useState<ApplyResult | null>(null)
+  // apply は file-path 経由（main が実ファイルを読む）。previewHash は preview→apply TOCTOU 照合用。
+  const [loadedFilePath, setLoadedFilePath] = useState<string | null>(null)
+  const [previewHash, setPreviewHash] = useState<string>('')
 
   const [showLogs, setShowLogs] = useState(false)
   const [logs, setLogs] = useState<ChangeLogEntry[]>([])
@@ -155,9 +162,13 @@ export function CCRequestInboxPage(): React.JSX.Element {
     setRequest(null)
     setRequestError(null)
     setResult(null)
+    setLoadedFilePath(null)
+    setPreviewHash('')
     try {
       const r = await window.api.settingsReadRequest(filePath)
       setRequest(r as ChangeRequest)
+      setLoadedFilePath(filePath)
+      setPreviewHash(r.previewHash ?? '')
       // Refresh current settings (in case it changed)
       const s = await window.api.settingsRead()
       setCurrentSettings(s)
@@ -168,11 +179,11 @@ export function CCRequestInboxPage(): React.JSX.Element {
   }
 
   const handleApply = async (): Promise<void> => {
-    if (!request) return
+    if (!request || !loadedFilePath) return
     setApplying(true)
     setResult(null)
     try {
-      const r = await window.api.settingsApplyChange(request, password)
+      const r = await window.api.settingsApplyChange(loadedFilePath, previewHash, password)
       setResult(r)
       // Refresh current settings to reflect the new state
       const s = await window.api.settingsRead()
@@ -431,8 +442,36 @@ export function CCRequestInboxPage(): React.JSX.Element {
                       )}
                       {result.reason === 'auth-missing-for-skill' && (
                         <span className="ml-2 text-muted-foreground">
-                          (auth.password 未設定環境では skill apply は許可されません。先に
-                          settings 経路でパスワードを登録してください)
+                          (auth.password 未設定環境では skill apply は許可されません。先に settings
+                          経路でパスワードを登録してください)
+                        </span>
+                      )}
+                      {result.reason === 'content-changed' && (
+                        <span className="ml-2 text-muted-foreground">
+                          (プレビュー後にファイル内容が変わりました。再読込してから適用してください)
+                        </span>
+                      )}
+                      {result.reason === 'read-error' && (
+                        <span className="ml-2 text-muted-foreground">
+                          (ファイルを読めませんでした。パス・存在・権限を確認してください)
+                        </span>
+                      )}
+                      {result.reason === 'review-required' && (
+                        <span className="ml-2 text-muted-foreground">
+                          (推奨 skill
+                          提案は独立レビュー承認が必要です。候補ブラウザから採用してください)
+                        </span>
+                      )}
+                      {result.reason === 'terminal-state' && (
+                        <span className="ml-2 text-muted-foreground">
+                          (この提案は既に確定済み（採用/却下）です)
+                        </span>
+                      )}
+                      {result.reason === 'hook-prerequisite-missing' && (
+                        <span className="ml-2 text-muted-foreground">
+                          (提案 hooks が参照する実体（hook ファイル / 必須
+                          skill）が不在です。先に実体を配置（golden deploy
+                          または手動配置）してから適用してください)
                         </span>
                       )}
                     </div>

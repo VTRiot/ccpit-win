@@ -11,6 +11,21 @@ interface HealthItem {
   detail: string
 }
 
+/**
+ * Golden 追従の未解決一覧（ADR 0002）。
+ *
+ * ADR 0001 D3 は「後で」を残した根拠に「未追従として記録・**可視化**される」を挙げているが、
+ * 実際には `deferred` を表示する画面がどこにも無かった（本件の実測で判明）。
+ * 「もう問わない」を足すなら沈黙が増えるので、先にこの穴を塞ぐ。
+ */
+interface FollowUpItem {
+  path: string
+  kind: 'deferred' | 'unmanaged' | 'overlay'
+  drifted: boolean | null
+  lapsed?: boolean
+  decidedAt?: string
+}
+
 const STATUS_ICON: Record<string, { icon: React.ElementType; color: string }> = {
   ok: { icon: CheckCircle, color: 'text-green-500' },
   warn: { icon: AlertTriangle, color: 'text-yellow-500' },
@@ -29,25 +44,65 @@ export function HealthPage(): React.JSX.Element {
   const [results, setResults] = useState<HealthItem[]>([])
   const [denyList, setDenyList] = useState<string[]>([])
   const [ccCliAvailable, setCcCliAvailable] = useState<boolean | null>(null)
+  const [followUp, setFollowUp] = useState<FollowUpItem[]>([])
+  type UndoGroup = Awaited<ReturnType<typeof window.api.goldenListUndoGenerations>>[number]
+  const [undoGenerations, setUndoGenerations] = useState<UndoGroup[]>([])
   const [loading, setLoading] = useState(false)
   const [hasRun, setHasRun] = useState(false)
 
   const handleCheck = async (): Promise<void> => {
     setLoading(true)
-    const [healthResults, deny, ccCli] = await Promise.all([
+    const [healthResults, deny, ccCli, follow, undos] = await Promise.all([
       window.api.healthCheck(),
       window.api.healthDenyList(),
       window.api.healthCcCli(),
+      // 未追従は起動時ではなくここで実測する（列挙された数件だけ・見る人が居るときだけ）。
+      window.api.goldenFollowUpState().catch(() => [] as FollowUpItem[]),
+      // 戻せる上書き世代の一覧を取得 (AC9, AC12)
+      window.api.goldenListUndoGenerations().catch(() => [] as UndoGroup[])
     ])
     setResults(healthResults)
     setDenyList(deny)
     setCcCliAvailable(ccCli)
+    setFollowUp(follow)
+    setUndoGenerations(undos)
     setHasRun(true)
     setLoading(false)
     const issues = healthResults.filter(
       (r) => r.status === 'warn' || r.status === 'error'
     ).length
     window.dispatchEvent(new CustomEvent('health-refreshed', { detail: { issues } }))
+  }
+
+  /** 「もう問わない」を取り消す。次回起動で再提示される（`deferred` へ戻す）。 */
+  const handleRemanage = async (path: string): Promise<void> => {
+    await window.api.goldenRemanage([path])
+    setFollowUp(await window.api.goldenFollowUpState().catch(() => [] as FollowUpItem[]))
+  }
+
+  /**
+   * 反映（overlay）を破棄する。
+   * 失効した反映もユーザーの内容の唯一の控えになりうるので、確認してから消す。
+   */
+  const handleDiscardOverlay = async (path: string): Promise<void> => {
+    if (!window.confirm(t('goldenReconcile.followUp.discardConfirm'))) return
+    await window.api.goldenDiscardOverlay([path])
+    setFollowUp(await window.api.goldenFollowUpState().catch(() => [] as FollowUpItem[]))
+  }
+
+  /**
+   * 上書きされたファイルを元に戻し、overlay へ反映・台帳更新する (AC10, AC11)。
+   */
+  const handleRestoreUndo = async (rel: string, generationStamp: string): Promise<void> => {
+    if (!window.confirm(t('goldenReconcile.undo.confirmRestore', { path: rel }))) return
+    setLoading(true)
+    try {
+      await window.api.goldenRestoreUndoBackups([{ rel, generationStamp }])
+      await handleCheck()
+    } catch (err) {
+      console.error('[HealthPage] failed to restore undo', err)
+      setLoading(false)
+    }
   }
 
   return (
@@ -84,6 +139,150 @@ export function HealthPage(): React.JSX.Element {
           )}
         </CardContent>
       </Card>
+
+      {/* Golden 追従（ADR 0002: 未追従を沈黙させない / ADR 0004: 戻せる上書き） */}
+      {hasRun && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('goldenReconcile.followUp.title')}</CardTitle>
+            <CardDescription>
+              {followUp.length === 0 && undoGenerations.length === 0
+                ? t('goldenReconcile.followUp.none')
+                : t('goldenReconcile.followUp.summary', {
+                    n: followUp.filter((f) => f.kind !== 'overlay').length,
+                    unmanaged: followUp.filter((f) => f.kind === 'unmanaged').length,
+                    overlay: followUp.filter((f) => f.kind === 'overlay').length
+                  })}
+            </CardDescription>
+          </CardHeader>
+          {(followUp.length > 0 || undoGenerations.length > 0) && (
+            <CardContent className="space-y-6">
+              {followUp.length > 0 && (
+                <div className="space-y-2">
+                  {followUp.map((f) => (
+                    <div
+                      key={`${f.kind}:${f.path}`}
+                      className="flex items-center gap-3 py-2 px-3 rounded-md bg-muted/30"
+                    >
+                      <span className="font-mono text-xs break-all flex-1">{f.path}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {t(`goldenReconcile.followUp.kind.${f.kind}`)}
+                      </span>
+                      {f.drifted !== null && (
+                        <span
+                          className={cn(
+                            'text-xs shrink-0',
+                            f.drifted ? 'text-yellow-600' : 'text-muted-foreground'
+                          )}
+                        >
+                          {f.drifted
+                            ? t('goldenReconcile.followUp.drifted')
+                            : t('goldenReconcile.followUp.notDrifted')}
+                        </span>
+                      )}
+                      {f.lapsed && (
+                        <span className="text-xs text-yellow-600 shrink-0">
+                          {t('goldenReconcile.followUp.lapsed')}
+                        </span>
+                      )}
+                      {f.kind === 'unmanaged' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={loading}
+                          onClick={() => void handleRemanage(f.path)}
+                        >
+                          {t('goldenReconcile.followUp.remanage')}
+                        </Button>
+                      )}
+                      {f.kind === 'overlay' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={loading}
+                          onClick={() => void handleDiscardOverlay(f.path)}
+                        >
+                          {t('goldenReconcile.followUp.discard')}
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 戻せる上書き（アンドゥ導線・AC9, AC12, AC13, AC14） */}
+              <div className="pt-4 border-t border-border space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold">{t('goldenReconcile.undo.title')}</h4>
+                  <span className="text-xs text-muted-foreground">
+                    {t('goldenReconcile.undo.latestOnlyNote')}
+                  </span>
+                </div>
+                {undoGenerations.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">{t('goldenReconcile.undo.none')}</p>
+                ) : (
+                  <div className="space-y-3">
+                    {undoGenerations.map((g) => (
+                      <div
+                        key={g.generationStamp}
+                        className={cn(
+                          'p-3 rounded-md border text-xs space-y-2',
+                          g.isLatest
+                            ? 'border-primary/40 bg-muted/30'
+                            : 'border-border bg-muted/10 opacity-70'
+                        )}
+                      >
+                        <div className="flex items-center justify-between font-medium">
+                          <span>
+                            {t('goldenReconcile.undo.generationLabel', { stamp: g.generationStamp })}
+                          </span>
+                          {g.isLatest ? (
+                            <span className="text-green-600 font-semibold">
+                              {t('goldenReconcile.undo.latestBadge')}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">
+                              {t('goldenReconcile.undo.olderBadge')}
+                            </span>
+                          )}
+                        </div>
+                        <ul className="space-y-1.5">
+                          {g.files.map((f) => (
+                            <li
+                              key={f.rel}
+                              className="flex items-center justify-between gap-2 pt-1 border-t border-border/40"
+                            >
+                              <span className="font-mono break-all flex-1">{f.rel}</span>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {f.canRestore ? (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={loading}
+                                    onClick={() => void handleRestoreUndo(f.rel, g.generationStamp)}
+                                  >
+                                    {t('goldenReconcile.undo.restoreButton')}
+                                  </Button>
+                                ) : (
+                                  <span className="text-muted-foreground">
+                                    {f.notRestorableReason
+                                      ? t(`goldenReconcile.undo.reason.${f.notRestorableReason}`)
+                                      : t('goldenReconcile.undo.cannotRestore')}
+                                  </span>
+                                )}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      )}
 
       {/* Deny Test */}
       <Card>

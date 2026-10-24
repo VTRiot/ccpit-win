@@ -41,6 +41,15 @@
           {
             "type": "command",
             "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/session-summary-gate.sh\""
+            ],
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash",
             "timeout": 10,
             "args": [
               "-c",
@@ -55,6 +64,87 @@
               "-c",
               "\"$HOME/.claude/hooks/restart-all-gate.sh\""
             ]
+          },
+          {
+            "type": "command",
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/verification-board-gate.sh\""
+            ],
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/recommend-review-gate.sh\""
+            ],
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/comment-response-gate.sh\""
+            ],
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/context-usage-gate.sh\""
+            ],
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/stuck-loop-gate.sh\""
+            ],
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/paste-delimiter-gate.sh\""
+            ],
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/opaque-approval-gate.sh\""
+            ],
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/file-url-backtick-gate.sh\""
+            ],
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/handover-declaration-gate.sh\""
+            ],
+            "timeout": 10
           }
         ]
       }
@@ -69,6 +159,34 @@
             "args": [
               "-c",
               "\"$HOME/.claude/hooks/settings-guard.sh\""
+            ],
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/skill-edit-auth-guard.sh\""
+            ],
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell|mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/away-gate-hook.sh\""
             ],
             "timeout": 5
           }
@@ -94,6 +212,15 @@
             "args": [
               "-c",
               "\"$HOME/.claude/hooks/cc-identity-register.sh\""
+            ],
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/pending-reaper.sh\""
             ],
             "timeout": 10
           }

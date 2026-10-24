@@ -8,6 +8,15 @@
  * when names collide; we surface those collisions via {@link ExtensionsSummary.mergeNotes}.
  */
 
+/**
+ * CCES 出力フォーマットのバージョン。039 FB④ で 'v1.1' を追加（Digest/Recap レイアウト）。
+ * 消費側（設計 AI / Juiz）は 'v1.0' への固定 expect を持たない（影響なしを設計レーンが確認済み）。
+ */
+export type CcesFormatVersion = 'v1.0' | 'v1.1'
+
+/** 現行フォーマットバージョン（generateExtensionsSummary が metadata に刻む）。 */
+export const CCES_FORMAT_VERSION: CcesFormatVersion = 'v1.1'
+
 export interface ExtensionsSummaryMetadata {
   /**
    * Generated timestamp (ISO 8601).
@@ -21,14 +30,17 @@ export interface ExtensionsSummaryMetadata {
   generatedAt: string
 
   /**
-   * Format version. 'v1.0' for this implementation.
+   * Format version. See {@link CcesFormatVersion}.
+   * - 'v1.0': 初版レイアウト（Metadata → Opening → Global → Project → Merge Notes）。
+   * - 'v1.1': 039 FB④ LITM 対策で Digest（先頭）と Critical Recap（末尾）を追加したレイアウト。
+   *   データモデルは v1.0 と同一（フォーマッタのみの差）。
    *
-   * Why this exists in Ver.1.0:
+   * Why this exists:
    * - Ver.1.5 / 2.0 will use this to distinguish summary formats and migrate.
    *
    * DO NOT REMOVE without consulting Ver.1.5 / 2.0 implementation plan.
    */
-  version: 'v1.0'
+  version: CcesFormatVersion
 
   /**
    * SHA-256 of the canonicalized summary body (everything except metadata).

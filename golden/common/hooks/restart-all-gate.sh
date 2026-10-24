@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 # restart-all-gate.sh — Stop hook（DELEGATE 主軸）
 #
 # 役割: CCPIT が設定変更時に立てる「全体フラグ」(generation 整数) を読み、

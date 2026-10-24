@@ -20,6 +20,7 @@ import {
   type ExtensionsSummary,
   type GlobalLayer,
   type ProjectLayer,
+  CCES_FORMAT_VERSION,
   OVERSIZED_THRESHOLD_BYTES,
 } from './types'
 
@@ -52,7 +53,7 @@ export async function generateExtensionsSummary(opts: GenerateOpts): Promise<Ext
   const summary: ExtensionsSummary = {
     metadata: {
       generatedAt: new Date().toISOString(),
-      version: 'v1.0',
+      version: CCES_FORMAT_VERSION,
       hostHash,
       projectPath: opts.projectPath,
       projectName,
@@ -91,6 +92,10 @@ export function formatAsMarkdown(summary: ExtensionsSummary): string {
   lines.push('')
   lines.push(...renderMetadata(summary))
   lines.push('')
+  // 039 FB④ (LITM): 先頭ダイジェスト。長文の中間が読み飛ばされても、要点は冒頭で拾える。
+  // 正はあくまで各セクション本文で、ここは典拠への索引（typed model からの導出のみ）。
+  lines.push(...renderDigest(summary))
+  lines.push('')
   if (summary.opening.trim().length > 0) {
     lines.push('## Opening')
     lines.push('')
@@ -110,7 +115,93 @@ export function formatAsMarkdown(summary: ExtensionsSummary): string {
   lines.push('## Merge Notes')
   lines.push('')
   lines.push(...renderMergeNotes(summary))
+  lines.push('')
+  // 039 FB④ (LITM): 末尾リキャップ。文書末でも読むべき最重要点（衝突と優先規則）を再掲する。
+  lines.push(...renderCriticalRecap(summary))
   return lines.join('\n')
+}
+
+/** opening の最初の非空行（Digest/Recap の 1 行要約用）。無ければ '(none)'。 */
+function firstNonEmptyLine(text: string): string {
+  const line = text
+    .split('\n')
+    .map((l) => l.trim())
+    .find((l) => l.length > 0)
+  return line ?? '(none)'
+}
+
+/**
+ * 039 FB④: 先頭ダイジェスト（read first）。各レイヤの件数と主要な名前一覧、衝突要旨を
+ * typed model から導出して並べる。バイト数（oversized）は 2-pass 再計算で古くなり得るため
+ * 意図的に載せない（DECISION (c)）。
+ */
+function renderDigest(summary: ExtensionsSummary): string[] {
+  const g = summary.global
+  const p = summary.project
+  const lines: string[] = []
+  lines.push('## Digest (read first)')
+  lines.push('')
+  lines.push('> LITM 対策の要約。正は各セクション本文で、ここはその索引。')
+  lines.push('')
+  lines.push(`- Project: \`${summary.metadata.projectPath}\` (${summary.metadata.projectName})`)
+  lines.push(`- CC IDs: ${(summary.metadata.ccIds ?? []).join(', ') || '(none)'}`)
+  lines.push(
+    `- Global: rules ${g.rules.length}, skills ${g.skills.regular.length} regular / ${g.skills.catalyst.length} catalyst, ` +
+      `hooks ${g.hooks.files.length}, mcp ${g.mcp.configured ? `${g.mcp.servers.length} server(s)` : 'not configured'}, ` +
+      `subagents ${g.subagents.deployed ? g.subagents.agents.length : 'not deployed'}, plugins ${g.plugins.plugins.length}, ` +
+      `marketplaces ${g.marketplaces.length}`
+  )
+  lines.push(
+    `- Project: CLAUDE.md ${p.claudeMd ? 'present' : 'absent'}, CLAUDE.local.md ${p.claudeLocal ? 'present' : 'absent'}, ` +
+      `rules ${p.rules.length}, skills ${p.skills.regular.length} regular / ${p.skills.catalyst.length} catalyst, ` +
+      `agents ${p.agents.length}, commands ${p.commands.length}`
+  )
+  lines.push(
+    `- Merge Notes: ${summary.mergeNotes.length === 0 ? 'no collisions' : `${summary.mergeNotes.length} collision(s)`}`
+  )
+  if (g.rules.length > 0) {
+    lines.push(`- Global rule names: ${g.rules.map((r) => r.name).join(', ')}`)
+  }
+  if (g.skills.regular.length > 0) {
+    lines.push(`- Global skill names: ${g.skills.regular.map((s) => s.name).join(', ')}`)
+  }
+  if (p.rules.length > 0) {
+    lines.push(`- Project rule names: ${p.rules.map((r) => r.name).join(', ')}`)
+  }
+  if (p.skills.regular.length > 0) {
+    lines.push(`- Project skill names: ${p.skills.regular.map((s) => s.name).join(', ')}`)
+  }
+  return lines
+}
+
+/**
+ * 039 FB④: 末尾リキャップ（re-stated for LITM）。文書末でも必ず拾うべき最重要点
+ * （典拠の所在・優先規則・衝突・opening 要点）を再掲する。詳細は各セクションが正。
+ */
+function renderCriticalRecap(summary: ExtensionsSummary): string[] {
+  const lines: string[] = []
+  lines.push('## Critical Recap (re-stated for LITM)')
+  lines.push('')
+  lines.push('> 長文末尾でも読むべき要点の再掲。詳細は上記各セクションが正。')
+  lines.push('')
+  lines.push('- 典拠: 上記の各セクション本文が正。本節はその再掲。')
+  lines.push(
+    '- Precedence: per MANX Protocol r7 §3-3, the Project layer overrides Global on name collision.'
+  )
+  lines.push(`- Project: \`${summary.metadata.projectPath}\` (${summary.metadata.projectName})`)
+  lines.push(`- CC IDs: ${(summary.metadata.ccIds ?? []).join(', ') || '(none)'}`)
+  if (summary.mergeNotes.length === 0) {
+    lines.push('- Merge Notes: no name collisions (Project adds to Global without override).')
+  } else {
+    lines.push(
+      `- Merge Notes (${summary.mergeNotes.length}): ` +
+        summary.mergeNotes.map((n) => `${n.kind} \`${n.name}\``).join(', ')
+    )
+  }
+  if (summary.opening.trim().length > 0) {
+    lines.push(`- Opening (first line): ${firstNonEmptyLine(summary.opening)}`)
+  }
+  return lines
 }
 
 function renderMetadata(summary: ExtensionsSummary): string[] {

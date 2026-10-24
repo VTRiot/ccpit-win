@@ -1,6 +1,6 @@
-﻿{
+{
   "name": "ccpit-win",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "CCPIT — Claude Code Protocol Interlock Tower",
   "license": "MIT",
   "main": "./out/main/index.js",

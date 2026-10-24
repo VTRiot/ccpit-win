@@ -9,7 +9,7 @@
  * （Marshal review finding 対応）。
  */
 import { existsSync, readFileSync } from 'fs'
-import { join } from 'path'
+import { join, normalize as pathNormalize } from 'path'
 import { KNOWN_TEMPLATES } from './denyValidation'
 import { isWslLauncher } from './bashResolver'
 
@@ -189,6 +189,112 @@ export function validateRequiredSkills(
   const installedSet = new Set(installedSkillNames)
   const missing = required.filter((name) => !installedSet.has(name))
   return { valid: missing.length === 0, missing }
+}
+
+/**
+ * hook コマンド名 → その hook が発火時に要求する skill のマップ。
+ * Apply 前提条件ゲート（settingsChange Step 3.7）が参照する。
+ * 拡張時はここに 1 行足す（hook 追加で要求 skill が増えるケースに備えた構造）。
+ */
+export const HOOK_REQUIRED_SKILLS: Record<string, readonly string[]> = {
+  'skill-proposal-gate.sh': ['skill-proposal-emitter']
+}
+
+/**
+ * コマンド文字列から管理対象 hook 参照（`$HOME/.claude/hooks/...` / `~/.claude/hooks/...`）を
+ * 全て抽出し正規化する。ラッパー形式（`bash $HOME/.claude/hooks/x.sh` 等）の内側参照も拾う
+ * （Marshal review R2: ラッパーで素通りするバイパスの封じ）。
+ * - rels: hooks/ 配下に正規化できた相対パス
+ * - escapes: `..` 等で hooks/ から脱出する参照（fail-closed 対象）
+ * - unrecognized: `.claude/hooks` に言及するが管理形式で 1 件も解釈できないコマンド
+ *   （絶対パス・バックスラッシュ区切り等。静的解決できないため fail-closed 対象）
+ * 正規化前の生 rel で後続判定すると `subdir/../skill-proposal-gate.sh` が
+ * HOOK_REQUIRED_SKILLS 照合を素通りする（Marshal review R1 対応）。
+ */
+function extractManagedHookRefs(command: string): {
+  rels: string[]
+  escapes: string[]
+  unrecognized: boolean
+} {
+  // トークン終端はシェルメタ文字（; & | ( ) < > `）でも切る: `...gate.sh; true` のセミコロンを
+  // ファイル名に含めると実行実体（gate.sh）と検証対象が乖離する（Marshal review R3/R4 対応）。
+  //
+  // 【検証境界（これが本ゲートの契約）】完全なシェル解釈（クォート・エスケープ・展開）は静的に
+  // 不可能。本ゲートの脅威モデルは「人間の順序ミス防止」であり、~/.claude/hooks へ細工ファイルを
+  // 置ける者による意図的バイパスは対象外（その権限があれば管理外コマンド登録や実体配置が最初から
+  // 可能で、ゲートで防げる層ではない。悪意ある変更案への防御は diff 確認 + パスワード認証が担う）。
+  const tokens = command.match(/(?:\$HOME|~)\/\.claude\/hooks\/[^\s"';&|()<>`]+/g) ?? []
+  const rels: string[] = []
+  const escapes: string[] = []
+  for (const token of tokens) {
+    const rel = token.replace(/^(?:\$HOME|~)\/\.claude\/hooks\//, '')
+    const norm = pathNormalize(rel).replace(/\\/g, '/')
+    if (norm === '..' || norm.startsWith('../') || norm.startsWith('/')) {
+      escapes.push(token)
+    } else {
+      rels.push(norm)
+    }
+  }
+  const mentionsHooksDir = /[\\/]+\.claude[\\/]+hooks[\\/]+/i.test(command)
+  return { rels, escapes, unrecognized: mentionsHooksDir && tokens.length === 0 }
+}
+
+export interface HookPrerequisitesResult {
+  valid: boolean
+  /** 実体不在の hook ファイル（claudeDir 配下の絶対パス表示） */
+  missingHookFiles: string[]
+  /** 不在の必須 skill 名 */
+  missingRequiredSkills: string[]
+}
+
+/**
+ * 提案 settings の hooks セクションが参照する実体（hook ファイル + 必須 runtime skill）の
+ * 実在を検証する（Apply 前提条件ゲート、fail-closed の素材）。
+ *
+ * 検証境界: `$HOME/.claude/hooks/` または `~/.claude/hooks/` 参照のコマンドのみ検証する。
+ * それ以外（任意のシェルコマンド・絶対パス等）は静的に解決不能なため対象外（過剰検証による
+ * 偽陽性 = 正当な Apply の阻止を避ける）。
+ * skillsRoot 未指定時は skill 検証をスキップする（hook ファイル検証は常時）。
+ */
+export function validateHookPrerequisites(
+  hooksSection: unknown,
+  claudeDir: string,
+  skillsRoot?: string
+): HookPrerequisitesResult {
+  const entries = flattenHookEntries(hooksSection)
+  const missingHookFiles: string[] = []
+  const requiredSkills = new Set<string>()
+  for (const e of entries) {
+    const refs = extractManagedHookRefs(e.command)
+    if (refs.unrecognized) {
+      // `.claude/hooks` に言及するが管理形式で解釈できない参照は fail-closed（拒否対象に積む）
+      missingHookFiles.push(`${e.command}（管理形式で解釈できない hooks 参照）`)
+      continue
+    }
+    for (const token of refs.escapes) {
+      // 管理対象 prefix を装って hooks/ 外へ脱出するパスは fail-closed
+      missingHookFiles.push(`${token}（hooks/ 外への脱出パス）`)
+    }
+    for (const rel of refs.rels) {
+      const fsPath = join(claudeDir, 'hooks', rel)
+      if (!existsSync(fsPath)) missingHookFiles.push(fsPath)
+      // 必須 skill は正規化後 rel の basename で照合（subdir/../gate.sh と gate.sh を同一視。
+      // サブディレクトリ配置の同名 hook も保守的に同じ要求を課す = fail-closed 方向）
+      const base = rel.split('/').pop() ?? rel
+      for (const skill of HOOK_REQUIRED_SKILLS[base] ?? []) requiredSkills.add(skill)
+    }
+  }
+  const missingRequiredSkills: string[] = []
+  if (skillsRoot !== undefined) {
+    for (const skill of requiredSkills) {
+      if (!existsSync(join(skillsRoot, skill, 'SKILL.md'))) missingRequiredSkills.push(skill)
+    }
+  }
+  return {
+    valid: missingHookFiles.length === 0 && missingRequiredSkills.length === 0,
+    missingHookFiles,
+    missingRequiredSkills
+  }
 }
 
 /**

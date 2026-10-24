@@ -1,4 +1,4 @@
-﻿import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
+import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { app } from 'electron'
@@ -9,6 +9,8 @@ import {
   type MigrationNotice,
   type ProjectsMigrationPaths
 } from './projectsMigration'
+import type { SpecialProjectEntry } from './appConfig'
+import { cwdMatches } from './sessionRegistry'
 
 const CCPIT_DIR = join(app.getPath('home'), '.ccpit')
 const PROJECTS_FILE = join(CCPIT_DIR, 'projects.json')
@@ -49,7 +51,11 @@ export interface ProjectEntry {
   groupKey?: string | null
   documents?: string[]
   favorite?: boolean
+  /** pxpipe（トークン削減プロキシ）を経由して CC を起動するか（per-project・launch-time 反映） */
+  pxpipeEnabled?: boolean
   location_type?: LocationType
+  /** プロジェクト格納フォルダ(自動探索 root)外を手動フルパス登録した印。一覧で視覚区別する。 */
+  external?: boolean
   // 034-B: confirmed フィールドは廃止。
   // 「明示意思」の正典は protocol.json の history（append-only event log）に統合。
   // Full Re-scan の skip 判定は getLatestManualEntry(path) で行う。
@@ -207,7 +213,10 @@ export async function removeProject(projectPath: string): Promise<void> {
  * ファイルシステムは変更しない。CLAUDE.md は既存前提。
  * 既に登録済みのパスはスキップ。
  */
-export async function importProjects(paths: string[]): Promise<ProjectEntry[]> {
+export async function importProjects(
+  paths: string[],
+  opts?: { external?: boolean }
+): Promise<ProjectEntry[]> {
   const projects = await loadProjects()
   const existingSet = new Set(projects.map((p) => p.path.toLowerCase()))
 
@@ -221,7 +230,8 @@ export async function importProjects(paths: string[]): Promise<ProjectEntry[]> {
       path: projectPath,
       createdAt: await resolveDirCreatedAt(projectPath),
       location_type: 'local',
-      favorite: false
+      favorite: false,
+      ...(opts?.external ? { external: true } : {})
     }
     projects.push(entry)
     added.push(entry)
@@ -261,6 +271,47 @@ export async function setFavorite(projectPath: string, favorite: boolean): Promi
   if (idx < 0) return
   projects[idx] = { ...projects[idx], favorite }
   await saveProjects(projects)
+}
+
+/** pxpipe（トークン削減プロキシ経由）の per-project ON/OFF を設定 */
+export async function setPxpipeEnabled(projectPath: string, enabled: boolean): Promise<void> {
+  const projects = await loadProjects()
+  const idx = projects.findIndex((p) => p.path === projectPath)
+  if (idx < 0) return
+  projects[idx] = { ...projects[idx], pxpipeEnabled: enabled }
+  await saveProjects(projects)
+}
+
+/**
+ * pxpipe フラグを読む（CC 起動時の軽量参照）。未設定は false。
+ * パス比較は `cwdMatches`（大小文字・末尾区切り・スラッシュ方向を正準化）で行う。
+ * 13_pxp Phase 1（Codex 総合クローズ判定 round3 指摘）: 素の `===` だとスペル差
+ * （`C:/Projects/app` vs `C:\Projects\app\` 等）で同一ディレクトリを取りこぼす。
+ */
+export async function getPxpipeEnabled(projectPath: string): Promise<boolean> {
+  const projects = await loadProjects()
+  return projects.find((p) => cwdMatches(p.path, projectPath))?.pxpipeEnabled ?? false
+}
+
+/**
+ * 13_pxp Phase 1（Codex 総合クローズ判定 round2 指摘・severity high）: あるパスが pxpipe
+ * 経由かどうかは、通常 projects 一覧（`getPxpipeEnabled` 相当）だけでは判定できない。
+ * 038 Feature B の特別枠（`appConfig.specialEntries`）は projects.json 未登録パスのため
+ * `force` モードで起動され、通常一覧には現れない（ccLaunch.ts の PxpipeMode ドキュメント参照）。
+ * 呼び出し元（`cc:restartAll` の中継未経由警告判定）は両方を見る必要があるため、
+ * I/O（loadProjects の fs 読取・getConfig）から判定ロジックを分離した純関数として提供する。
+ *
+ * 特別枠側のパス比較も `cwdMatches` で正準化する（round3 指摘）: specialEntries は
+ * ユーザーが app-config.json を直接編集して登録するため、`launchCc` に渡す実際の cwd と
+ * スペル（大小文字・末尾区切り・スラッシュ方向）が完全一致しない現実的な可能性がある。
+ */
+export function resolveIsPxpipeEnabled(
+  cwd: string,
+  normalProjectEnabled: boolean,
+  specialEntries: SpecialProjectEntry[]
+): boolean {
+  if (normalProjectEnabled) return true
+  return specialEntries.some((e) => cwdMatches(e.path, cwd) && e.pxpipeEnabled === true)
 }
 
 // 034-B: setConfirmed 関数は廃止（confirmed フィールドが廃止されたため）。

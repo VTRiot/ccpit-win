@@ -1,4 +1,4 @@
-﻿/**
+/**
  * procEnum — live な claude.exe プロセスを CIM で全列挙する。
  *
  * 検出ギャップ根治の「全数検出（fail-silent 根絶）」の情報源。sessions/<pid>.json は

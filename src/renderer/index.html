@@ -2,11 +2,15 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>CCPIT — Claude Code Configuration Manager</title>
+    <title>CCPIT — Claude Code Protocol Interlock Tower</title>
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <!-- frame-src: pxpipe 内蔵ダッシュボード用。**厳密オリジンのみ**列挙し、ワイルドカードと
+         localhost 表記は使わない（localhost は IPv4/IPv6 の解決差で穴が開く）。
+         default-src 'self' は据え置き＝他の緩和は一切しない。
+         ポートは pxpipe の候補ポート(47821/47831/47841)と ja ダッシュボード(47822)。 -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-src http://127.0.0.1:47821 http://127.0.0.1:47822 http://127.0.0.1:47831 http://127.0.0.1:47841"
     />
   </head>
 

@@ -2,6 +2,13 @@
 @import "tw-animate-css";
 
 /*
+ * `dark:` をアプリの表示の切り替え（<html> の dark クラス。hooks/useTheme.ts）で決める。
+ * Tailwind v4 の既定は OS の配色に従うので、OS がライトでアプリがダークのとき、
+ * `dark:` の明るい文字色が効かず、暗い文字が暗い地に乗っていた。
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
  * CCPIT Theme — claude.ai inspired warm tones
  * Dark = default, Light = toggle
  * Using shadcn/ui semantic variable naming with @theme inline

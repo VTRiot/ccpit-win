@@ -61,12 +61,47 @@ JSON by hand.
   Strict based on env credentials and write-tool keywords.
 - Skill Proposals — Claude Code (or a teammate) drops SKILL.md candidates
   into a proposals queue; the user browses them in a dedicated tab with
-  provenance and body preview, then adopts or rejects from the GUI. When
-  the OpenAI Codex CLI is installed, proposals carrying a "recommend"
-  badge additionally require an independent Codex review before adoption;
-  Claude Code may reject individual review findings, but each rejection
-  rationale is recorded and auditable. Without Codex, adoption works as
-  before.
+  provenance and body preview, then adopts or rejects from the GUI.
+  Proposals carrying a "recommend" badge cannot be adopted until an
+  independent review is recorded with verdict "approve" — whatever
+  route produced the review (the OpenAI Codex CLI is one supported
+  route). Approval is hash-bound to the reviewed proposal content, so
+  editing the proposal invalidates a stale approval. Forcing adoption
+  past an unmet gate is a break-glass override: the actor, content
+  hash, and every overridden block are appended to a persistent audit
+  log. When several proposals target the same bundled skill, the user can
+  pick them and have a background Claude Code session merge them into one
+  composite proposal (bulk compose); when more than one proposal for the
+  same skill is promotable, the browser explains what blocks the selection
+  and how to resolve it. Proposals that failed to parse offer a one-click
+  "ask Claude Code to repair".
+- Adopted Skill Integrity — reconciles the adoption registry with
+  ~/.claude/skills and classifies each adopted skill as Clean / Hash
+  mismatch / Missing on disk / Gate-bypassed, with removal, restore, and
+  name-collision resolution.
+- Golden update check at startup — on every launch (outside Setup), CCPIT
+  compares the deployed golden bundle, its deploy record, and the user's
+  ~/.claude copies by content hash. For each differing file it asks:
+  Overwrite (with backup), Send to distribution, Send to distribution &
+  Propose, Consult Claude Code (side-by-side merge consultation), Stop
+  asking, or Later. Redeploying golden keeps the user's own settings.json
+  edits (two-layer compose: only golden-owned keys are refreshed).
+- Background Claude Code (BG-CC) — compose, independent review,
+  comment-response jobs, and the model-catalog refresh run in a hidden
+  `claude -p` session under the user's own account. A tray indicator opens
+  a panel showing state, elapsed time, and approximate cost; Maintenance
+  has a BG-CC tab (model-list cache clear, raw log). The catalog refresh
+  is the only job that runs without a button press: once at startup when
+  the cached list is older than 24 hours (about $0.05 per run).
+- Node.js is a recommended requirement since v1.7.0: the bundled gate
+  hooks keep their logic in Node (.cjs). Without `node` on PATH they exit
+  silently (fail-open) — if a user reports "the gates never block", ask
+  whether Node.js is installed before anything else.
+- Per-project launch options — Bypass mode, resume session, and model are
+  stored per project and never inherited implicitly across projects.
+  Launch models include Opus 5.5 / Opus 5 / Sonnet 5.
+- Special entries — projects outside the scanned roots can be pinned at
+  the top of the Projects list.
 - Report renderer — the bundled md-render skill turns Markdown reports
   into deterministic offline HTML: day/dark themes, H2 section tabs,
   persistent per-section comments, one-click reply-prompt generation,
@@ -85,6 +120,11 @@ JSON by hand.
   hits, and independent review launches, each in its own tab. Every tab
   states its measurement limits up front instead of showing fabricated
   numbers.
+- PXP dashboard (opt-in, off by default) — CCPIT can supervise the local
+  token-saving proxy "pxpipe" (third-party OSS, pinned version; see the
+  bundled NOTICE) and shows a Japanese dashboard overlay. When enabled, a
+  Fable launch button appears per project. If the user has not enabled it,
+  do not suggest it as a fix for unrelated problems.
 - i18n — full English and Japanese UI.
 
 ## Your role

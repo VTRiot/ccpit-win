@@ -1,4 +1,4 @@
-﻿/**
+/**
  * bashResolver — hook の exec form 起動に使う bash.exe 実体パスを解決する
  * （起動形不一致 order で master 正取込）。
  *

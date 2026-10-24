@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 # session-launch-record.sh — SessionStart hook
 #
 # 役割: このセッションが「どの settings generation をロードして起動したか」を記録する。

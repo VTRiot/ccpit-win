@@ -56,7 +56,12 @@ Add `debug-report-gate.sh` as an entry in the `Stop` array of the existing `hook
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/debug-report-gate.sh"
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/debug-report-gate.sh\""
+            ],
+            "timeout": 10
           }
         ]
       }
@@ -77,11 +82,21 @@ Append to the existing array:
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/report-gate.sh"
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/report-gate.sh\""
+            ],
+            "timeout": 10
           },
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/debug-report-gate.sh"
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/debug-report-gate.sh\""
+            ],
+            "timeout": 10
           }
         ]
       }

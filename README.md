@@ -6,7 +6,7 @@
 
 > 🇯🇵 **[日本語版 README はこちら / Japanese README](./README.ja.md)**
 
-[![Version](https://img.shields.io/badge/version-1.6.0-3b82f6)](./package.json)
+[![Version](https://img.shields.io/badge/version-1.7.0-3b82f6)](./package.json)
 [![License](https://img.shields.io/badge/license-MIT-22c55e)](./LICENSE)
 [![Electron](https://img.shields.io/badge/Electron-39-47848F)](https://www.electronjs.org/)
 [![Platform](https://img.shields.io/badge/platform-Windows-0078d4)](#quick-start)
@@ -31,8 +31,30 @@ If you have used Claude Code for more than a few weeks, you probably recognise t
 | You wired up an MCP server with a write API and now you are nervous. | MCP tab classifies every server as Safe / Caution / Strict and disables write tools by default. |
 | You want your team to use the same Claude Code setup. | Golden Bundle exports your config as a password-protected `.pit` file your teammates can import. |
 | You constantly switch between Claude Code projects and forget which is which. | Projects auto-detects every CC project on disk and tags it with its protocol (MANX / ASAMA / Macau / Legacy). |
+| You deployed a shared bundle months ago and have edited half of it since — which side is right now? | The startup golden update check diffs the bundle, its deploy record, and your `~/.claude/` by content hash and asks per file: overwrite (with backup), send your edit back toward distribution, or have Claude Code consult on a merge. |
+| Three sessions proposed three versions of the same skill. | Select them in the Skill candidates browser and let a background Claude Code session merge them into one composite proposal; the browser explains any conflict that blocks promotion. |
 
 CCPIT is not a wrapper around Claude Code — it sits next to it and manages the configuration surface so you can spend your time on the actual work.
+
+---
+
+## What's new in v1.7.0
+
+What you will actually notice after upgrading. Full list in the [CHANGELOG](./CHANGELOG.md); each item is described in [Features](#features).
+
+| Area | What you get |
+|---|---|
+| **Fable launch button** | With the PXP dashboard enabled, every project row gets a one-click *Fable* button that starts Claude Code through the local pxpipe proxy, using the model and options saved for that project. |
+| **PXP dashboard (opt-in)** | Off by default. Turn it on and CCPIT supervises **pxpipe** (a local token-saving proxy, third-party OSS, pinned version) and shows per-session savings in a Japanese overlay. CCPIT only talks to the proxy's localhost port. |
+| **Per-project launch options** | Bypass mode, resume session, and model are remembered *per project*. Nothing leaks into another project; a resume session ID stays with the project it came from. |
+| **New models in the launch menu** | Opus 5.5 / Opus 5 / Sonnet 5 join the choices. The model list fetched at startup appears without restarting the app. |
+| **Special entries** | Pin projects that live outside the scanned roots at the top of the Projects list. |
+| **Bulk compose of skill proposals** | Three sessions proposed three versions of the same skill? Select them and a background Claude Code session merges them into one composite proposal. Sources get *Merged into composite* / *awaiting approval* badges. |
+| **Conflict guidance + one-click repair** | When two proposals for the same skill compete, the browser says what blocks promotion, why, and how to resolve it. A proposal that failed to parse offers *ask Claude Code to repair*. |
+| **Adopted Skill Integrity** | A page that checks every adopted skill against `~/.claude/skills` — Clean / Hash mismatch / Missing on disk / Gate-bypassed — with remove, restore, and name-collision resolution. |
+| **Background Claude Code panel** | Long-running jobs (compose, independent review, comment responses) run in a hidden `claude -p` session. A tray indicator opens a panel with state, elapsed time, and approximate cost. |
+| **Fixes you will notice** | Projects on Japanese-character paths now launch; projects on paths with parentheses open in the right folder; 175 previously unreadable proposals are readable again; PXP follows `/model` switches. |
+| **Upgrading from 1.6.x** | On first launch CCPIT may ask, per file, what to do with configuration files that differ from the bundle. Nothing is touched until you answer; *Stop asking* silences a file for good. |
 
 ---
 
@@ -114,6 +136,8 @@ What you get: your Claude Code sessions stop being disposable. At the end of a s
 4. Enter your password → **Adopt**. CCPIT snapshots first, validates, and rolls back automatically on failure. The skill lands in `~/.claude/skills/`.
 5. Next session: when its trigger matches, the skill fires. Rejected proposals keep their reasoning — nothing is silently lost, and you remain the only gate that can make anything permanent.
 
+Several proposals for the same skill? Tick them and press **Compose** — a background Claude Code session merges them into one composite proposal, the sources get a *Merged into composite* badge, and progress shows right where you pressed the button. If more than one proposal is promotable for the same skill, the browser tells you what blocks the selection and how to resolve it.
+
 ---
 
 ## Features
@@ -134,6 +158,8 @@ Re-runnable from Settings any time.
 - **Health** — runs a battery of checks across `settings.json` (deny coverage & symmetry, hook registration coverage **and liveness** — non-firing registrations are reported, not shown green), `CLAUDE.md`, `rules/`, `skills/`, and `hooks/`. Counts pass / warn / info / fail and shows the offending entries inline. Since v1.6.0, a user-customized `CLAUDE.md` is reported as informational — customizing it is normal use — while a missing or empty `CLAUDE.md` is an error.
 - **Doctor Analysis** — produces a "doctor pack" you can attach to a bug report or feed back to Claude when something is misbehaving.
 - **CLI presence detection** — verifies that `claude` is on `PATH` and reports the version.
+- **Deployed `scripts/` check** — bundled helper scripts (e.g. the review-ledger recorder) are verified to exist after deploy.
+- **BG-CC tab** — for background Claude Code jobs (compose, independent review, comment responses): clear the model-list cache, read the raw log.
 
 ### Project management
 
@@ -143,6 +169,8 @@ Re-runnable from Settings any time.
 - **Favorites** — pin the projects you actually work on.
 - **Protocol history** — see which protocol revisions a project has been through.
 - **CC Launch Button** — open Claude Code in the right project directory in one click.
+- **Per-project launch options** — Bypass mode, resume session, and model (Opus 5.5 / Opus 5 / Sonnet 5 and more) are stored per project; nothing is inherited implicitly across projects, and a resume session ID stays bound to the project it came from.
+- **Special entries** — pin projects that live outside the scanned roots at the top of the list.
 - **CC Request Inbox** — when Claude Code wants to change your settings, it drops a request here. You approve or reject from a GUI instead of editing JSON.
 
 ### Configuration & distribution
@@ -150,6 +178,8 @@ Re-runnable from Settings any time.
 - **CCES (Claude Code Extensions Summary)** — exports your current setup as a Markdown snapshot you can paste into a new conversation, share with a teammate, or commit to a repo.
 - **Recovery Kit** — named snapshots of your entire `~/.claude/` directory. Restore any past state in one click.
 - **Golden Bundle** — package your settings, rules, and skills into a password-protected `.pit` archive. Distribute to your team; they import it through the same UI.
+- **Golden update check at startup** ★ new in v1.7.0 — on every launch (outside Setup), CCPIT compares the deployed bundle, its deploy record, and your `~/.claude/` copies by content hash. For each file that differs it asks: *Overwrite (with backup)*, *Send to distribution* (promote your edit back into the bundle), *Send to distribution & Propose* (Claude Code drafts a GitHub issue), *Consult Claude Code* (side-by-side merge consultation), *Stop asking*, or *Later*. A partial deploy is never reported as success, and the previous version is archived before anything is overwritten.
+- **Two-layer `settings.json`** ★ new in v1.7.0 — redeploying golden no longer discards your own `settings.json` edits: the golden layer and your local layer are composed, and only golden-owned keys are refreshed.
 - **i18n** — full English and Japanese UI.
 
 ### Skill proposal loop
@@ -158,7 +188,11 @@ Re-runnable from Settings any time.
 
 - **Sensing** — a Stop hook has the CC distill each session into a skill proposal (or an explicit "no candidate") under `~/.ccpit/proposals/`.
 - **Skill candidate browser** — proposals as cards: What / Why / How, self-assigned recommend / reject labels, 5-axis scores, origin project.
-- **Review gate + one-click adopt** — independent review findings surface next to the card; adoption is password-gated with snapshot / validate / auto-rollback.
+- **Review gate + one-click adopt** — independent review findings surface next to the card; adoption is password-gated with snapshot / validate / auto-rollback. The gate is route-agnostic (any recorded independent reviewer; the OpenAI Codex CLI is one route), approvals are bound to the proposal's content hash and expire on edit, and forcing past an unmet gate (break-glass) is appended to an audit log.
+- **Bulk compose** ★ new in v1.7.0 — select several proposals for the same skill and let a background Claude Code session merge them into one composite proposal; sources get *Merged into composite* / *awaiting approval* badges and the composite can be discarded.
+- **Conflict guidance + repair** ★ new in v1.7.0 — when more than one proposal for the same skill is promotable, the browser says what blocks the selection, why, and how to resolve it (including rejecting the competitor in place). Proposals that failed to parse offer a one-click *ask Claude Code to repair*.
+- **Adopted Skill Integrity** ★ new in v1.7.0 — reconciles the adoption registry with `~/.claude/skills` and classifies each adopted skill as Clean / Hash mismatch / Missing on disk / Gate-bypassed, with removal, restore, and name-collision resolution.
+- **Background Claude Code (BG-CC)** ★ new in v1.7.0 — compose, independent review, and comment-response jobs run in a hidden `claude -p` session; a tray indicator opens a panel with state, elapsed time, and approximate cost.
 - Hands-on walkthrough: **Tour 2** above.
 
 ### Enforcement stats
@@ -175,9 +209,9 @@ Governance you cannot observe is governance you have to take on faith. The **Enf
 
 Every tab states its measurement limits in a banner up front — what cannot be measured is declared as unmeasurable instead of being padded with fabricated numbers. Nothing is written: the page only reads transcripts.
 
-### MCP server management ★
+### MCP server management
 
-The newest addition, designed for teams who are starting to wire up MCP servers but worry about giving the model write access by accident.
+Designed for teams who are starting to wire up MCP servers but worry about giving the model write access by accident.
 
 | Capability | What it gives you |
 |---|---|
@@ -190,6 +224,10 @@ The newest addition, designed for teams who are starting to wire up MCP servers 
 
 ![CCPIT Add MCP Server dialog — Guided (Mode A) selected, deepwiki preset (Read-only public docs/wiki access) filling Name, Command (npx) and Args; an Environment section enforcing the VAR_NAME placeholder form, a "Safe — Read-only, no auth, local-only" risk note, and Cancel / Save (run CLI) buttons](./docs/screenshots/mcp.png)
 
+### PXP dashboard (opt-in) ★ new in v1.7.0
+
+Off by default. When enabled, CCPIT can supervise **pxpipe** — a local token-saving proxy for Claude Code (third-party OSS, pinned version; see the bundled NOTICE) — and shows a Japanese dashboard overlay with per-session savings. A *Fable* launch button appears per project. CCPIT talks only to the proxy's localhost port; it does not call any remote service itself.
+
 ---
 
 ## Quick start
@@ -200,7 +238,8 @@ The newest addition, designed for teams who are starting to wire up MCP servers 
 |---|---|
 | **Windows 10 / 11 (64-bit)** | The packaged installer targets Windows. macOS / Linux are source-build only and not yet supported targets. |
 | **Git for Windows** or **scoop Git** (`bash.exe`) | CCPIT's governance hooks run as bash scripts. Since v1.6.0, golden deploy resolves your local Git Bash and writes its absolute path into the hook registrations — and **stops with guidance instead of deploying hooks that would never fire** if no Git Bash is found (fail-closed). |
-| **Claude Code CLI** (`claude` on `PATH`) | Needed for CC launch buttons, MCP write operations, and CLI-backed edits. The rest of the UI works without it (a banner explains what is disabled). |
+| **Claude Code CLI** (`claude` on `PATH`) | Needed for CC launch buttons, MCP write operations, CLI-backed edits, and the background Claude Code (BG-CC) jobs. The rest of the UI works without it (a banner explains what is disabled). |
+| **Node.js** (`node` on `PATH`) — recommended | Since v1.7.0 the bundled gate hooks keep their logic in Node (`.cjs`) behind a thin bash entry. Without `node` the gates exit silently (fail-open) instead of blocking — Health does not yet flag this. |
 
 ### Install from a packaged installer (recommended)
 
@@ -263,12 +302,13 @@ A tool that edits your Claude Code configuration should tell you exactly where i
 | `~/.claude/settings.json` | ✅ | ✅ | Health checks; golden deploy rewrites it **after backing up the existing file** (`*.bak.<timestamp>`). Deploy also injects the absolute path of your local Git Bash into hook registrations. |
 | `~/.claude/CLAUDE.md`, `rules/`, `skills/`, `hooks/` | ✅ | ✅ | Golden deploy / migration / skill adoption. Every overwrite is preceded by a backup or Recovery Kit snapshot. |
 | `~/.claude.json`, `{project}/.mcp.json` | ✅ | ✅ | MCP tab, both scopes. CLI-backed where the CLI supports the edit. |
-| `~/.ccpit/` | ✅ | ✅ | CCPIT's own state: `app-config.json`, `projects.json`, `snapshots/` (Recovery Kit), `proposals/` (skill proposals from your CC sessions), review records, CC change requests. |
+| `~/.ccpit/` | ✅ | ✅ | CCPIT's own state: `app-config.json`, `projects.json`, `snapshots/` (Recovery Kit), `proposals/` (skill proposals from your CC sessions), review records, the break-glass audit log, golden deploy records and the promotion ledger, background Claude Code (BG-CC) logs, CC change requests. |
 | Your project directories | ✅ | — | Read-only scanning for project discovery (DetectLink) and protocol badges. |
 
 Things you should know, stated plainly:
 
-- **No telemetry, no network calls.** The app makes no HTTP requests of its own — everything runs against your local files. (External links in the UI open your browser; MCP servers you configure are executed by Claude Code, not by CCPIT.)
+- **No telemetry, no network calls of its own.** The app makes no HTTP requests itself — everything runs against your local files. It does, however, *launch other programs that talk to the network*, and those are listed here rather than hidden: (1) the background Claude Code (BG-CC) jobs below; (2) MCP servers you configure, executed by Claude Code, not by CCPIT; (3) the opt-in PXP proxy, which CCPIT only talks to on localhost. External links in the UI open your browser.
+- **Background Claude Code jobs are visible — and one runs at startup.** Compose, independent review, comment responses, and the model-catalog refresh run as a hidden `claude -p` session under your own account and quota; the tray indicator and the BG-CC panel show what is running, for how long, and the approximate cost. The model-catalog refresh is the only job you do not press a button for: when the cached list is older than 24 hours, CCPIT refreshes it once at startup (about $0.05 per run, as the tooltip states). The other jobs run only when you start them.
 - **The adoption/deploy password is stored locally** in `settings.json` (`auth.password`) and checked by the settings-guard hook. It is a governance gate against casual/unattended edits — not encryption. Anyone with full access to your user profile can read it.
 - **Hooks are bash scripts** installed under `~/.claude/hooks/` and registered in `settings.json`. Claude Code (not CCPIT) executes them at session events (Stop / PreToolUse / SessionStart). You can read every script before deploying — they are plain text in this repository under `golden/common/hooks/`.
 - **Destructive operations snapshot first.** Golden deploy, migration, and skill adoption all take a backup / Recovery Kit snapshot before writing, and adoption rolls back automatically on validation failure.
@@ -306,6 +346,11 @@ What is in the box today:
 - Report HTML renderer skill (`md-render`: dark theme, tabs, per-section comments, `--verify`)
 - Bulk CC restart (generation-flag based, confirmation preview)
 - Per-session CC identity (surfaced in exported summaries)
+- Golden update check at startup + two-layer `settings.json` on redeploy (v1.7.0)
+- Bulk compose of skill proposals, conflict guidance, one-click repair, Adopted Skill Integrity (v1.7.0)
+- Background Claude Code (BG-CC) panel (v1.7.0)
+- Per-project launch options + special entries (v1.7.0)
+- PXP dashboard, opt-in (v1.7.0)
 - English / Japanese UI
 - Packaged Windows installer (NSIS; currently unsigned — see the SmartScreen note in Quick start)
 
@@ -317,10 +362,14 @@ Areas under active design (not yet shipped, intentionally not promised by date):
 
 ---
 
-## Known issues (v1.6.0)
+## Known issues (v1.7.0)
 
 Stated up front rather than discovered the hard way:
 
+- **The golden update check asks on every launch** while a file still differs from the bundle. Choose *Stop asking* for that file if the local edit is intentional; the question goes away without touching the file.
+- **Some bundled skills are Japanese-only for now** — four of the skills in the v1.7.0 English bundle are marked *Translation Pending* (`handover-cc`, `golden-name-collision-proposal-triage`, `memory-import-size-rotation`, `remote-tmux-lane-drive`). They still work; only the prose is Japanese.
+- **Gate hooks need Node.js to enforce** — the bundled gates exit silently when `node` is not on `PATH` (fail-open by design, so a missing runtime never locks you out). Health does not yet report this; install Node.js if you want the gates to actually block.
+- **PXP dashboard needs the proxy** — the opt-in PXP dashboard requires a working pxpipe install; if another tool already holds the proxy port, CCPIT reports it instead of pretending the proxy is up.
 - **Unsigned installer** — Windows SmartScreen shows a warning on first run. Workaround in [Quick start](#quick-start); code signing is planned alongside incorporation.
 - **Git Bash is a hard requirement for hooks** — golden deploy intentionally refuses to run when no Git Bash (`bash.exe`) can be resolved from scoop Git or Git for Windows, because the hooks it would register could never fire. Install one of the two, then re-run deploy.
 - **Upgrading from an older deploy?** Health may report your existing hook registrations after upgrading:
@@ -362,6 +411,8 @@ CCPIT ships a Claude Code skill called `md-render` under `golden/common/`. It tu
 - **One-click reply-prompt generation + copy** — turn any section into a ready-to-paste follow-up prompt.
 - **Inline diagrams** — Mermaid (vendored, offline) and value-driven bar figures.
 - **sha1 heading anchors** for stable deep links, plus a bidirectional `--verify` (HTML ⊆ MD and MD ⊆ HTML) that fails closed when the HTML and its source drift apart.
+
+Updated in v1.7.0: a **copy button** on code blocks, **figure color checks** (fails closed on unreadable contrast), and **`comments_resolved` burn-in** — resolved reviewer comments are embedded read-only in the HTML next to the author's response.
 
 - Japanese (canonical): `golden/common/ja/skills/md-render/SKILL.md`
 - English: `golden/common/en/skills/md-render/SKILL.md`

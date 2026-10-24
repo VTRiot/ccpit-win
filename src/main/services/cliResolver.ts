@@ -16,3 +16,20 @@ export function resolveClaudeBin(): { command: string; useShell: boolean } {
   if (bare) return { command: bare, useShell: false }
   return { command: 'claude', useShell: false }
 }
+
+/**
+ * npx の解決。pxpipe proxy 起動（`npx -y pxpipe-proxy@x.y.z`）に使う。
+ * Windows は `npx.cmd`（実体 .cmd）ゆえ絶対パス + `shell: true`。`.exe`/POSIX は `shell: false`。
+ * resolveClaudeBin と同型。
+ */
+export function resolveNpxBin(): { command: string; useShell: boolean } {
+  if (process.platform === 'win32') {
+    const cmd = whichExe('npx.cmd')
+    if (cmd) return { command: cmd, useShell: true }
+    const exe = whichExe('npx.exe')
+    if (exe) return { command: exe, useShell: false }
+  }
+  const bare = whichExe('npx')
+  if (bare) return { command: bare, useShell: false }
+  return { command: 'npx', useShell: false }
+}

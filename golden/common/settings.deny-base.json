@@ -9,8 +9,6 @@
   "Bash(cat **/credentials/**/*)",
   "Edit(~/.claude/settings.json)",
   "Edit(~/.claude/settings.local.json)",
-  "Write(~/.claude/settings.json)",
-  "Write(~/.claude/settings.local.json)",
   "Bash(cat ~/.claude/settings.json)",
   "Bash(cat ~/.claude/settings.local.json)",
   "Read(~/.ssh/**)",

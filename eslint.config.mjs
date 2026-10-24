@@ -6,7 +6,24 @@ import eslintPluginReactHooks from 'eslint-plugin-react-hooks'
 import eslintPluginReactRefresh from 'eslint-plugin-react-refresh'
 
 export default defineConfig(
-  { ignores: ['**/node_modules', '**/dist', '**/out'] },
+  // golden/ は配布バンドル正本（dist/out と同種のアーティファクト）。アプリ用 TS/React 設定で
+  // lint すると CommonJS スクリプトが誤 error になり、vendor/mermaid.min.js (3.3MB) は prettier が
+  // heap OOM でクラッシュする（038 §4-6 検証中に判明した既存地雷）。検証は各 skill の selfcheck が担う。
+  // resources/dashboard-ja も同種（同梱する実体をそのまま配る領域）。アプリ用 TS/React 設定で
+  // lint する対象ではなく、整形も禁止（sha256 固定テストが正本との一致を守っている）。
+  {
+    ignores: [
+      '**/node_modules',
+      '**/dist',
+      '**/out',
+      'golden',
+      'resources/dashboard-ja',
+      // 古い golden の自己検査の写し（試験が「この版に戻ったら落ちる」ことを示すために保存。golden と同様に中身を変えない）
+      'src/main/services/__tests__/fixtures/proposal-golden-self-check',
+      '**/vendor',
+      '**/*.min.js'
+    ]
+  },
   tseslint.configs.recommended,
   eslintPluginReact.configs.flat.recommended,
   eslintPluginReact.configs.flat['jsx-runtime'],

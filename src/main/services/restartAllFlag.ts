@@ -1,4 +1,4 @@
-﻿/**
+/**
  * restartAllFlag — DELEGATE 全体フラグ（settings generation）の writer/reader
  *
  * CCPIT「全 CC 再起動」ボタンが generation を +1 する。各 CC の Stop hook(restart-all-gate.sh) が

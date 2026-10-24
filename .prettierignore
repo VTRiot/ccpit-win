@@ -4,3 +4,6 @@ pnpm-lock.yaml
 LICENSE.md
 tsconfig.json
 tsconfig.*.json
+# 同梱する第三者ラッパー実体。`prettier --write .` が触ると配布物が正本から byte 単位でずれ、
+# sha256 固定テストが落ちる（＝意図しない改変の検知が本来の目的）。整形対象から外す。
+resources/dashboard-ja

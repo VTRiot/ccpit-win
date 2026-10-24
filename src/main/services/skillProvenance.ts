@@ -18,11 +18,12 @@
  * 本モジュールは Electron Main プロセスのサービス（AI 体制非依存）。
  */
 
-import { readFile, writeFile, mkdir, rename } from 'fs/promises'
+import { readFile, mkdir, rename } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import { createHash } from 'crypto'
 import { homedir } from 'os'
+import { writeJsonArrayAtomic } from './atomicFile'
 
 /** 採用レジストリの 1 エントリ。 */
 export interface AdoptedSkillEntry {
@@ -38,6 +39,15 @@ export interface AdoptedSkillEntry {
   source: 'adopted' | 'emergency'
   /** 採用時点で観測した golden バージョン（あれば。ケース2/失効判定の参考） */
   goldenVersionAtAdoption?: string
+  /** 更新採用（同名 skill の差し替え）の最終時刻 ISO 8601。初回採用のみなら未設定 */
+  updatedAt?: string
+  /** 直前版の SKILL.md sha256（更新採用時のみ。ロールバック照合用） */
+  previousHash?: string
+  /** 直前版の圧縮アーカイブディレクトリ（更新採用時のみ。ロールバック実体） */
+  archivePath?: string
+  /** アーカイブからのロールバックを実行した時刻 ISO 8601（CCPIT_058）。
+   *  adoptedAt/updatedAt の意味を上書きしないための専用フィールド。 */
+  restoredFromArchiveAt?: string
 }
 
 /** 緊急避難 override マーカー（golden バグ時のみ Dr 動線で生成）。 */
@@ -143,7 +153,34 @@ export async function upsertAdoptedSkill(
   }
   const next = list.filter((e) => e.name !== entry.name)
   next.push(entry)
-  await writeFile(paths.adoptedRegistryPath, JSON.stringify(next, null, 2), 'utf-8')
+  await writeJsonArrayAtomic(paths.adoptedRegistryPath, next)
+}
+
+/**
+ * 採用レジストリから 1 件を name で削除する（撤去機能用）。該当が無ければ何もしない。
+ * 破損ファイルは upsertAdoptedSkill と同じく `.corrupt-<ts>` へ退避してから新規開始する
+ * （読めない状態を黙って「該当なし」として扱わない）。
+ */
+export async function removeAdoptedSkillEntry(
+  name: string,
+  paths: ProvenancePaths = getDefaultProvenancePaths()
+): Promise<void> {
+  let list: AdoptedSkillEntry[] = []
+  try {
+    list = await readAdoptedRegistry(paths)
+  } catch {
+    const ts = new Date().toISOString().replace(/[:.]/g, '-')
+    try {
+      await rename(paths.adoptedRegistryPath, `${paths.adoptedRegistryPath}.corrupt-${ts}`)
+    } catch {
+      // 退避失敗時もブロックしない
+    }
+    list = []
+  }
+  const next = list.filter((e) => e.name !== name)
+  if (next.length === list.length) return // 無ければ何もしない
+  await mkdir(join(paths.adoptedRegistryPath, '..'), { recursive: true })
+  await writeJsonArrayAtomic(paths.adoptedRegistryPath, next)
 }
 
 /**
@@ -223,7 +260,7 @@ export async function createEmergencyOverride(
   }
   const next = list.filter((o) => o.name !== override.name)
   next.push(override)
-  await writeFile(paths.emergencyOverridesPath, JSON.stringify(next, null, 2), 'utf-8')
+  await writeJsonArrayAtomic(paths.emergencyOverridesPath, next)
 }
 
 /** 緊急 override を skill 名で削除（golden Fix 後の Dr 削除導線）。 */
@@ -235,7 +272,7 @@ export async function removeEmergencyOverride(
   const next = list.filter((o) => o.name !== name)
   if (next.length === list.length) return // 無ければ何もしない
   await mkdir(join(paths.emergencyOverridesPath, '..'), { recursive: true })
-  await writeFile(paths.emergencyOverridesPath, JSON.stringify(next, null, 2), 'utf-8')
+  await writeJsonArrayAtomic(paths.emergencyOverridesPath, next)
 }
 
 /**

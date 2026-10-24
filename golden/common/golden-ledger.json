@@ -1,0 +1,994 @@
+[
+  {
+    "name": "testable-impl",
+    "target": "common/ja/skills/testable-impl/SKILL.md",
+    "hash": "1081429e8830bfa283f8899f80b752e253c029a8611ec09e90ef31232edf5449",
+    "promotedAt": "2026-09-15T20:30:00+09:00",
+    "source": "normal",
+    "goldenVersionAtPromotion": "contract-preexisting",
+    "action": "contract-preexisting",
+    "history": {
+      "originalRecord": "契約制定前入庫 (契約 r20 追補条項 7-c)",
+      "lane": "preexisting",
+      "originalDate": "2026-09-15"
+    }
+  },
+  {
+    "name": "stopbug-guard",
+    "target": "common/ja/skills/stopbug-guard/SKILL.md",
+    "hash": "141e41a36f1f8945a51b0898444b3242345b775230b5458f314c2f3ca154fd96",
+    "promotedAt": "2026-09-15T20:30:00+09:00",
+    "source": "normal",
+    "goldenVersionAtPromotion": "contract-preexisting",
+    "action": "contract-preexisting",
+    "history": {
+      "originalRecord": "契約制定前入庫 (契約 r20 追補条項 7-c)",
+      "lane": "preexisting",
+      "originalDate": "2026-09-15"
+    }
+  },
+  {
+    "name": "skill-proposal-emitter",
+    "target": "common/ja/skills/skill-proposal-emitter/SKILL.md",
+    "hash": "988b03fdbec00550b9c24fa5aa3622f472dc850f95e353309aac290f0a31f51f",
+    "promotedAt": "2026-09-15T20:30:00+09:00",
+    "source": "normal",
+    "goldenVersionAtPromotion": "contract-preexisting",
+    "action": "contract-preexisting",
+    "history": {
+      "originalRecord": "契約制定前入庫 (契約 r20 追補条項 7-c)",
+      "lane": "preexisting",
+      "originalDate": "2026-09-15"
+    }
+  },
+  {
+    "name": "settings-change-request-emitter",
+    "target": "common/ja/skills/settings-change-request-emitter/SKILL.md",
+    "hash": "f70ab95ac9f0534a7670b37a41c104fe8c3c9e7e2040b8e450d6f2c074eda625",
+    "promotedAt": "2026-09-15T20:30:00+09:00",
+    "source": "normal",
+    "goldenVersionAtPromotion": "contract-preexisting",
+    "action": "contract-preexisting",
+    "history": {
+      "originalRecord": "契約制定前入庫 (契約 r20 追補条項 7-c)",
+      "lane": "preexisting",
+      "originalDate": "2026-09-15"
+    }
+  },
+  {
+    "name": "rumination",
+    "target": "common/ja/skills/rumination/SKILL.md",
+    "hash": "ce2b69b2d76d6cd1a5cd2279982209958ba1006e4f1b0a31937433d4809f79db",
+    "promotedAt": "2026-09-15T20:30:00+09:00",
+    "source": "normal",
+    "goldenVersionAtPromotion": "contract-preexisting",
+    "action": "contract-preexisting",
+    "history": {
+      "originalRecord": "契約制定前入庫 (契約 r20 追補条項 7-c)",
+      "lane": "preexisting",
+      "originalDate": "2026-09-15"
+    }
+  },
+  {
+    "name": "report",
+    "target": "common/ja/skills/report/SKILL.md",
+    "hash": "d76d379e3b096d68cf960f445bb70eff36a8cbfdb093cc48eb6a138156fc4634",
+    "promotedAt": "2026-09-26T23:12:28.145Z",
+    "source": "normal",
+    "goldenVersionAtPromotion": "ba33c2c47a1affbb02a4134f4f2175ecc4558564",
+    "action": "contract-applied",
+    "sourceCommitSha": "84a208ff4668193932282f6e1ffdeb4996c1cb79",
+    "files": [
+      {
+        "path": "SKILL.md",
+        "hash": "d76d379e3b096d68cf960f445bb70eff36a8cbfdb093cc48eb6a138156fc4634",
+        "status": "present"
+      },
+      {
+        "path": "templates/present.md",
+        "hash": "31bd7197a822398636d6228b125af655191478b293ecb200a8d3f1ab7d3d080f",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "契約 CLI コミット (84a208ff) 追補同期",
+      "lane": "contract-cli",
+      "originalDate": "2026-09-26"
+    }
+  },
+  {
+    "name": "refactoring",
+    "target": "common/ja/skills/refactoring/SKILL.md",
+    "hash": "8048d509256abc5bc698b2455a5b95c57008420d443fabb4e0be2abb2699516a",
+    "promotedAt": "2026-09-15T20:30:00+09:00",
+    "source": "normal",
+    "goldenVersionAtPromotion": "contract-preexisting",
+    "action": "contract-preexisting",
+    "history": {
+      "originalRecord": "契約制定前入庫 (契約 r20 追補条項 7-c)",
+      "lane": "preexisting",
+      "originalDate": "2026-09-15"
+    }
+  },
+  {
+    "name": "md-render",
+    "target": "common/ja/skills/md-render/SKILL.md",
+    "hash": "968a4198deeff8215478c730af218e8565f4c20a061bf9014561942261b7c55c",
+    "promotedAt": "2026-09-26T23:13:09.653Z",
+    "source": "normal",
+    "goldenVersionAtPromotion": "c9d7f3c48574b37bfb6372c63424aff53001eee2",
+    "action": "contract-applied",
+    "sourceCommitSha": "7a6aa6d6e9d9254110cbdd9e6c22463a39bbb719",
+    "files": [
+      {
+        "path": "SKILL.md",
+        "hash": "968a4198deeff8215478c730af218e8565f4c20a061bf9014561942261b7c55c",
+        "status": "present"
+      },
+      {
+        "path": "md2html.cjs",
+        "hash": "610f90865cb0bbec777744f849e51606219afa13b109bebc4ea40cc0a1e8fbe7",
+        "status": "present"
+      },
+      {
+        "path": "vendor/LICENSE-mermaid.txt",
+        "hash": "daed624239c68e2640b2333fa726b9ace3275f281ef4676aca82b24d505669d3",
+        "status": "present"
+      },
+      {
+        "path": "vendor/mermaid.min.js",
+        "hash": "61b335a46df05a7ce1c98378f60e5f3e77a7fb608a1056997e8a649304a936d6",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "契約 CLI コミット (7a6aa6d6) 追補同期",
+      "lane": "contract-cli",
+      "originalDate": "2026-09-26"
+    }
+  },
+  {
+    "name": "investigation",
+    "target": "common/ja/skills/investigation/SKILL.md",
+    "hash": "53672f19399418fc30d76c6fbba0f439e121e7321b453c339a1f95c144a55c59",
+    "promotedAt": "2026-09-15T20:30:00+09:00",
+    "source": "normal",
+    "goldenVersionAtPromotion": "contract-preexisting",
+    "action": "contract-preexisting",
+    "history": {
+      "originalRecord": "契約制定前入庫 (契約 r20 追補条項 7-c)",
+      "lane": "preexisting",
+      "originalDate": "2026-09-15"
+    }
+  },
+  {
+    "name": "external-repo-analysis",
+    "target": "common/ja/skills/external-repo-analysis/SKILL.md",
+    "hash": "7562e3824e5cc82854334500b905e93735f3c162ffb19c2348f9b2043deb6592",
+    "promotedAt": "2026-09-15T20:30:00+09:00",
+    "source": "normal",
+    "goldenVersionAtPromotion": "contract-preexisting",
+    "action": "contract-preexisting",
+    "history": {
+      "originalRecord": "契約制定前入庫 (契約 r20 追補条項 7-c)",
+      "lane": "preexisting",
+      "originalDate": "2026-09-15"
+    }
+  },
+  {
+    "name": "diagram-craft",
+    "target": "common/ja/skills/diagram-craft/SKILL.md",
+    "hash": "ffbafe7e4eb7c6e4a9a967866f7e64911d4154984299afd62d0bb3703b29e212",
+    "promotedAt": "2026-09-15T20:30:00+09:00",
+    "source": "normal",
+    "goldenVersionAtPromotion": "contract-preexisting",
+    "action": "contract-preexisting",
+    "history": {
+      "originalRecord": "契約制定前入庫 (契約 r20 追補条項 7-c)",
+      "lane": "preexisting",
+      "originalDate": "2026-09-15"
+    }
+  },
+  {
+    "name": "debug-toolkit",
+    "target": "common/ja/skills/debug-toolkit/SKILL.md",
+    "hash": "dcdae9471dba27bcc603f5b93006a3f26c069a37024f95731ee2eb8ed2b1590b",
+    "promotedAt": "2026-09-15T20:30:00+09:00",
+    "source": "normal",
+    "goldenVersionAtPromotion": "contract-preexisting",
+    "action": "contract-preexisting",
+    "history": {
+      "originalRecord": "契約制定前入庫 (契約 r20 追補条項 7-c)",
+      "lane": "preexisting",
+      "originalDate": "2026-09-15"
+    }
+  },
+  {
+    "name": "completion-interlock",
+    "target": "common/ja/skills/completion-interlock/SKILL.md",
+    "hash": "e0d5391406bd6ebf954ca33aac23cb88b6098003581870b8933614a04699e107",
+    "promotedAt": "2026-09-15T20:30:00+09:00",
+    "source": "normal",
+    "goldenVersionAtPromotion": "contract-preexisting",
+    "action": "contract-preexisting",
+    "history": {
+      "originalRecord": "契約制定前入庫 (契約 r20 追補条項 7-c)",
+      "lane": "preexisting",
+      "originalDate": "2026-09-15"
+    }
+  },
+  {
+    "name": "codex-review",
+    "target": "common/ja/skills/codex-review/SKILL.md",
+    "hash": "f489f783147fe00a3421c917e918fdb0e2860f5489cb194d3a174cf7b1dd9712",
+    "promotedAt": "2026-09-15T20:30:00+09:00",
+    "source": "normal",
+    "goldenVersionAtPromotion": "contract-preexisting",
+    "action": "contract-preexisting",
+    "history": {
+      "originalRecord": "契約制定前入庫 (契約 r20 追補条項 7-c)",
+      "lane": "preexisting",
+      "originalDate": "2026-09-15"
+    }
+  },
+  {
+    "name": "bat-powershell-caution",
+    "target": "common/ja/skills/bat-powershell-caution/SKILL.md",
+    "hash": "8eccabcf04d8ed856f59185fb9d8917043a201879a77cd0b9a62987de2a9ffec",
+    "promotedAt": "2026-09-15T20:30:00+09:00",
+    "source": "normal",
+    "goldenVersionAtPromotion": "contract-preexisting",
+    "action": "contract-preexisting",
+    "history": {
+      "originalRecord": "契約制定前入庫 (契約 r20 追補条項 7-c)",
+      "lane": "preexisting",
+      "originalDate": "2026-09-15"
+    }
+  },
+  {
+    "name": "imaging-proxy-verbatim-read",
+    "target": "common/ja/skills/imaging-proxy-verbatim-read/SKILL.md",
+    "hash": "9f9d84e6ee125f7ca051b801e961bdc7d45a7f023b63fc98a03f3f6b186621fb",
+    "promotedAt": "2026-09-17T15:21:50.788Z",
+    "source": "normal",
+    "goldenVersionAtPromotion": "a415d9a7d85e6f1d526b7b192f05d945929b779e",
+    "history": {
+      "originalRecord": "ツール出力を画像化するプロキシの配下で、sha256・PID・ポート・行番号・パス・URL・版番号など「1 文字違うと意味が変わる／辿り着けなくなる値」をそのまま引用・引数・照合に使うときに、モデルを問わず発火する。要旨で足りる読取には発火しない。対象を先に限定して出力を画像化されない大きさに保ち、画像化された出力の値を根拠に使わず、取れない値は未検証として扱う。",
+      "lane": "不明",
+      "originalDate": "2026-09-17"
+    }
+  },
+  {
+    "name": "design-lane-order-and-review-cycle",
+    "target": "common/ja/skills/design-lane-order-and-review-cycle/SKILL.md",
+    "hash": "24d43aaa1a7a26672c0cd91e15b6acd085c4e5a8bee5c586f26d1c6fde2b9a26",
+    "promotedAt": "2026-09-28T20:12:18.676Z",
+    "source": "normal",
+    "goldenVersionAtPromotion": "59280a432345b524d8f36a3c87fae57017870dc1",
+    "history": {
+      "originalRecord": "設計AI役のCCが、別セッションの実装レーンCCへ案件を発注するときに発火する。What/Why のみを明示して How を委譲し（How を書くときは参考情報・決定権は実装CC と明示）、4点セット（指示MD／配置と検証／Clear判断と妥当性／投下プロンプト・正本 Vol.2-7 §3-0 準拠）で渡し、Plan レビュー→承認→実装計画のCodexレビュー→実装→実装のCodexレビュー→HTML報告→指摘、の順序を管理する。自分で実装する場合や、単発のレビュー依頼には発火しない。",
+      "lane": "不明",
+      "originalDate": "2026-09-15"
+    },
+    "catchupCommits": [
+      "ed08b3405b87c71c4c3ac6a5946a43bf85880f6b",
+      "2cdf13e40f9945064df104b5a701b50f827cac0c"
+    ],
+    "sourceCommitSha": "2cdf13e40f9945064df104b5a701b50f827cac0c",
+    "files": [
+      {
+        "path": "SKILL.md",
+        "hash": "24d43aaa1a7a26672c0cd91e15b6acd085c4e5a8bee5c586f26d1c6fde2b9a26",
+        "status": "present"
+      }
+    ],
+    "action": "contract-applied"
+  },
+  {
+    "name": "skill-distribution-bundler",
+    "target": "common/ja/skills/skill-distribution-bundler/SKILL.md",
+    "hash": "f2b812852bfa14b898a38f9fae26d801d6803c3c1d2ee8dd27dace1307455062",
+    "promotedAt": "2026-09-17T18:32:09.870Z",
+    "source": "normal",
+    "goldenVersionAtPromotion": "33401379bbd97a9f1c23ae5f28d7721b98bd0dc0",
+    "history": {
+      "originalRecord": "自作 skill / スクリプト一式を別ユーザー・別環境（他OS含む）へインポート可能な形で配布・プレゼントする際に発火する。私的固有語のサニタイズ、OS依存箇所のクロスプラットフォーム移植、受領者向けインストールREADMEの同梱、構文/DryRun検証、ZIP梱包までを一貫ゲートで行う。",
+      "lane": "不明",
+      "originalDate": "2026-06-24"
+    }
+  },
+  {
+    "name": "vendor-safeguard-refusal-triage",
+    "target": "common/ja/skills/vendor-safeguard-refusal-triage/SKILL.md",
+    "hash": "403bcca83882e40e1adde984e64c459ce9a89e01a1c1c6c932c6c7ac98902ffb",
+    "promotedAt": "2026-09-17T18:32:09.870Z",
+    "source": "normal",
+    "goldenVersionAtPromotion": "33401379bbd97a9f1c23ae5f28d7721b98bd0dc0",
+    "history": {
+      "originalRecord": "ベンダー側の非公開分類器（API の safeguards 等）にリクエストを丸ごと拒否され、現在のセッションが停止しているときに発火する。表示文言でなく transcript の生レコードで拒否カテゴリを確定し、全セッションのコホート集計で原因仮説を反証し、公式一次資料で判定対象と申請窓口の有無を確かめ、停止条件つきの復帰動線を出す。判定ロジックを手元で再現できる検出器（lint・ヘルスチェック・自己診断 UI）の誤検知判定には使わない（detector-signal-fidelity-triage の領分）。停止していない過去事例の説明だけが目的なら発火しない（investigation で足りる）。",
+      "lane": "不明",
+      "originalDate": "2026-09-14"
+    }
+  },
+  {
+    "name": "bat-powershell-caution",
+    "target": "common/ja/skills/bat-powershell-caution/SKILL.md",
+    "hash": "8eccabcf04d8ed856f59185fb9d8917043a201879a77cd0b9a62987de2a9ffec",
+    "promotedAt": "2026-09-18T20:15:23.583Z",
+    "source": "normal",
+    "goldenVersionAtPromotion": "withdrawn",
+    "action": "withdrawn",
+    "history": {
+      "originalRecord": "撤去: bat-powershell-caution"
+    }
+  },
+  {
+    "name": "bat-powershell-caution",
+    "target": "common/ja/skills/bat-powershell-caution/SKILL.md",
+    "hash": "8eccabcf04d8ed856f59185fb9d8917043a201879a77cd0b9a62987de2a9ffec",
+    "promotedAt": "2026-09-18T20:17:03.467Z",
+    "source": "normal",
+    "goldenVersionAtPromotion": "restored",
+    "action": "restored",
+    "history": {
+      "originalRecord": "復帰: bat-powershell-caution"
+    }
+  },
+  {
+    "name": "codex-review",
+    "target": "common/ja/skills/codex-review/SKILL.md",
+    "hash": "18a3f450532d9ae853a9d79ee7dbf09ee696c787f1778483c533e4e9fa0ca87b",
+    "promotedAt": "2026-09-24T12:29:31.305Z",
+    "source": "normal",
+    "goldenVersionAtPromotion": "84a208ff4668193932282f6e1ffdeb4996c1cb79",
+    "history": {
+      "originalRecord": "汎用の独立 Codex 第二レビュアー。marshal-review が発火しない領域（実装前の計画/設計レビュー、Skill 採用候補レビュー、working-tree 差分でない成果物）で発火する。同一タスクで marshal-review が発火する（実装変更がある）場合は、二重 Codex 実行を避けるため取り下げる。候補レビュー時は findings を CCPIT のレビューボックス契約に記録する。対象が「事実調査・研究結論の独立クロスチェック」の場合は本skillではなく`codex-cli-crossref`skill（生の`codex exec` CLIを直接呼ぶ、別ツール向けの手順）を使う。",
+      "lane": "不明",
+      "originalDate": "2026-09-19"
+    }
+  },
+  {
+    "name": "handover-cc",
+    "target": "common/ja/skills/handover-cc/SKILL.md",
+    "hash": "452e2c086e75b7c967ddf0f5d81a46a6537093009cf4c2a97b7851a85f0878df",
+    "promotedAt": "2026-09-28T16:04:01.636Z",
+    "source": "normal",
+    "goldenVersionAtPromotion": "78fcd8b390b3eb420eed052d9d706729637798f7",
+    "files": [
+      {
+        "path": "SKILL.md",
+        "hash": "452e2c086e75b7c967ddf0f5d81a46a6537093009cf4c2a97b7851a85f0878df",
+        "status": "present"
+      },
+      {
+        "path": "Vol2-7_CC.md",
+        "hash": "b5a57e3434c28404384cfe2a35fa91b632b95ec806fd53276ae0f0a83dba4d4c",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "CC 自身が設計AIとして実装レーン CC へ指示を発行する時の条文（定義の正本）。「Vol.2プロトコル/Vol2プロトコル/Volume 2 protocol に従って指示セットにして」「投下4点セット/四点セット」「指示書/指示MDを書いて」「Clear判断」「実装レーンCCへの要求仕様」「P-Link」「FromDesignAi」「受け入れ条件（条件/判定方法/証跡の形/区分）」「発注の型の宣言」「副作用ゼロ検証」等で発火する。HandOver Vol.2-7 指示書設計憲法を Claude Code 実行系向けに読み替えた版。指示MDの命名・構造・What/Why/How 分離・投下4点セット・/clear 判断・受け入れ条件設計・テスト報告検証の規範を与える。発注サイクルの順序管理は design-lane-order-and-review-cycle が担い、本 skill は各点の定義を与える（役割分担は §0 参照）。",
+      "lane": "不明",
+      "originalDate": "2026-09-28"
+    }
+  },
+  {
+    "name": "golden-name-collision-proposal-triage",
+    "target": "common/ja/skills/golden-name-collision-proposal-triage/SKILL.md",
+    "hash": "2d2009455ce839384a14b14e33d41fec589588e6b1901a60788eceb94a19f799",
+    "promotedAt": "2026-09-30T09:45:52.785Z",
+    "source": "proposal",
+    "goldenVersionAtPromotion": "8a3db452262f3071c024c9d646686d13c7cbe8ac",
+    "files": [
+      {
+        "path": "SKILL.md",
+        "hash": "2d2009455ce839384a14b14e33d41fec589588e6b1901a60788eceb94a19f799",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "CCPIT の Skill Proposal 採用（adopt）が「golden 配布 skill と同名です」で拒否された時、またはそのトーストに言及する提案コメントへ応答する時に発火する。無関係な同名の可能性を先に除外したうえで、Doctor Analysis の緊急避難 override の適用可否・golden 正本編集の権限を判定し、実行前に独立レビューへ通してから golden-distribution-safe-add へ委譲する。提案コメント応答（decision の付け方）までを扱う。",
+      "lane": "cc-proposal",
+      "originalDate": "2026-09-11"
+    }
+  },
+  {
+    "name": "skill-proposal-emitter",
+    "target": "common/ja/skills/skill-proposal-emitter/SKILL.md",
+    "hash": "6b4fb54ac0cf2fef2dec4d4c9d0174f353f76dd60b92b8bad168df9ffeaec88a",
+    "promotedAt": "2026-09-30T09:45:52.785Z",
+    "source": "proposal",
+    "goldenVersionAtPromotion": "8a3db452262f3071c024c9d646686d13c7cbe8ac",
+    "files": [
+      {
+        "path": "SKILL.md",
+        "hash": "6b4fb54ac0cf2fef2dec4d4c9d0174f353f76dd60b92b8bad168df9ffeaec88a",
+        "status": "present"
+      },
+      {
+        "path": "proposal_self_check.cjs",
+        "hash": "ef2c1958591bd1061fc346b01a35c78708d7a329148f51e227686527ebdf0a1f",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "セッション終了時に、そのセッションで踏んだ WorkFlow のうち Skill 化が有益な候補を「完成版 SKILL.md（必要なら付随ファイルも）+ 採用推奨/棄却ラベル + 評価軸スコア」の提案 MD として出力するために発火する。CCPIT の候補ブラウザから人間が ほぼ手数0 で採用できる形式。",
+      "lane": "cc-proposal",
+      "originalDate": "2026-09-30"
+    }
+  },
+  {
+    "name": "report",
+    "target": "common/ja/skills/report/SKILL.md",
+    "hash": "510ce35deef74af7b5bab763709c85602ffcad2e72f28dc9870849aa5c8d83ae",
+    "promotedAt": "2026-09-30T12:49:21.210Z",
+    "source": "proposal",
+    "goldenVersionAtPromotion": "a412e643e9feba2b3366138860c040c1a176f5c4",
+    "files": [
+      {
+        "path": "SKILL.md",
+        "hash": "510ce35deef74af7b5bab763709c85602ffcad2e72f28dc9870849aa5c8d83ae",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "報告書・完了報告を出力する際に発火する。インターロック検証欄を含む報告書を生成する",
+      "lane": "cc-proposal",
+      "originalDate": "2026-09-30"
+    }
+  },
+  {
+    "name": "md-render",
+    "target": "common/ja/skills/md-render/SKILL.md",
+    "hash": "9520dc481201d6f61528f6879a179ec50126d4bc80aa1de90ecfcda0a6bb487b",
+    "promotedAt": "2026-09-30T20:47:53.952Z",
+    "source": "proposal",
+    "goldenVersionAtPromotion": "9c6e7743c43e9c265b313f72d56cdc5e2ac355fb",
+    "files": [
+      {
+        "path": "SKILL.md",
+        "hash": "9520dc481201d6f61528f6879a179ec50126d4bc80aa1de90ecfcda0a6bb487b",
+        "status": "present"
+      },
+      {
+        "path": "md2html.cjs",
+        "hash": "b28f9ad9a37b1fccb16a58031ecc75b6fb130b101d895a873871a5df2ad9bfea",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "報告書 MD から決定論 HTML を生成・検証する際に発火する。md2html.cjs（同梱）で render / verify / lint / selftest / check を実行する",
+      "lane": "cc-proposal",
+      "originalDate": "2026-10-01"
+    }
+  },
+  {
+    "name": "md-render",
+    "target": "common/ja/skills/md-render/SKILL.md",
+    "hash": "d036942931b0af4a936799b5a984c3422fd751d04ef62726b31afca3829a240e",
+    "promotedAt": "2026-10-03T10:55:28.250Z",
+    "source": "proposal",
+    "goldenVersionAtPromotion": "b35fc79f5050d34d663bbe91bc6e5d592e319206",
+    "files": [
+      {
+        "path": "SKILL.md",
+        "hash": "d036942931b0af4a936799b5a984c3422fd751d04ef62726b31afca3829a240e",
+        "status": "present"
+      },
+      {
+        "path": "md2html.cjs",
+        "hash": "79ecbdf2379a427a538dc5cc2f6f3e21e127daba58eba350790ba72cb85cb27f",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "報告書 MD から決定論 HTML を生成・検証する際に発火する。md2html.cjs（同梱）で render / verify / lint / selftest / check を実行する",
+      "lane": "cc-proposal",
+      "originalDate": "2026-10-02"
+    }
+  },
+  {
+    "name": "md-render",
+    "target": "common/ja/skills/md-render/SKILL.md",
+    "hash": "16f8dbb83ca0e49bbb0ca977d373d21f912bccb371a9ac0d98a2449dee4315da",
+    "promotedAt": "2026-10-04T03:31:38.775Z",
+    "source": "proposal",
+    "goldenVersionAtPromotion": "d824f52a76198dfb52588d1afbc7cda3756c7eb6",
+    "files": [
+      {
+        "path": "SKILL.md",
+        "hash": "16f8dbb83ca0e49bbb0ca977d373d21f912bccb371a9ac0d98a2449dee4315da",
+        "status": "present"
+      },
+      {
+        "path": "md2html.cjs",
+        "hash": "55a08ee2c3623eea0c00bff00c25891db66b572e114df3eafda15f2b9a3899ea",
+        "status": "present"
+      },
+      {
+        "path": "chapters/clickable-figures.md",
+        "hash": "57abe827ed198c16afb1ce79f1b696dd615642f1fb95554b312e5bda53c2b2ef",
+        "status": "present"
+      },
+      {
+        "path": "chapters/code-blocks.md",
+        "hash": "2a403b7f13e8ddbb52076032d1147b5df5ef90482829091b4acee33984eb138a",
+        "status": "present"
+      },
+      {
+        "path": "chapters/code-quotes.md",
+        "hash": "87302bc47b11ea177b93d74a1c6c90bb01a2f056f858c70740641eaf487ae77e",
+        "status": "present"
+      },
+      {
+        "path": "chapters/delivery.md",
+        "hash": "dbda4c154e2c77f74ef083c918d50e7e0fbc7b250510f44329bab5d5cfc5d12b",
+        "status": "present"
+      },
+      {
+        "path": "chapters/figure-colors-script.md",
+        "hash": "3e0ceecb25832796bc6fba7f7a96c0d5cd284295121a7e98dda328cc0a37820e",
+        "status": "present"
+      },
+      {
+        "path": "chapters/figure-colors.md",
+        "hash": "9dc4efd7240c0c754fcd8de334ec7a39d3967a3377d78e32fe86adfc89f3af8d",
+        "status": "present"
+      },
+      {
+        "path": "chapters/figures.md",
+        "hash": "eeea2933490d94b7915187fa0d152ee2c5d6918c3e933f5cc9f1493bc6b03ada",
+        "status": "present"
+      },
+      {
+        "path": "chapters/maintaining.md",
+        "hash": "feb580fa7684b9f5891204f08ab770a8a93d302cafbca566a10a747b5272407a",
+        "status": "present"
+      },
+      {
+        "path": "chapters/opt-in-display.md",
+        "hash": "2b1670dda7f4d0884404f38ce74cdcd79fb2fdc85e7b5fbebfb880adbba875bc",
+        "status": "present"
+      },
+      {
+        "path": "chapters/outputs.md",
+        "hash": "844651f154f6c6bd4045e31a79aa39772ca72509f235cc66672ddb60fdca5984",
+        "status": "present"
+      },
+      {
+        "path": "chapters/review-comments.md",
+        "hash": "368a6c56ba07f2a1f4448457bae26904e29b0be0f1da8691beab8d99f9a01d4c",
+        "status": "present"
+      },
+      {
+        "path": "chapters/tables.md",
+        "hash": "e07c008fba55cfe7caf2e2c9dd250ccece7a95692c8e36708465d929756a2b7b",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "報告書 MD から決定論 HTML を生成・検証する際に発火する。md2html.cjs（同梱）で render / verify / lint / selftest / check を実行する",
+      "lane": "cc-proposal",
+      "originalDate": "2026-10-04"
+    }
+  },
+  {
+    "name": "handover-cc",
+    "target": "common/ja/skills/handover-cc/SKILL.md",
+    "hash": "c339d3029b3adfd0d0f48c28f478bab2a3f429458c733de2e46f72e0062a6c43",
+    "promotedAt": "2026-10-04T03:31:38.775Z",
+    "source": "proposal",
+    "goldenVersionAtPromotion": "d824f52a76198dfb52588d1afbc7cda3756c7eb6",
+    "files": [
+      {
+        "path": "SKILL.md",
+        "hash": "c339d3029b3adfd0d0f48c28f478bab2a3f429458c733de2e46f72e0062a6c43",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "CC 自身が設計AIとして実装レーン CC へ指示を発行する時の条文（定義の正本）。「Vol.2プロトコル/Vol2プロトコル/Volume 2 protocol に従って指示セットにして」「投下4点セット/四点セット」「指示書/指示MDを書いて」「Clear判断」「実装レーンCCへの要求仕様」「P-Link」「FromDesignAi」「受け入れ条件（条件/判定方法/証跡の形/区分）」「発注の型の宣言」「副作用ゼロ検証」等で発火する。HandOver Vol.2-7 指示書設計憲法を Claude Code 実行系向けに読み替えた版。指示MDの命名・構造・What/Why/How 分離・投下4点セット・/clear 判断・受け入れ条件設計・テスト報告検証の規範を与える。発注サイクルの順序管理は design-lane-order-and-review-cycle が担い、本 skill は各点の定義を与える（役割分担は §0 参照）。",
+      "lane": "cc-proposal",
+      "originalDate": "2026-10-04"
+    }
+  },
+  {
+    "name": "md-render",
+    "target": "common/ja/skills/md-render/SKILL.md",
+    "hash": "ba6eb0b113c4cc68a8c85d81152f223939072d7974a1f41d2eaac55a67341012",
+    "promotedAt": "2026-10-12T01:00:44.536Z",
+    "source": "proposal",
+    "goldenVersionAtPromotion": "e9184b6307f3b9a166bd3270f7524e068c0efd84",
+    "files": [
+      {
+        "path": "SKILL.md",
+        "hash": "ba6eb0b113c4cc68a8c85d81152f223939072d7974a1f41d2eaac55a67341012",
+        "status": "present"
+      },
+      {
+        "path": "md2html.cjs",
+        "hash": "8e88994f70f3e9d28cbb4d4276cd3b5f27aaa32d3b26ad3ce75d37991f249eb2",
+        "status": "present"
+      },
+      {
+        "path": "chapters/figures.md",
+        "hash": "a2ac81b6d2adbc7b630ff84391b89233007648e1c854c9954028947bfc57f932",
+        "status": "present"
+      },
+      {
+        "path": "chapters/review-comments.md",
+        "hash": "d5fb5009e533c5c40d414e24bc06fc1a8b207b52f8b4a5e257984f004be75435",
+        "status": "present"
+      },
+      {
+        "path": "tools/svg_figure.py",
+        "hash": "8f4784be24a724815df7569eddcce9b47c72a6b3608364f719fac02a2fcfc8f0",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "報告書 MD から決定論 HTML を生成・検証する際に発火する。md2html.cjs（同梱）で render / verify / lint / selftest / check を実行する",
+      "lane": "cc-proposal",
+      "originalDate": "2026-10-12"
+    }
+  },
+  {
+    "name": "memory-import-size-rotation",
+    "target": "common/ja/skills/memory-import-size-rotation/SKILL.md",
+    "hash": "ffa12af96099f9e9b554b1ca1cbc1df640a11b752d260230a4f54cb13253c3ba",
+    "promotedAt": "2026-10-13T06:27:37.649Z",
+    "source": "normal",
+    "goldenVersionAtPromotion": "2537bfafe7b8bb2cfa69db403da5948ae70568ac",
+    "files": [
+      {
+        "path": "SKILL.md",
+        "hash": "ffa12af96099f9e9b554b1ca1cbc1df640a11b752d260230a4f54cb13253c3ba",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "CLAUDE.md または @import 先メモリファイルについて、ハーネスが文字数上限の超過を警告したとき（執筆時点の上限は 40k 字）、あるいはメモリファイルの肥大に気づいたときに発火。追記型ログ節を ARCHIVE へ退避し、ホット部分のみ残して上限内へ戻す。",
+      "lane": "不明",
+      "originalDate": "2026-10-04"
+    }
+  },
+  {
+    "name": "impl-lane-plan-review-delivery-cycle",
+    "target": "common/ja/skills/impl-lane-plan-review-delivery-cycle/SKILL.md",
+    "hash": "a2e6d4709a30bd61206df431bccb55681bc90c4d53852fb3e15deb98dd4c608a",
+    "promotedAt": "2026-10-16T17:19:06.831Z",
+    "source": "proposal",
+    "goldenVersionAtPromotion": "bbe85704ad403b9467aee7600dbb5ed4de3f1631",
+    "files": [
+      {
+        "path": "SKILL.md",
+        "hash": "a2e6d4709a30bd61206df431bccb55681bc90c4d53852fb3e15deb98dd4c608a",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "設計AIから What/Why 形式の指示MDを受けて実装する立場（実装レーンCC）になったときに発火する。参考情報を実物で裏取りし、/plan でファイルとして Plan を起草、承認後に実装計画をCodexレビュー、指摘を刈り取って実装、実装状態を再度Codexレビュー、人間向けHTML報告書で返すまでを通しで管理する。How の決定権は自分にあり、指摘は説明責任を果たせば棄却できる。自分が発注側のときや、指示を伴わない単独作業には発火しない。",
+      "lane": "cc-proposal",
+      "originalDate": "2026-10-16"
+    }
+  },
+  {
+    "name": "remote-tmux-lane-drive",
+    "target": "common/ja/skills/remote-tmux-lane-drive/SKILL.md",
+    "hash": "eb42c1c219e44519b049c1a00c17e1d6d494644c42656fa167f70e1ac90be19c",
+    "promotedAt": "2026-10-16T17:54:43.471Z",
+    "source": "proposal",
+    "goldenVersionAtPromotion": "141c17274a5bd150da66989bf27f61e3fee9a60a",
+    "files": [
+      {
+        "path": "SKILL.md",
+        "hash": "eb42c1c219e44519b049c1a00c17e1d6d494644c42656fa167f70e1ac90be19c",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "別マシンの tmux pane で動く実装レーンの CLI エージェント（Claude Code 等）へ、設計側の CC が SSH 経由で直接、指示の投下・確認画面への応答・進行の観測・完了報告の受領検分を行うときに発火する。人間が投下（と確認画面の応答）を設計側に委ねたときだけ使う。委任が無ければ cross-node-cc-instruction-handoff の「人間が貼る・押す」に従う。配置と四点セットの定義は cross-node-cc-instruction-handoff と handover-cc、発注の順序は design-lane-order-and-review-cycle に従う。同一マシン内のセッション間連絡（SendMessage 等）には使わない。",
+      "lane": "cc-proposal",
+      "originalDate": "2026-10-16"
+    }
+  },
+  {
+    "name": "impl-lane-plan-review-delivery-cycle",
+    "target": "common/ja/skills/impl-lane-plan-review-delivery-cycle/SKILL.md",
+    "hash": "a2e6d4709a30bd61206df431bccb55681bc90c4d53852fb3e15deb98dd4c608a",
+    "promotedAt": "2026-10-17T11:31:34.040Z",
+    "source": "proposal",
+    "goldenVersionAtPromotion": "c9a16d2044ebd1eb6a1530c3ba8efad35b4b620f",
+    "files": [
+      {
+        "path": "SKILL.md",
+        "hash": "a2e6d4709a30bd61206df431bccb55681bc90c4d53852fb3e15deb98dd4c608a",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "設計AIから What/Why 形式の指示MDを受けて実装する立場（実装レーンCC）になったときに発火する。参考情報を実物で裏取りし、/plan でファイルとして Plan を起草、承認後に実装計画をCodexレビュー、指摘を刈り取って実装、実装状態を再度Codexレビュー、人間向けHTML報告書で返すまでを通しで管理する。How の決定権は自分にあり、指摘は説明責任を果たせば棄却できる。自分が発注側のときや、指示を伴わない単独作業には発火しない。",
+      "lane": "cc-proposal",
+      "originalDate": "2026-10-17"
+    }
+  },
+  {
+    "name": "impl-lane-plan-review-delivery-cycle",
+    "target": "common/ja/skills/impl-lane-plan-review-delivery-cycle/SKILL.md",
+    "hash": "feaf91aff21a40fec7ff7e4ce0803fada10ab389dec89bc6c6ea1377273ebce2",
+    "promotedAt": "2026-10-18T09:22:42.857Z",
+    "source": "proposal",
+    "goldenVersionAtPromotion": "6afecd47eb96f5bfddb765a9054ad683f6adfa41",
+    "files": [
+      {
+        "path": "SKILL.md",
+        "hash": "feaf91aff21a40fec7ff7e4ce0803fada10ab389dec89bc6c6ea1377273ebce2",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "設計AIから What/Why 形式の指示MDを受けて実装する立場（実装レーンCC）になったときに発火する。参考情報を実物で裏取りし、/plan でファイルとして Plan を起草、承認後に実装計画をCodexレビュー、指摘を刈り取って実装、実装状態を再度Codexレビュー、人間向けHTML報告書で返すまでを通しで管理する。How の決定権は自分にあり、指摘は説明責任を果たせば棄却できる。自分が発注側のときや、指示を伴わない単独作業には発火しない。",
+      "lane": "cc-proposal",
+      "originalDate": "2026-10-17"
+    }
+  },
+  {
+    "name": "hook:context-usage",
+    "target": "common/hooks/context-usage-gate.sh",
+    "hash": "1850208c6e4ae6424eb5158f6a493ad39e544ff0247bd7f9685bc37fb0951041",
+    "promotedAt": "2026-10-21T11:07:48.140Z",
+    "source": "local-hooks:~/.claude/hooks",
+    "goldenVersionAtPromotion": "contract-applied",
+    "action": "contract-applied",
+    "files": [
+      {
+        "path": "common/hooks/context-usage-detect.cjs",
+        "hash": "a795da44b3984770226a6087199d7b946aae5fae1ede80a7016a07515a12571a",
+        "status": "present"
+      },
+      {
+        "path": "common/hooks/context-usage-gate.test.cjs",
+        "hash": "0e3e05b35bb6a1bc6e5b0de3deb49d9be0c799d64701f6a1106affd86c132beb",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "CCPIT_L0_013 W4（所有者の決定 2026-10-21「全部 golden へ」・発注書 r6）",
+      "lane": "CCPIT-e9",
+      "originalDate": "2026-10-21"
+    }
+  },
+  {
+    "name": "hook:stuck-loop",
+    "target": "common/hooks/stuck-loop-gate.sh",
+    "hash": "5911380a1bfb2e7fff213c59306042f2d9303ca4b06b57cd1bfeb7c5be0901b7",
+    "promotedAt": "2026-10-21T11:07:48.140Z",
+    "source": "local-hooks:~/.claude/hooks",
+    "goldenVersionAtPromotion": "contract-applied",
+    "action": "contract-applied",
+    "files": [
+      {
+        "path": "common/hooks/stuck-loop-detect.cjs",
+        "hash": "b73db7a0f8fd26e4af6ec82d3d3559f6c3185752a13bb7ea4825dfb0f28179f4",
+        "status": "present"
+      },
+      {
+        "path": "common/hooks/stuck-loop-detect.test.cjs",
+        "hash": "2d93c5118555b171fef41411b1ca4f23f93fec3732b9660e0aa3cdbec71739e5",
+        "status": "present"
+      },
+      {
+        "path": "common/hooks/stuck-loop-detect.fixture-loop.jsonl",
+        "hash": "93a9ece95679e20a37e24263012307b5465943de14b1aaf73bbf09dd7331d1ca",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "CCPIT_L0_013 W4（所有者の決定 2026-10-21「全部 golden へ」・発注書 r6）",
+      "lane": "CCPIT-e9",
+      "originalDate": "2026-10-21"
+    }
+  },
+  {
+    "name": "hook:paste-delimiter",
+    "target": "common/hooks/paste-delimiter-gate.sh",
+    "hash": "98cb251e45fc02dbb1aa9b521d2ff99112df1ea96b40caa2ad622d8169f0e08e",
+    "promotedAt": "2026-10-21T11:07:48.140Z",
+    "source": "local-hooks:~/.claude/hooks",
+    "goldenVersionAtPromotion": "contract-applied",
+    "action": "contract-applied",
+    "files": [
+      {
+        "path": "common/hooks/paste-delimiter-detect.cjs",
+        "hash": "37c9c33c9da16366f8f54c37d0648aedc67e37ffb40acf380cc14a61615ccc4a",
+        "status": "present"
+      },
+      {
+        "path": "common/hooks/paste-delimiter-gate.test.cjs",
+        "hash": "2b4eae3d4703ebd9b3465b35f112705819e33b80f592dca62fd29b9f030c9d44",
+        "status": "present"
+      },
+      {
+        "path": "common/hooks/last-assistant-text.cjs",
+        "hash": "eed7a971e5b4771a830217c968b8f3de11dc94915c723a30078e676217113d26",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "CCPIT_L0_013 W4（所有者の決定 2026-10-21「全部 golden へ」・発注書 r6）",
+      "lane": "CCPIT-e9",
+      "originalDate": "2026-10-21"
+    }
+  },
+  {
+    "name": "hook:opaque-approval",
+    "target": "common/hooks/opaque-approval-gate.sh",
+    "hash": "dd0637baec81327f55d5764774ba3b2f919cbd468dcca3c2674cc7bcdbc7c974",
+    "promotedAt": "2026-10-21T11:07:48.140Z",
+    "source": "local-hooks:~/.claude/hooks",
+    "goldenVersionAtPromotion": "contract-applied",
+    "action": "contract-applied",
+    "files": [
+      {
+        "path": "common/hooks/opaque-approval-detect.cjs",
+        "hash": "423a31a627e00497fbb78e0ec4b5323164ececae61104deb298e3c9b7afe7a31",
+        "status": "present"
+      },
+      {
+        "path": "common/hooks/opaque-approval-gate.test.cjs",
+        "hash": "79cd2f86f27ea03fdecf59e2e43bb338898ffc4866672c0ec88dc1817a1d0cf9",
+        "status": "present"
+      },
+      {
+        "path": "common/hooks/last-assistant-text.cjs",
+        "hash": "eed7a971e5b4771a830217c968b8f3de11dc94915c723a30078e676217113d26",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "CCPIT_L0_013 W4（所有者の決定 2026-10-21「全部 golden へ」・発注書 r6）",
+      "lane": "CCPIT-e9",
+      "originalDate": "2026-10-21"
+    }
+  },
+  {
+    "name": "hook:file-url-backtick",
+    "target": "common/hooks/file-url-backtick-gate.sh",
+    "hash": "3c32ee71e3697775f6bed7ee06b3e3ce6a3b9cd1bd2cab7998ed0c3759a3b941",
+    "promotedAt": "2026-10-21T11:07:48.140Z",
+    "source": "local-hooks:~/.claude/hooks",
+    "goldenVersionAtPromotion": "contract-applied",
+    "action": "contract-applied",
+    "files": [
+      {
+        "path": "common/hooks/file-url-backtick-detect.cjs",
+        "hash": "d2e6ac43e54441a18fd5f2bb763659c0ff92bacdf22063536d7634c0fdecf030",
+        "status": "present"
+      },
+      {
+        "path": "common/hooks/file-url-backtick-gate.test.cjs",
+        "hash": "0ec75559d51e2e58e7084aabe1330b868c127ea2ef701e835c3a0572f492c1d5",
+        "status": "present"
+      },
+      {
+        "path": "common/hooks/last-assistant-text.cjs",
+        "hash": "eed7a971e5b4771a830217c968b8f3de11dc94915c723a30078e676217113d26",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "CCPIT_L0_013 W4（所有者の決定 2026-10-21「全部 golden へ」・発注書 r6）",
+      "lane": "CCPIT-e9",
+      "originalDate": "2026-10-21"
+    }
+  },
+  {
+    "name": "hook:handover-declaration",
+    "target": "common/hooks/handover-declaration-gate.sh",
+    "hash": "2bc67792dc25dc85c68eab65d136c0a7ad65ccd4b782303e6d06305e6c55f16b",
+    "promotedAt": "2026-10-21T11:07:48.140Z",
+    "source": "local-hooks:~/.claude/hooks",
+    "goldenVersionAtPromotion": "contract-applied",
+    "action": "contract-applied",
+    "files": [
+      {
+        "path": "common/hooks/handover-declaration-detect.cjs",
+        "hash": "0c1e461029c98ae06ab0eaf2b76efea4b8fa6d30a16dd37016fbf99432d7ee01",
+        "status": "present"
+      },
+      {
+        "path": "common/hooks/handover-declaration-gate.test.cjs",
+        "hash": "7fa9d02bfa2bdb294fea3914d478a4049f9324e605a36627c8d02e09131c3484",
+        "status": "present"
+      },
+      {
+        "path": "common/hooks/last-assistant-text.cjs",
+        "hash": "eed7a971e5b4771a830217c968b8f3de11dc94915c723a30078e676217113d26",
+        "status": "present"
+      },
+      {
+        "path": "common/hooks/last-human-text.cjs",
+        "hash": "b5596b42e0b4a1d3b79a50b5536913f2f510f60964ec42701a8848c6ef169af9",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "CCPIT_L0_013 W4（所有者の決定 2026-10-21「全部 golden へ」・発注書 r6）",
+      "lane": "CCPIT-e9",
+      "originalDate": "2026-10-21"
+    }
+  },
+  {
+    "name": "hook:skill-edit-auth-guard",
+    "target": "common/hooks/skill-edit-auth-guard.sh",
+    "hash": "3c6c26302dee3f008fa27da63818a9c5bcd369140f08fded2f9b7987eb134911",
+    "promotedAt": "2026-10-21T11:07:48.140Z",
+    "source": "local-hooks:~/.claude/hooks",
+    "goldenVersionAtPromotion": "contract-applied",
+    "action": "contract-applied",
+    "files": [
+      {
+        "path": "common/hooks/skill-edit-auth-guard.test.cjs",
+        "hash": "6ca4886cbeeaab554b36561b74c80d65dd69cc9541ee71526a9693718120d39f",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "CCPIT_L0_013 W4（所有者の決定 2026-10-21「全部 golden へ」・発注書 r6）",
+      "lane": "CCPIT-e9",
+      "originalDate": "2026-10-21"
+    }
+  },
+  {
+    "name": "hook:away-gate",
+    "target": "common/hooks/away-gate-hook.sh",
+    "hash": "10508f2e0703082857e161a582058cb7a49fb76216399d127307d46f89fd1953",
+    "promotedAt": "2026-10-21T11:07:48.140Z",
+    "source": "awaygate-build:~/.ccpit/away-gate/bin@964941f466ba",
+    "goldenVersionAtPromotion": "contract-applied",
+    "action": "contract-applied",
+    "files": [
+      {
+        "path": "common/hooks/away-gate-hook.cjs",
+        "hash": "964941f466bac1fa2a436ef9fcbd5e793b33c935aa8adba3cf7fb6e14f714c3d",
+        "status": "present"
+      },
+      {
+        "path": "common/hooks/away-gate-hook.test.cjs",
+        "hash": "e149a800a24c648c7d543199239f24b02e3d8711d83283e864b73c04af863603",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "CCPIT_L0_013 W4（所有者の決定 2026-10-21「全部 golden へ」・発注書 r6）",
+      "lane": "CCPIT-e9",
+      "originalDate": "2026-10-21"
+    }
+  },
+  {
+    "name": "hook:pending-reaper",
+    "target": "common/hooks/pending-reaper.sh",
+    "hash": "c1b23f027e4c41a583143cf4bc2e1d1829ce7b32d1b0c22cd7785192c430a516",
+    "promotedAt": "2026-10-21T11:07:48.140Z",
+    "source": "repo:_Tools/pending-reaper.cjs",
+    "goldenVersionAtPromotion": "contract-applied",
+    "action": "contract-applied",
+    "files": [
+      {
+        "path": "common/hooks/pending-reaper.cjs",
+        "hash": "6bf5d45d19c08e703607dd65810f4f70935625062db18a755d791f4afe6e862d",
+        "status": "present"
+      },
+      {
+        "path": "common/hooks/pending-reaper.test.cjs",
+        "hash": "fbbf4e0598ccc2eb21eee7a7cc6a6eb9f1ad376a38cfa7b017b4c68dd3cd2983",
+        "status": "present"
+      }
+    ],
+    "history": {
+      "originalRecord": "CCPIT_L0_013 W4（所有者の決定 2026-10-21「全部 golden へ」・発注書 r6）",
+      "lane": "CCPIT-e9",
+      "originalDate": "2026-10-21"
+    }
+  }
+]

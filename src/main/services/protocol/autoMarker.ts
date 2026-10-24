@@ -1,4 +1,4 @@
-﻿import { readFile, stat } from 'fs/promises'
+import { readFile, stat } from 'fs/promises'
 import { homedir } from 'os'
 import { join } from 'path'
 import { readProtocol } from './protocolReader'

@@ -7,6 +7,7 @@ import AdmZip from 'adm-zip'
 import { getConfig, setConfig, type Language, type PitReference } from './appConfig'
 import { createBackupZip, hasAnyBackup, getBackupDir } from './backup'
 import { GITHUB_URL, CLAUDE_CODE_DOCS, AI_GUIDES } from './constants'
+import { extractFencedCodeBlocks, maskFencedCodeBlocks } from './skillProposals'
 
 interface ScannedFile {
   path: string
@@ -496,38 +497,38 @@ interface ParsedBlock {
   content: string
 }
 
-/** claude.ai 出力 MD からコードブロックをパースし、配置先を判定 */
+/** 取り込むコードブロックの情報文字列（無し・markdown・json・yaml）。ほかの言語のブロック（```bash など）は取り込まない */
+const IMPORT_BLOCK_INFOS = new Set(['', 'markdown', 'json', 'yaml'])
+
+/**
+ * claude.ai 出力 MD からコードブロックをパースし、配置先を判定
+ *
+ * コードブロックの境界は CommonMark のフェンスの規則（extractFencedCodeBlocks）で決め、配置先を決める見出しは
+ * コードブロックの外の行だけから探す（maskFencedCodeBlocks）。2026-09-28 069 M2: 以前は正規表現で最初の ```
+ * （行の途中でも）で切り、コードブロックの中の `# コメント` や `## 見出し` も見出しに数えていた。```bash の塊は
+ * 開きと見なされず、その閉じが次の開きになっていた。閉じの無いブロック（出力が途中で切れた等）は取り込まない。
+ */
 export function parseImportMd(mdContent: string): ParsedBlock[] {
   const blocks: ParsedBlock[] = []
-  const headingRegex = /^#{1,4}\s+(?:P\d:\s+)?(?:rules\/|skills\/)?(.+)/
-  const codeBlockRegex = /```(?:markdown|json|yaml)?\n([\s\S]*?)```/g
+  // 見出しは「P2: rules/…」の形のまま resolveTarget へ渡す（resolveTarget が rules/・skills/・P1〜P3 で配置先を
+  // 見分ける）。2026-09-28 069 M2: 以前はここで「P2: 」「rules/」を剥がしてから渡しており、rules・skills の
+  // 見分けがいつも付かず、配置先が見出しの文字列そのものになっていた
+  const headingRegex = /^#{1,4}\s+(.+)/
 
-  const lines = mdContent.split('\n')
+  const maskedLines = maskFencedCodeBlocks(mdContent).split('\n')
 
-  // 各行の開始位置を記録
-  const lineStarts: number[] = []
-  let pos = 0
-  for (const line of lines) {
-    lineStarts.push(pos)
-    pos += line.length + 1
-  }
+  for (const block of extractFencedCodeBlocks(mdContent)) {
+    if (block.closeLine === null || !IMPORT_BLOCK_INFOS.has(block.info)) continue
 
-  // コードブロック抽出
-  let match: RegExpExecArray | null
-  while ((match = codeBlockRegex.exec(mdContent)) !== null) {
-    const blockContent = match[1]
-    const matchPos = match.index
-
-    // このコードブロックの直前の見出しを探す
+    // このコードブロックの直前の見出しを探す（コードブロックの外の行だけ）
     let heading = ''
-    for (let i = 0; i < lineStarts.length; i++) {
-      if (lineStarts[i] > matchPos) break
-      const hm = lines[i].match(headingRegex)
+    for (let i = 0; i < block.openLine; i++) {
+      const hm = maskedLines[i].replace(/\r$/, '').match(headingRegex)
       if (hm) heading = hm[1].trim()
     }
 
     const { filename, targetPath } = resolveTarget(heading)
-    blocks.push({ filename, targetPath, content: blockContent })
+    blocks.push({ filename, targetPath, content: block.content })
   }
 
   return blocks
@@ -537,58 +538,50 @@ function resolveTarget(
   heading: string
 ): { filename: string; targetPath: string } {
   const lower = heading.toLowerCase()
+  // 「P1」〜「P3」「P0」は語として見る（`skills/help1` の `p1` を CLAUDE.md と取り違えない。2026-09-28 069 M2）
+  const isLayer = (n: number): boolean => new RegExp(`\\bp${n}\\b`).test(lower)
 
   // CLAUDE.md
-  if (lower.includes('claude.md') || lower.includes('p1')) {
+  if (lower.includes('claude.md') || isLayer(1)) {
     return { filename: 'CLAUDE.md', targetPath: 'CLAUDE.md' }
   }
 
   // rules/
-  if (lower.includes('rules/') || lower.includes('p2')) {
+  if (lower.includes('rules/') || isLayer(2)) {
     const nameMatch = heading.match(/rules\/(.+\.md)/i)
     const name = nameMatch ? nameMatch[1] : `rule_${Date.now()}.md`
     return { filename: name, targetPath: `rules/${name}` }
   }
 
   // skills/
-  if (lower.includes('skills/') || lower.includes('p3')) {
+  if (lower.includes('skills/') || isLayer(3)) {
     const nameMatch = heading.match(/skills\/(.+?)(?:\/SKILL\.md)?$/i)
     const name = nameMatch ? nameMatch[1] : `skill_${Date.now()}`
     return { filename: `${name}/SKILL.md`, targetPath: `skills/${name}/SKILL.md` }
   }
 
   // settings.json deny
-  if (lower.includes('settings') || lower.includes('deny') || lower.includes('p0')) {
+  if (lower.includes('settings') || lower.includes('deny') || isLayer(0)) {
     return { filename: 'settings_deny_additions.json', targetPath: 'settings_deny_additions.json' }
   }
 
   return { filename: basename(heading) || 'unknown.md', targetPath: heading }
 }
 
-/** パースした結果を Golden に配置 */
+/**
+ * パースした結果を Golden に配置
+ *
+ * 【封鎖処置】契約違反の直接書込み口を物理的に遮断。
+ * golden への書込みは契約実行ツール（_Tools/golden-apply）経由のみ許可される。
+ */
 export async function importToGolden(
-  blocks: ParsedBlock[],
-  goldenBasePath: string,
-  templateName: string
+  _blocks: ParsedBlock[],
+  _goldenBasePath: string,
+  _templateName: string
 ): Promise<{ placed: string[]; errors: string[] }> {
-  const result = { placed: [] as string[], errors: [] as string[] }
-
-  for (const block of blocks) {
-    const destPath = join(goldenBasePath, templateName, block.targetPath)
-    const destDir = join(destPath, '..')
-
-    try {
-      await mkdir(destDir, { recursive: true })
-      await writeFile(destPath, block.content, 'utf-8')
-      result.placed.push(block.targetPath)
-    } catch (err) {
-      result.errors.push(
-        `${block.targetPath}: ${err instanceof Error ? err.message : String(err)}`
-      )
-    }
-  }
-
-  return result
+  throw new Error(
+    '契約違反: golden への直接書込みは禁止されています。契約実行ツール（_Tools/golden-apply）を経由してください。'
+  )
 }
 
 // ─── .pit ファイル インポート機能 ───

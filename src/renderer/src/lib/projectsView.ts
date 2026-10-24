@@ -1,4 +1,4 @@
-﻿export const SORT_MODES = ['dateDesc', 'dateAsc', 'nameAsc', 'nameDesc', 'favoritesFirst'] as const
+export const SORT_MODES = ['dateDesc', 'dateAsc', 'nameAsc', 'nameDesc', 'favoritesFirst'] as const
 
 export type SortMode = (typeof SORT_MODES)[number]
 

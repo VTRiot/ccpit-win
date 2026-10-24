@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react'
 import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { X, HeartPulse, Shield, Stethoscope, Wrench, Inbox, Clipboard, Plug } from 'lucide-react'
+import {
+  X,
+  HeartPulse,
+  Shield,
+  Stethoscope,
+  Wrench,
+  Inbox,
+  Clipboard,
+  Plug,
+  Terminal,
+  SlidersHorizontal
+} from 'lucide-react'
 import { Button } from './ui/button'
 import { cn } from '../lib/utils'
 import { HealthPage } from '../pages/HealthPage'
@@ -11,8 +22,19 @@ import { DebugPage } from '../pages/DebugPage'
 import { CCRequestInboxPage } from '../pages/CCRequestInboxPage'
 import { CcesAdvancedPage } from '../pages/CcesAdvancedPage'
 import { McpPage } from '../pages/McpPage'
+import { BgccMaintenancePage } from '../pages/BgccMaintenancePage'
+import { GeneralPage } from '../pages/GeneralPage'
 
-type Tab = 'health' | 'rk' | 'da' | 'inbox' | 'ccesAdvanced' | 'mcp' | 'devTools'
+type Tab =
+  | 'general'
+  | 'health'
+  | 'rk'
+  | 'da'
+  | 'inbox'
+  | 'ccesAdvanced'
+  | 'mcp'
+  | 'bgcc'
+  | 'devTools'
 
 interface MaintenanceDialogProps {
   open: boolean
@@ -40,12 +62,17 @@ export function MaintenanceDialog({
   if (!open) return null
 
   const tabs: { id: Tab; labelKey: string; icon: React.ElementType; label?: string }[] = [
+    // CCPIT 055 W-4: General タブは「HEALTH の左」＝ index 0（配列順がそのまま表示順）。
+    // 初期選択タブは従来どおり health（指示は位置のみ。初期選択の変更は要件外ゆえ触らん）。
+    { id: 'general', labelKey: 'pages.general.title', icon: SlidersHorizontal },
     { id: 'health', labelKey: 'pages.health.title', icon: HeartPulse },
     { id: 'rk', labelKey: 'settings.recoveryKit', icon: Shield },
     { id: 'da', labelKey: 'settings.doctorAnalysis', icon: Stethoscope },
     { id: 'inbox', labelKey: 'settings.requestInbox', icon: Inbox },
     { id: 'ccesAdvanced', labelKey: 'settings.ccesAdvanced.title', icon: Clipboard },
     { id: 'mcp', labelKey: 'pages.mcp.title', icon: Plug },
+    // FB02 F9: BG-CC 保守（カタログ Clear + 生ログ）。debugMode ゲート外（一般ユーザー到達可）。
+    { id: 'bgcc', labelKey: 'pages.bgcc.title', icon: Terminal },
     ...(debugMode
       ? [{ id: 'devTools' as Tab, labelKey: 'settings.devTools.title', icon: Wrench }]
       : [])
@@ -87,6 +114,7 @@ export function MaintenanceDialog({
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-6">
+          {activeTab === 'general' && <GeneralPage />}
           {activeTab === 'health' && <HealthPage />}
           {activeTab === 'rk' && (
             <RKPage
@@ -107,6 +135,7 @@ export function MaintenanceDialog({
           {activeTab === 'inbox' && <CCRequestInboxPage />}
           {activeTab === 'ccesAdvanced' && <CcesAdvancedPage />}
           {activeTab === 'mcp' && <McpPage />}
+          {activeTab === 'bgcc' && <BgccMaintenancePage />}
           {activeTab === 'devTools' && debugMode && <DebugPage />}
         </div>
       </div>

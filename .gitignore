@@ -1,11 +1,23 @@
 node_modules
 dist
 out
+# 隔離起動用のビルド出力（scripts/dev-isolated.cjs）。本物の開発版の out/ と分ける
+out-isolated
 .DS_Store
 .eslintcache
 *.log*
 
 # Editor / tool backup files
-*.bak
-*.bak2
-*.bak.*
+# `*.bak` `*.bak2` `*.bak.*` の 3 本立ては .bak3 / .bak-l1 / .bak-20260807 を取りこぼす
+# （同型のグロブ穴が sync-to-public.ps1 の /XF 側にもあり、実際に projects.ts.bak3 が
+#  tracked のまま公開同期に乗る状態だった）。接尾辞を問わず 1 本で受ける。
+# **本ファイルは ccpit 配下にのみ効く**。根の .gitignore は広げていない —
+# _Prompt/**/_backups/ の `.bak-YYYYMMDD` は意図的な証跡保全で、追跡できなくなると困るため。
+*.bak*
+
+# Windows ショートカット。開発機の絶対パス・内部リポ名・ホスト名 (MachineID) が
+# バイナリに埋まる。公開同期に乗る本ツリーでは追跡しない。
+*.lnk
+
+# TypeScript の増分ビルド情報。生成物であり公開物として無意味。
+*.tsbuildinfo

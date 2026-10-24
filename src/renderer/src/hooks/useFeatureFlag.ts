@@ -7,6 +7,7 @@ export type FeatureKey =
   | 'favoriteToggle'
   | 'autoMarking'
   | 'editMarkerUI'
+  | 'pxpipeToggle'
 
 export type FeatureFlags = Record<FeatureKey, { enabled: boolean }>
 
@@ -17,6 +18,7 @@ export const FEATURE_KEYS: readonly FeatureKey[] = [
   'favoriteToggle',
   'autoMarking',
   'editMarkerUI',
+  'pxpipeToggle',
 ] as const
 
 export const DEFAULT_FEATURES: FeatureFlags = {
@@ -26,6 +28,8 @@ export const DEFAULT_FEATURES: FeatureFlags = {
   favoriteToggle: { enabled: true },
   autoMarking: { enabled: true },
   editMarkerUI: { enabled: true },
+  // 配布地雷 #5: pxpipe 未導入ユーザーに Plug アイコンを出さないため既定 OFF(opt-in)。既存 ON 値は保持。
+  pxpipeToggle: { enabled: false },
 }
 
 let cached: FeatureFlags = { ...DEFAULT_FEATURES }

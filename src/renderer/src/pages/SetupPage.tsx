@@ -36,6 +36,7 @@ export function SetupPage({ onSetupCompleted }: SetupPageProps): React.JSX.Eleme
     void window.api.configGet().then((config) => {
       const next = !config.debugMode
       void window.api.configSet({ debugMode: next }).then(() => {
+        window.dispatchEvent(new CustomEvent('debug-mode-changed', { detail: next }))
         setToastMessage(next ? t('common.debugModeOn') : t('common.debugModeOff'))
         setToastVariant(next ? 'success' : 'error')
         setToastOpen(true)

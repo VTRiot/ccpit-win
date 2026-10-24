@@ -56,7 +56,12 @@ ${EDITOR:-vi} ~/.claude/settings.json
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/debug-report-gate.sh"
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/debug-report-gate.sh\""
+            ],
+            "timeout": 10
           }
         ]
       }
@@ -77,11 +82,21 @@ ${EDITOR:-vi} ~/.claude/settings.json
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/report-gate.sh"
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/report-gate.sh\""
+            ],
+            "timeout": 10
           },
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/debug-report-gate.sh"
+            "command": "bash",
+            "args": [
+              "-c",
+              "\"$HOME/.claude/hooks/debug-report-gate.sh\""
+            ],
+            "timeout": 10
           }
         ]
       }
