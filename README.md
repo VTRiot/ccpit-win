@@ -170,6 +170,9 @@ Re-runnable from Settings any time.
 - **Protocol history** — see which protocol revisions a project has been through.
 - **CC Launch Button** — open Claude Code in the right project directory in one click.
 - **Per-project launch options** — Bypass mode, resume session, and model (Opus 5.5 / Opus 5 / Sonnet 5 and more) are stored per project; nothing is inherited implicitly across projects, and a resume session ID stays bound to the project it came from.
+- **Fable launch button** (shown when the PXP dashboard is enabled) — starts Claude Code through the local pxpipe proxy with the Fable model, effort level, and version saved for that project.
+
+![CCPIT Projects screen with the PXP dashboard enabled (isolated demo environment) — two special entries, Demo Project and Sample App, each with a Fable button, a Launch button, the "…" launch-options menu, and CCES Generate; the sidebar shows Projects / Skill candidates / Skill Integrity / Enforcement stats / PXP dashboard](./docs/screenshots/projects-fable.png)
 - **Special entries** — pin projects that live outside the scanned roots at the top of the list.
 - **CC Request Inbox** — when Claude Code wants to change your settings, it drops a request here. You approve or reject from a GUI instead of editing JSON.
 
@@ -227,6 +230,8 @@ Designed for teams who are starting to wire up MCP servers but worry about givin
 ### PXP dashboard (opt-in) ★ new in v1.7.0
 
 Off by default. When enabled, CCPIT can supervise **pxpipe** — a local token-saving proxy for Claude Code (third-party OSS, pinned version; see the bundled NOTICE) — and shows a Japanese dashboard overlay with per-session savings. A *Fable* launch button appears per project. CCPIT talks only to the proxy's localhost port; it does not call any remote service itself.
+
+![CCPIT PXP dashboard (Japanese UI, example data from the author's environment) — top bar with the per-model imaging scope (Opus 5 / Opus 5.5 pass-through OFF, Fable 5 imaging ON, Fable 5.1 linked) and "Proxy running (:47821)"; the pxpipe panel reports 52% reduction over 679 imaged requests (20M provider-equivalent input tokens vs 43M as plain text), with tiles for 694 requests, 22,307,571 input tokens saved, an estimated saving of $223.08, and $0.3814 per request; below, a recent-requests table and an image-vs-text breakdown of the latest request](./docs/screenshots/pxp-dashboard.png)
 
 ---
 

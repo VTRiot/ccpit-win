@@ -170,6 +170,9 @@ Settings からいつでも再実行可能。
 - **Protocol History** — その PJ がどのプロトコル rev を経てきたかの履歴表示
 - **CC Launch Button** — 正しい PJ ディレクトリでワンクリック Claude Code 起動
 - **起動オプションの PJ 単位保存** — Bypass・再開セッション・モデル（Opus 5.5 / Opus 5 / Sonnet 5 ほか）は PJ ごとに保存。他の PJ へ暗黙に引き継がれず、再開セッション ID は出た PJ に束縛される
+- **Fable 起動ボタン**（PXP ダッシュボードを有効にすると出る） — その PJ に保存した Fable のモデル・effort・バージョンで、手元の pxpipe プロキシ経由の Claude Code を起動する
+
+![PXP ダッシュボード有効時の CCPIT Projects 画面（隔離したデモ環境） — 特別枠の Demo Project と Sample App の 2 行に、それぞれ Fable ボタン・Launch ボタン・「…」の起動オプション・CCES Generate。サイドバーは Projects / Skill candidates / Skill Integrity / Enforcement stats / PXP dashboard](./docs/screenshots/projects-fable.png)
 - **特別エントリ** — 走査対象の外にある PJ を一覧の先頭に固定
 - **CC Request Inbox** — Claude Code から「設定をこう変えたい」とリクエストが届くと、ここに溜まる。GUI で承認/却下、JSON 直接編集不要
 
@@ -227,6 +230,8 @@ MCP サーバを使い始めたチーム向け。「うっかり write 権限を
 ### PXP ダッシュボード（任意）★ v1.7.0 新機能
 
 既定は off。有効にすると、Claude Code 向けのトークン節約プロキシ **pxpipe**（第三者 OSS・版を固定・NOTICE 同梱）を CCPIT が監督し、セッションごとの節約量を日本語ダッシュボードで重ねて表示する。PJ ごとに *Fable* 起動ボタンが出る。CCPIT が話すのはプロキシの localhost ポートだけで、自身は外部サービスを呼ばない。
+
+![CCPIT の PXP ダッシュボード（作者環境の例示データ） — 上部にモデル別の画像化スコープ（Opus 5 / Opus 5.5 は素通し OFF、Fable 5 は画像化中 ON、Fable 5.1 は連動 ON）と「Proxy 稼働中 (:47821)」。pxpipe のパネルは 679 件の画像化で 52% 削減（プロバイダ換算入力トークン 20M、テキストのままなら 43M）、下にリクエスト数 694・削減した入力トークン 22,307,571・推定削減額 $223.08（約¥34,979）・1 リクエストあたり $0.3814 のタイル、最近のリクエスト表と最新リクエストの画像 vs テキストの内訳](./docs/screenshots/pxp-dashboard.png)
 
 ---
 
